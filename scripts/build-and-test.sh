@@ -29,10 +29,6 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if we're in a CI environment
-is_ci() {
-    [ "${CI:-false}" = "true" ] || [ "${GITHUB_ACTIONS:-false}" = "true" ]
-}
 
 # Build Docker images
 build_images() {
@@ -183,7 +179,7 @@ main() {
     validate_pdfs || exit_code=1
 
     # Clean up test files
-    rm -f *.pdf
+    rm -f ./*.pdf
 
     # Summary
     echo ""
