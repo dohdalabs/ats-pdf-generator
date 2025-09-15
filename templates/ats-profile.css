@@ -1,0 +1,193 @@
+/* ATS-Friendly Profile CSS */
+/* Optimized for Applicant Tracking Systems */
+
+@page {
+    size: A4;
+    margin: 1.5cm;
+}
+
+body {
+    font-family: 'Liberation Sans', Arial, Helvetica, 'DejaVu Sans', sans-serif;
+    font-size: 10pt;
+    line-height: 1.4;
+    color: #000;
+    margin: 0;
+    padding: 0;
+    background-color: white;
+}
+
+/* Header */
+h1 {
+    font-size: 18pt;
+    font-weight: bold;
+    color: #000;
+    margin-top: 0;
+    margin-bottom: 0.2em;
+    text-align: left;
+    page-break-after: avoid;
+}
+
+/* Subtitle under name */
+h1 + p {
+    text-align: left;
+    margin-bottom: 0.3em;
+    font-weight: bold;
+    font-size: 11pt;
+}
+
+h2 {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #000;
+    margin-top: 1.3em; /* subtle extra space before sections */
+    margin-bottom: 0.6em;
+    page-break-after: avoid;
+}
+
+h3 {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #000;
+    margin-top: 0.8em;
+    margin-bottom: 0.2em;
+    page-break-after: avoid;
+}
+
+/* Job title and company styling */
+h3 + p {
+    font-style: italic;
+    margin-bottom: 0.3em;
+    margin-top: -0.1em;
+}
+
+/* Content */
+p {
+    margin: 0.5em 0;
+    text-align: left;
+    line-height: 1.5;
+    page-break-inside: avoid;
+}
+
+/* Strong text formatting */
+strong {
+    font-weight: bold;
+    color: #000;
+}
+
+ul, ol {
+    margin: 0.35em 0;
+    padding-left: 1.8em;
+}
+
+li {
+    margin-bottom: 0.6em; /* a touch more space between bullets */
+    text-align: left;
+    display: list-item;
+    list-style-position: outside;
+    line-height: 1.4;
+    page-break-inside: avoid;
+}
+
+/* Ensure proper spacing for nested lists */
+li li {
+    margin-bottom: 0.6em;
+}
+
+/* Ensure proper line breaks */
+br {
+    display: block;
+    content: "";
+    margin-top: 0.3em;
+}
+
+/* Address formatting */
+address {
+    margin: 0.6em 0;
+    line-height: 1.4;
+    font-style: normal;
+}
+
+/* Ensure paragraphs don't break awkwardly */
+p + p {
+    margin-top: 0.8em;
+}
+
+/* Links */
+a {
+    color: #000;
+    text-decoration: underline;
+}
+
+/* Tables */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.5em 0;
+}
+
+th, td {
+    border: 1px solid #000;
+    padding: 0.3em;
+    text-align: left;
+    font-size: 10pt;
+}
+
+th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+
+/* Page breaks */
+h1, h2 {
+    page-break-after: avoid;
+}
+
+/* Horizontal rules */
+hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 1.0em 0;
+    height: 1px;
+}
+
+/* Email and contact info formatting */
+p:first-of-type {
+    text-align: left;
+    margin-bottom: 0.5em;
+    font-size: 10pt;
+}
+
+/* Professional summary and key sections */
+h2 + p {
+    margin-top: 0.3em;
+}
+
+/* Work experience roles - increase spacing, no separators */
+h3[id*="engineering"], h3[id*="director"], h3[id*="principal"], h3[id*="senior"] {
+    margin-top: 1.4em;
+}
+
+/* Italic descriptions under job titles */
+em, i {
+    font-style: italic;
+    color: #333;
+}
+
+/* Bullet point improvements */
+li::marker {
+    color: #000;
+}
+
+/* Better spacing for competencies and skills */
+p strong {
+    color: #000;
+    font-weight: bold;
+}
+
+/* Ensure text is selectable */
+* {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}

@@ -1,0 +1,173 @@
+/* ATS-Friendly Cover Letter CSS */
+/* Optimized for Applicant Tracking Systems */
+
+@page {
+    size: A4;
+    margin: 1.5cm;
+}
+
+body {
+    font-family: 'Liberation Sans', Arial, Helvetica, 'DejaVu Sans', sans-serif;
+    font-size: 10pt;
+    line-height: 1.4; /* match profile */
+    color: #000;
+    margin: 0;
+    padding: 0;
+    background-color: white;
+}
+
+/* Header */
+h1 {
+    font-size: 16pt;
+    font-weight: bold;
+    color: #000;
+    margin-top: 1.4em;
+    margin-bottom: 0.6em; /* Back to normal */
+    border-bottom: 1.5px solid #000;
+    padding-bottom: 0.3em;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+h2 {
+    font-size: 12pt;
+    font-weight: bold;
+    color: #000;
+    margin-top: 1.2em;
+    margin-bottom: 0.4em;
+}
+
+h3 {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #000;
+    margin-top: 1em;
+    margin-bottom: 0.3em;
+}
+
+/* Content */
+p {
+    margin: 0.5em 0; /* match profile */
+    text-align: left;
+    line-height: 1.5; /* match profile */
+    page-break-inside: avoid;
+}
+
+ul, ol {
+    margin: 0.6em 0;
+    padding-left: 1.5em;
+}
+
+li {
+    margin-bottom: 0.8em;
+    text-align: left;
+    display: list-item;
+    list-style-position: outside;
+    line-height: 1.4;
+    page-break-inside: avoid;
+}
+
+/* Ensure proper spacing for nested lists */
+li li {
+    margin-bottom: 0.6em;
+}
+
+/* Ensure proper line breaks */
+br {
+    display: block;
+    content: "";
+    margin-top: 0;
+}
+
+/* Address formatting */
+address {
+    margin: 0.6em 0;
+    line-height: 1.4;
+    font-style: normal;
+}
+
+/* Ensure paragraphs don't break awkwardly */
+p + p {
+    margin-top: 0.8em;
+}
+
+/* Reduce extra space at the end of document */
+p:last-child {
+    margin-bottom: 0;
+}
+
+/* Salutation spacing - use class="salutation" for "Dear..." line */
+.salutation {
+    margin-top: 1.0em;
+}
+
+/* Signature block - use class="signature" in markdown */
+.signature {
+    margin-top: 1.0em; /* More space before signature */
+    margin-bottom: 0;
+    line-height: 1.2;
+    font-family: 'Liberation Sans', Arial, Helvetica, sans-serif;
+}
+
+.signature p {
+    margin-top: 0.1em;
+    margin-bottom: 0.1em;
+    line-height: 1.2;
+    white-space: nowrap; /* Prevent line wrapping within phone numbers */
+    overflow: visible;
+}
+
+/* Make "Best regards," italic in signature */
+.signature p:first-child {
+    font-style: italic;
+}
+
+/* Prevent phone numbers from becoming numbered lists */
+.signature ol, .signature ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.signature li {
+    margin: 0.1em 0;
+    line-height: 1.2;
+}
+
+/* Links */
+a {
+    color: #000;
+    text-decoration: underline;
+}
+
+/* Tables */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.5em 0;
+}
+
+th, td {
+    border: 1px solid #000;
+    padding: 0.3em;
+    text-align: left;
+    font-size: 10pt;
+}
+
+th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+
+/* Page breaks */
+h1, h2 {
+    page-break-after: avoid;
+}
+
+/* Ensure text is selectable */
+* {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}

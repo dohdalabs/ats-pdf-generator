@@ -1,0 +1,55 @@
+---
+description: "Commit message generation rules"
+file_patterns: ["**/*"]
+---
+
+# Commit Message Generation Rules
+
+## Format Requirements (Conventional Commits v1.0.0)
+- **Basic Format**: `<type>[optional scope]: <description>`
+- **Subject line**: Under 50 characters, imperative mood, capitalized, no period
+- **Body**: Wrap at 72 characters, explain "what" and "why", separate from subject with blank line
+- **Footer**: Breaking changes and issue references, separate from body with blank line
+
+## Required Types (from specification)
+- `feat`: A new feature (triggers MINOR version bump)
+- `fix`: A bug fix (triggers PATCH version bump)
+
+## Optional Types (commonly used)
+- `docs`: Documentation changes
+- `style`: Code formatting, semicolons, etc. (no logic change)
+- `refactor`: Code restructuring (no feature or bug fix)
+- `perf`: Performance improvements
+- `test`: Adding or updating tests
+- `build`: Build system or external dependencies
+- `ci`: CI/CD configuration files and scripts
+- `chore`: Maintenance tasks, dependency updates
+- `revert`: Reverts a previous commit
+
+## Breaking Changes
+- **Format**: `BREAKING CHANGE: <description>` or `!` after type/scope
+- **Examples**:
+  - `feat!: remove deprecated API`
+  - `feat(api)!: change response format`
+  - Body: `BREAKING CHANGE: The API now returns data in JSON format instead of XML`
+
+## Project-Specific Scopes
+- `converter`: PDF conversion functionality
+- `docker`: Container-related changes
+- `ci`: CI/CD pipeline
+- `docs`: Documentation
+- `scripts`: Shell scripts
+- `templates`: CSS templates
+- `deps`: Dependencies
+
+## Examples
+```
+feat(converter): add support for custom CSS templates
+fix(docker): resolve multi-stage build issue
+docs(readme): update installation instructions
+chore(deps): update uv to latest version
+feat!: remove deprecated --output flag
+feat(api)!: change response format
+
+BREAKING CHANGE: The API now returns data in JSON format instead of XML
+```

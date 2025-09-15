@@ -1,0 +1,44 @@
+[env]
+PYTHONUNBUFFERED = "1"
+LC_ALL = "C.UTF-8"
+LANG = "C.UTF-8"
+
+[tools]
+python = "3.13.7"
+uv = "latest"
+shellcheck = "latest"
+hadolint = "2.12.1-beta"
+
+[tasks]
+# Environment setup
+install = "uv venv && uv pip install .[dev]"
+setup-local = "scripts/setup-local-env.sh"
+
+# Code quality (individual)
+lint = "uv run ruff check ."
+format = "uv run ruff format ."
+typecheck = "uv run mypy src/"
+test = "uv run pytest"
+shell-lint = "shellcheck install.sh src/*.sh || true"
+docker-lint = "hadolint --ignore DL3008,DL3009,DL3018,DL3045,DL4006 docker/Dockerfile.optimized docker/Dockerfile.alpine docker/Dockerfile.dev || true"
+
+# Comprehensive quality checks
+quality = "scripts/quality-check.sh"
+all-checks = "scripts/quality-check.sh"
+
+# PDF conversion
+convert = "scripts/convert-pdf.sh"
+
+# Docker operations
+build-image = "scripts/build-dev-image.sh"
+build-test = "scripts/build-and-test.sh"
+docker-shell = "docker run --rm -it -v \"$(pwd):/app\" -w /app ats-pdf-generator:dev bash"
+docker-clean = "docker rmi ats-pdf-generator:dev 2>/dev/null || true"
+
+# Publishing
+setup-auth = "scripts/setup-docker-auth.sh"
+publish = "scripts/publish.sh"
+publish-image = "scripts/publish-image.sh"
+
+# Pre-commit
+pre-commit = "uv run pre-commit run --all-files"

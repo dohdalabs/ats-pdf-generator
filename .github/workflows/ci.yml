@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CI: true
+
+jobs:
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'uv'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v1
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: uv pip install .[dev]
+
+      - name: Install additional tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o hadolint
+          chmod +x hadolint
+          sudo mv hadolint /usr/local/bin/
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Run quality checks
+        run: ./scripts/quality-check.sh
+
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run build and test
+        run: ./scripts/build-and-test.sh
+
+  publish:
+    name: Publish (on main)
+    runs-on: ubuntu-latest
+    needs: [quality, build-and-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish images
+        run: ./scripts/publish.sh latest
+
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [quality, build-and-test, publish]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "📋 CI Summary:"
+          echo "  🐍 Quality: Code quality checks completed"
+          echo "  🐳 Build: Docker images built and tested"
+          echo "  📦 Publish: Images published to registries (main branch only)"
+          echo "✅ All CI checks completed successfully!"

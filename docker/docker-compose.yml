@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # ATS Document Converter Service
+  ats-converter:
+    build:
+      context: .
+      dockerfile: Dockerfile.optimized
+    image: ats-document-converter:latest
+    container_name: ats-document-converter
+    volumes:
+      - .:/app
+    working_dir: /app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LC_ALL=C.UTF-8
+      - LANG=C.UTF-8
+    # Remove container after execution
+    restart: "no"
+    # Resource limits (optimized for smaller image)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  # Development service
+  ats-converter-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.optimized
+    image: ats-document-converter:dev
+    container_name: ats-document-converter-dev
+    volumes:
+      - .:/app
+    working_dir: /app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LC_ALL=C.UTF-8
+      - LANG=C.UTF-8
+      - DEBUG=1
+    # Keep container running for development
+    command: ["tail", "-f", "/dev/null"]
+    restart: "unless-stopped"
+    profiles:
+      - dev

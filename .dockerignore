@@ -1,0 +1,58 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+QUICKSTART.md
+PDF_ENGINES.md
+*.md
+
+# Scripts (we'll copy only what we need)
+install.sh
+docker-build.sh
+docker-md2pdf.sh
+
+# Sample files
+sample.md
+default.css
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Docker files (except Dockerfile)
+docker-compose*.yml
+.dockerignore
+
+# Build artifacts
+*.pdf
+output/

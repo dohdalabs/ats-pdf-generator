@@ -1,0 +1,105 @@
+# ATS Document Converter - Optimized Docker Image
+# Multi-stage build to minimize final image size
+
+# Stage 1: Build stage for compiling dependencies
+FROM python:3.13-slim AS builder
+
+# Set shell with pipefail for better error handling
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Install build dependencies and uv
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libgdk-pixbuf-xlib-2.0-dev \
+    libffi-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    libharfbuzz-dev \
+    libfribidi-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv using pip (more reliable in Docker)
+RUN pip install --no-cache-dir uv==0.7.3
+ENV PATH="/root/.local/bin:$PATH"
+
+# Create virtual environment with uv
+RUN uv venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install Python dependencies
+WORKDIR /build
+COPY pyproject.toml .
+RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md
+RUN uv pip install --no-deps .
+RUN uv pip install weasyprint
+
+# Stage 2: Runtime stage
+FROM python:3.13-slim AS runtime
+
+# Set shell with pipefail for better error handling
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pandoc \
+    fonts-liberation \
+    fonts-noto-color-emoji \
+    fonts-dejavu-core \
+    ghostscript \
+    # Minimal font rendering dependencies
+    libcairo2 \
+    libpango-1.0-0 \
+    libgdk-pixbuf-xlib-2.0-0 \
+    libffi8 \
+    libjpeg62-turbo \
+    libpng16-16 \
+    libfreetype6 \
+    libharfbuzz0b \
+    libfribidi0 \
+    # Additional WeasyPrint dependencies
+    libpangoft2-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgobject-2.0-0 \
+    libglib-2.0-0 \
+    # Remove TeXLive - we'll use weasyprint's built-in rendering
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
+
+# Create app directory
+WORKDIR /app
+
+# Create a non-root user
+RUN useradd -m -s /bin/bash converter && \
+    chown -R converter:converter /app
+
+# Switch to non-root user
+USER converter
+
+# Create directories for input/output
+RUN mkdir -p /app/input /app/output /app/templates /app/css
+
+# Copy the Python script (WORKDIR is already set)
+COPY --chown=converter:converter src/ats_converter.py ./
+
+# Make the script executable
+RUN chmod +x /app/ats_converter.py
+
+# Set the entrypoint
+ENTRYPOINT ["python3", "/app/ats_converter.py"]
+
+# Default command (can be overridden)
+CMD ["--help"]
