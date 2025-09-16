@@ -74,6 +74,9 @@ RUN rm README.md
 RUN useradd -m -s /bin/bash developer && \
     chown -R developer:developer /app
 
+# Create tmp directory for temporary files
+RUN mkdir -p /app/tmp && chown developer:developer /app/tmp
+
 # Set up pre-commit hooks (optional)
 RUN uv pip install pre-commit
 
