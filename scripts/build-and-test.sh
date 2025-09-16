@@ -152,7 +152,7 @@ test_dev_environment() {
     # Test pytest in dev environment
     docker run --rm -v "$(pwd):/workspace" -w /workspace ats-pdf-generator:dev bash -c "
         source /app/.venv/bin/activate &&
-        pytest tests/ --cov-report=term-missing --cov-report=html:/tmp/coverage_html --cov=src &&
+        COVERAGE_FILE=/tmp/.coverage pytest tests/ --cov-report=term-missing --cov-report=html:/tmp/coverage_html --cov=src &&
         echo '✅ Tests passed in dev environment'
     " || {
         log_error "Tests failed in dev environment"
