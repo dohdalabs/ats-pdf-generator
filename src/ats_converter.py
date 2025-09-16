@@ -36,14 +36,17 @@ def main() -> None:
     temp_files = []
     processed_args = []
 
-    # Ensure tmp directory exists
-    tmp_dir = Path("tmp")
-    tmp_dir.mkdir(exist_ok=True)
+    # Ensure tmp directory exists - use /app/tmp if available, otherwise use current directory
+    if Path("/app/tmp").exists():
+        tmp_dir = Path("/app/tmp")
+    else:
+        tmp_dir = Path("tmp")
+        tmp_dir.mkdir(exist_ok=True)
 
     for a in args:
         if a in files:
             src = Path(a)
-            tmp = Path(f"tmp/{src.stem}.preprocessed.md")
+            tmp = tmp_dir / f"{src.stem}.preprocessed.md"
             with (
                 src.open("r", encoding="utf-8") as f_in,
                 tmp.open("w", encoding="utf-8") as f_out,
