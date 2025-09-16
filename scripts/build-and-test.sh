@@ -63,23 +63,47 @@ test_image_functionality() {
 
     # Test with sample files
     if [ -f "examples/sample-cover-letter.md" ]; then
-        docker run --rm -v "$(pwd)/examples:/app/input" -v "$(pwd):/app/output" "$image_tag" /app/input/sample-cover-letter.md -o /app/output/test-cover-letter.pdf
-        if [ -f "test-cover-letter.pdf" ]; then
+        # Create a test output directory with proper permissions
+        test_output_dir="test-output-$$"
+        mkdir -p "$test_output_dir"
+        chmod 777 "$test_output_dir"
+
+        # Use sh for Alpine images, bash for others
+        if [[ "$image_tag" == *"alpine"* ]]; then
+            shell_cmd="sh"
+        else
+            shell_cmd="bash"
+        fi
+        docker run --rm --entrypoint="" --user root -v "$(pwd)/examples:/app/input" -v "$(pwd)/$test_output_dir:/app/output" "$image_tag" "$shell_cmd" -c "python3 /app/ats_converter.py /app/input/sample-cover-letter.md -o /app/output/test-cover-letter.pdf && chown $(id -u):$(id -g) /app/output/test-cover-letter.pdf"
+        if [ -f "$test_output_dir/test-cover-letter.pdf" ]; then
             log_success "Cover letter test passed for $image_name"
-            rm -f test-cover-letter.pdf
+            rm -rf "$test_output_dir"
         else
             log_error "Cover letter test failed for $image_name"
+            rm -rf "$test_output_dir"
             return 1
         fi
     fi
 
     if [ -f "examples/sample-profile.md" ]; then
-        docker run --rm -v "$(pwd)/examples:/app/input" -v "$(pwd):/app/output" "$image_tag" /app/input/sample-profile.md -o /app/output/test-profile.pdf
-        if [ -f "test-profile.pdf" ]; then
+        # Create a test output directory with proper permissions
+        test_output_dir="test-output-$$"
+        mkdir -p "$test_output_dir"
+        chmod 777 "$test_output_dir"
+
+        # Use sh for Alpine images, bash for others
+        if [[ "$image_tag" == *"alpine"* ]]; then
+            shell_cmd="sh"
+        else
+            shell_cmd="bash"
+        fi
+        docker run --rm --entrypoint="" --user root -v "$(pwd)/examples:/app/input" -v "$(pwd)/$test_output_dir:/app/output" "$image_tag" "$shell_cmd" -c "python3 /app/ats_converter.py /app/input/sample-profile.md -o /app/output/test-profile.pdf && chown $(id -u):$(id -g) /app/output/test-profile.pdf"
+        if [ -f "$test_output_dir/test-profile.pdf" ]; then
             log_success "Profile test passed for $image_name"
-            rm -f test-profile.pdf
+            rm -rf "$test_output_dir"
         else
             log_error "Profile test failed for $image_name"
+            rm -rf "$test_output_dir"
             return 1
         fi
     fi
@@ -106,6 +130,8 @@ test_dev_environment() {
     # Test linting in dev environment
     docker run --rm -v "$(pwd):/workspace" -w /workspace ats-pdf-generator:dev bash -c "
         source /app/.venv/bin/activate &&
+        mkdir -p /workspace/.ruff_cache &&
+        chmod 777 /workspace/.ruff_cache &&
         ruff check . &&
         echo '✅ Linting passed in dev environment'
     " || {

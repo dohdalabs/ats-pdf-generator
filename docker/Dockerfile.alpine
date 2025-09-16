@@ -79,7 +79,7 @@ ENV LANG=C.UTF-8
 WORKDIR /app
 
 # Create directories for input/output
-RUN mkdir -p /app/input /app/output /app/templates /app/css
+RUN mkdir -p /app/input /app/output /app/templates /app/css /app/tmp
 
 # Create a non-root user
 RUN adduser -D -s /bin/sh converter && \
