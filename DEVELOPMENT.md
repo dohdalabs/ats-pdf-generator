@@ -102,6 +102,8 @@ mise run test
 
 **Note**: The commit-msg hook enforces [Conventional Commits](https://www.conventionalcommits.org/) format for better changelog generation.
 
+**Git Configuration**: This project uses rebase-based workflow to maintain clean commit history. Pulls use `git pull --rebase` to avoid unnecessary merge commits.
+
 ## 🎯 Script-First Architecture
 
 This project implements a **script-first approach** where all operations are implemented as reusable shell scripts that can be called by both local development tools (mise) and CI/CD systems (GitHub Actions). This architectural decision eliminates duplication and ensures consistent behavior across environments.
