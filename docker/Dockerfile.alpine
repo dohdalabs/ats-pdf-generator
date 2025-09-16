@@ -34,6 +34,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Install Python dependencies
 WORKDIR /build
 COPY pyproject.toml .
+COPY src/ ./src/
 RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md
 RUN uv pip install --no-deps .
 RUN uv pip install weasyprint
@@ -77,21 +78,24 @@ ENV LANG=C.UTF-8
 # Create app directory
 WORKDIR /app
 
+# Create directories for input/output
+RUN mkdir -p /app/input /app/output /app/templates /app/css
+
 # Create a non-root user
 RUN adduser -D -s /bin/sh converter && \
     chown -R converter:converter /app
-
-# Switch to non-root user
-USER converter
-
-# Create directories for input/output
-RUN mkdir -p /app/input /app/output /app/templates /app/css
 
 # Copy the Python script (WORKDIR is already set)
 COPY --chown=converter:converter src/ats_converter.py ./
 
 # Make the script executable
 RUN chmod +x /app/ats_converter.py
+
+# Verify the file exists and is executable
+RUN ls -la /app/ats_converter.py
+
+# Switch to non-root user
+USER converter
 
 # Set the entrypoint
 ENTRYPOINT ["python3", "/app/ats_converter.py"]

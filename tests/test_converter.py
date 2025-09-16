@@ -26,7 +26,8 @@ class TestATSConverter:
 
         captured = capsys.readouterr()
         assert "Usage:" in captured.out
-        assert "pandoc" in captured.out
+        assert "ATS Document Converter" in captured.out
+        assert "Convert Markdown documents to ATS-optimized PDFs" in captured.out
 
     def test_invalid_input_file(self) -> None:
         """Test that invalid input files are handled properly."""

@@ -63,7 +63,7 @@ test_image_functionality() {
 
     # Test with sample files
     if [ -f "examples/sample-cover-letter.md" ]; then
-        docker run --rm -v "$(pwd):/app" "$image_tag" examples/sample-cover-letter.md -o test-cover-letter.pdf
+        docker run --rm -v "$(pwd)/examples:/app/input" -v "$(pwd):/app/output" "$image_tag" /app/input/sample-cover-letter.md -o /app/output/test-cover-letter.pdf
         if [ -f "test-cover-letter.pdf" ]; then
             log_success "Cover letter test passed for $image_name"
             rm -f test-cover-letter.pdf
@@ -74,7 +74,7 @@ test_image_functionality() {
     fi
 
     if [ -f "examples/sample-profile.md" ]; then
-        docker run --rm -v "$(pwd):/app" "$image_tag" examples/sample-profile.md -o test-profile.pdf
+        docker run --rm -v "$(pwd)/examples:/app/input" -v "$(pwd):/app/output" "$image_tag" /app/input/sample-profile.md -o /app/output/test-profile.pdf
         if [ -f "test-profile.pdf" ]; then
             log_success "Profile test passed for $image_name"
             rm -f test-profile.pdf
@@ -93,6 +93,7 @@ test_dev_environment() {
 
     # Test that development tools are available
     docker run --rm ats-pdf-generator:dev bash -c "
+        source /app/.venv/bin/activate &&
         ruff --version &&
         mypy --version &&
         pytest --version &&
@@ -103,7 +104,8 @@ test_dev_environment() {
     }
 
     # Test linting in dev environment
-    docker run --rm -v "$(pwd):/app" -w /app ats-pdf-generator:dev bash -c "
+    docker run --rm -v "$(pwd):/workspace" -w /workspace ats-pdf-generator:dev bash -c "
+        source /app/.venv/bin/activate &&
         ruff check . &&
         echo '✅ Linting passed in dev environment'
     " || {
@@ -112,7 +114,8 @@ test_dev_environment() {
     }
 
     # Test type checking in dev environment
-    docker run --rm -v "$(pwd):/app" -w /app ats-pdf-generator:dev bash -c "
+    docker run --rm -v "$(pwd):/workspace" -w /workspace ats-pdf-generator:dev bash -c "
+        source /app/.venv/bin/activate &&
         mypy src/ &&
         echo '✅ Type checking passed in dev environment'
     " || {
@@ -121,7 +124,8 @@ test_dev_environment() {
     }
 
     # Test pytest in dev environment
-    docker run --rm -v "$(pwd):/app" -w /app ats-pdf-generator:dev bash -c "
+    docker run --rm -v "$(pwd):/workspace" -w /workspace ats-pdf-generator:dev bash -c "
+        source /app/.venv/bin/activate &&
         pytest tests/ &&
         echo '✅ Tests passed in dev environment'
     " || {

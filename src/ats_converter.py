@@ -13,10 +13,22 @@ from pathlib import Path
 
 def main() -> None:
     """Simple wrapper to call pandoc with weasyprint engine"""
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or "--help" in sys.argv or "-h" in sys.argv:
+        print("ATS Document Converter")
+        print("Convert Markdown documents to ATS-optimized PDFs for job applications")
+        print("")
         print("Usage: python3 ats_converter.py input.md [options]")
-        print("This script calls pandoc with weasyprint for ATS-optimized documents")
-        sys.exit(1)
+        print("")
+        print("Options:")
+        print("  -o FILE, --output=FILE    Output file (default: input.pdf)")
+        print("  --css=FILE               Custom CSS file")
+        print("  --pdf-engine=ENGINE      PDF engine (default: weasyprint)")
+        print("  -h, --help               Show this help message")
+        print("")
+        print("Examples:")
+        print("  python3 ats_converter.py cover-letter.md -o cover-letter.pdf")
+        print("  python3 ats_converter.py profile.md --css custom.css")
+        sys.exit(0)
 
     # Preprocess: convert lines beginning with a bullet '•' to markdown list '- '
     args = sys.argv[1:]

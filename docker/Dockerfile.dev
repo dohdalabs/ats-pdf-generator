@@ -63,7 +63,9 @@ COPY examples/ ./examples/
 RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md
 
 # Install dependencies including dev tools
-RUN uv venv && uv pip install .[dev]
+RUN uv venv
+ENV PATH="/app/.venv/bin:$PATH"
+RUN uv pip install .[dev]
 
 # Remove README.md as it's not needed in the final image
 RUN rm README.md
@@ -72,11 +74,11 @@ RUN rm README.md
 RUN useradd -m -s /bin/bash developer && \
     chown -R developer:developer /app
 
-# Switch to non-root user
-USER developer
-
 # Set up pre-commit hooks (optional)
 RUN uv pip install pre-commit
+
+# Switch to non-root user
+USER developer
 
 # Create useful aliases for development
 RUN echo 'alias lint="ruff check ."' >> ~/.bashrc && \
