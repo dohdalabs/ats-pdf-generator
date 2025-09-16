@@ -130,9 +130,9 @@ test_dev_environment() {
     # Test linting in dev environment
     docker run --rm -v "$(pwd):/workspace" -w /workspace ats-pdf-generator:dev bash -c "
         source /app/.venv/bin/activate &&
-        mkdir -p /workspace/.ruff_cache &&
-        chmod 777 /workspace/.ruff_cache &&
-        ruff check . &&
+        mkdir -p /workspace/.ruff_cache 2>/dev/null || true &&
+        chmod 777 /workspace/.ruff_cache 2>/dev/null || true &&
+        ruff check . --cache-dir /tmp/ruff_cache &&
         echo '✅ Linting passed in dev environment'
     " || {
         log_error "Linting test failed in dev environment"
