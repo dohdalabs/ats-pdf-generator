@@ -1,33 +1,31 @@
-# ATS Document Converter - Optimized Version
-# Debian slim-based image with minimal dependencies
+# ATS Document Converter - Alpine Linux Version
+# Ultra-minimal image using Alpine Linux
 
-FROM python:3.13-slim AS builder
+# Stage 1: Build stage
+FROM python:3.13-alpine AS builder
 
 # Set shell with pipefail for better error handling
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
 # Install build dependencies and uv
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    pkg-config \
-    libcairo2-dev \
-    libpango1.0-dev \
-    libgdk-pixbuf-xlib-2.0-dev \
+RUN apk add --no-cache \
+    build-base \
+    pkgconfig \
+    cairo-dev \
+    pango-dev \
+    gdk-pixbuf-dev \
     libffi-dev \
-    libjpeg-dev \
+    jpeg-dev \
     libpng-dev \
-    libfreetype6-dev \
-    libharfbuzz-dev \
-    libfribidi-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    freetype-dev \
+    harfbuzz-dev \
+    fribidi-dev \
+    musl-dev \
+    curl
 
 # Install uv using pip (more reliable in Docker)
 RUN pip install --no-cache-dir uv==0.7.3
 ENV PATH="/root/.local/bin:$PATH"
-
-# Verify uv installation
-RUN uv --version
 
 # Create virtual environment with uv
 RUN uv venv /opt/venv
@@ -38,38 +36,35 @@ WORKDIR /build
 COPY pyproject.toml .
 COPY src/ ./src/
 RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md
-
-# Install dependencies
-RUN uv pip install --no-deps . && uv pip install weasyprint
+RUN uv pip install --no-deps .
+RUN uv pip install weasyprint
 
 # Stage 2: Runtime stage
-FROM python:3.13-slim
+FROM python:3.13-alpine AS runtime
 
 # Set shell with pipefail for better error handling
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
     pandoc \
-    fonts-liberation \
-    fonts-noto-color-emoji \
-    fonts-dejavu-core \
+    fontconfig \
+    ttf-liberation \
+    ttf-dejavu \
     ghostscript \
-    libcairo2 \
-    libpango-1.0-0 \
-    libgdk-pixbuf-xlib-2.0-0 \
-    libffi8 \
-    libjpeg62-turbo \
-    libpng16-16 \
-    libfreetype6 \
-    libharfbuzz0b \
-    libfribidi0 \
-    libpangoft2-1.0-0 \
-    libpangocairo-1.0-0 \
-    libgobject-2.0-0 \
-    libglib-2.0-0 \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    # Runtime libraries
+    cairo \
+    pango \
+    gdk-pixbuf \
+    libffi \
+    jpeg \
+    libpng \
+    freetype \
+    harfbuzz \
+    fribidi \
+    # Font rendering
+    fontconfig-dev \
+    && fc-cache -fv
 
 # Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
@@ -83,11 +78,11 @@ ENV LANG=C.UTF-8
 # Create app directory
 WORKDIR /app
 
-# Create directories for input/output (CRITICAL: This was missing in original!)
+# Create directories for input/output
 RUN mkdir -p /app/input /app/output /app/templates /app/css /app/tmp
 
 # Create a non-root user
-RUN useradd -m -s /bin/bash converter && \
+RUN adduser -D -s /bin/sh converter && \
     chown -R converter:converter /app
 
 # Copy the Python script (WORKDIR is already set)
