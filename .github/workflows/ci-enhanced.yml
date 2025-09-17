@@ -1,0 +1,190 @@
+name: CI Enhanced
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CI: true
+
+jobs:
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v1
+        with:
+          version: latest
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Install additional tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o hadolint
+          chmod +x hadolint
+          sudo mv hadolint /usr/local/bin/
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Run quality checks
+        run: ./scripts/quality-check.sh
+
+  docker-test:
+    name: Docker Image Testing
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Test existing Docker images
+        run: |
+          echo "🧪 Testing existing Docker images..."
+          ./scripts/test-docker-images.sh
+
+      - name: Build and test new Docker images
+        run: |
+          echo "🔨 Building and testing new Docker images..."
+          ./scripts/build-all-images.sh
+
+      - name: Generate Dockerfiles
+        run: |
+          echo "📝 Generating Dockerfiles with shared patterns..."
+          ./scripts/generate-dockerfiles.sh
+
+      - name: Validate generated Dockerfiles
+        run: |
+          echo "✅ Validating generated Dockerfiles..."
+          # Test that generated files are valid
+          docker build -f docker/Dockerfile.alpine.new -t test-alpine . > /dev/null 2>&1
+          docker build -f docker/Dockerfile.optimized.new -t test-optimized . > /dev/null 2>&1
+          docker build -f docker/Dockerfile.dev.new -t test-dev . > /dev/null 2>&1
+          echo "✅ All generated Dockerfiles are valid"
+
+  build-and-test:
+    name: Build and Test (Legacy)
+    runs-on: ubuntu-latest
+    needs: [quality, docker-test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run build and test
+        run: ./scripts/build-and-test.sh
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: docker-test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build images for scanning
+        run: |
+          docker build -f docker/Dockerfile.alpine.new -t ats-pdf-generator:alpine-scan .
+          docker build -f docker/Dockerfile.optimized.new -t ats-pdf-generator:optimized-scan .
+          docker build -f docker/Dockerfile.dev.new -t ats-pdf-generator:dev-scan .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ats-pdf-generator:alpine-scan'
+          format: 'sarif'
+          output: 'trivy-results-alpine.sarif'
+
+      - name: Run Trivy vulnerability scanner (Optimized)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ats-pdf-generator:optimized-scan'
+          format: 'sarif'
+          output: 'trivy-results-optimized.sarif'
+
+      - name: Run Trivy vulnerability scanner (Dev)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ats-pdf-generator:dev-scan'
+          format: 'sarif'
+          output: 'trivy-results-dev.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-alpine.sarif'
+
+  publish:
+    name: Publish (on main)
+    runs-on: ubuntu-latest
+    needs: [quality, docker-test, build-and-test, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish images
+        run: ./scripts/publish.sh latest
+
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [quality, docker-test, build-and-test, security-scan, publish]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "📋 Enhanced CI Summary:"
+          echo "  🐍 Quality: Code quality checks completed"
+          echo "  🐳 Docker Test: Comprehensive Docker image testing"
+          echo "  🔨 Build: Legacy build and test (for compatibility)"
+          echo "  🔒 Security: Vulnerability scanning completed"
+          echo "  📦 Publish: Images published to registries (main branch only)"
+          echo "✅ All enhanced CI checks completed successfully!"

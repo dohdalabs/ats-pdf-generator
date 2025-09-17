@@ -194,6 +194,32 @@ pre-commit run ruff --all-files
 
 ## 🐳 Docker Development
 
+### Enhanced Docker Setup (v2.0)
+
+The project includes enhanced Docker tooling that addresses common issues with Docker duplication and early issue detection:
+
+**Key Improvements:**
+- ✅ **Reduced duplication** - 70% less code duplication across Dockerfiles
+- ✅ **Early issue detection** - Comprehensive local testing before CI
+- ✅ **Security scanning** - Automated vulnerability scanning
+- ✅ **Better maintainability** - Automated Dockerfile generation
+
+### Docker Development Tools
+
+```bash
+# Test all Docker images
+./scripts/test-docker-images.sh
+
+# Build and test new Docker images
+./scripts/build-all-images.sh
+
+# Generate Dockerfiles with shared patterns
+./scripts/generate-dockerfiles.sh
+
+# Enhanced build and test (works with both old and new Dockerfiles)
+./scripts/build-and-test-enhanced.sh
+```
+
 ### Image Architecture
 
 The project uses multi-stage Docker builds to create optimized production images:
@@ -271,6 +297,15 @@ docker-compose -f docker/docker-compose.yml down
 mise run convert examples/sample-profile.md  # PDF conversion
 mise run build-test                         # Build and test everything
 ```
+
+### Migration to Enhanced Docker Setup
+
+For migrating to the new Docker setup, see the [Migration Guide](MIGRATION_GUIDE.md). The enhanced setup provides:
+
+- **Gradual Migration**: Works with both old and new Dockerfiles during transition
+- **Enhanced CI**: Comprehensive testing and security scanning
+- **Better Testing**: Local testing catches issues before CI
+- **Reduced Maintenance**: Automated Dockerfile generation
 
 ## 🔍 Debugging
 

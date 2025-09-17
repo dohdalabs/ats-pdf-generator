@@ -1,10 +1,11 @@
 name: CI
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+# Temporarily disabled to test ci-enhanced.yml
+# on:
+#   push:
+#     branches: [ main, develop ]
+#   pull_request:
+#     branches: [ main ]
 
 env:
   CI: true
