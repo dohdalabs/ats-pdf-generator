@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Build All Images Script
-# Builds all Docker images using the new simplified Dockerfiles
+# Builds all Docker images using the simplified Dockerfiles
 
 set -euo pipefail
 
@@ -54,7 +54,7 @@ test_image() {
     log_info "Testing $image_name:$image_tag"
 
     # Test 1: Image runs and shows help
-    if [[ "$image_tag" != "dev-new" ]]; then
+    if [[ "$image_tag" != "dev" ]]; then
         if ! docker run --rm "$image_name:$image_tag" --help > /dev/null 2>&1; then
             log_error "Failed to run $image_name:$image_tag"
             return 1
@@ -96,30 +96,30 @@ main() {
     local failed_tests=()
 
     # Build and test Alpine image
-    if build_image "docker/Dockerfile.alpine.new" "ats-pdf-generator" "alpine-new"; then
-        if ! test_image "ats-pdf-generator" "alpine-new"; then
-            failed_tests+=("alpine-new")
+    if build_image "docker/Dockerfile.alpine" "ats-pdf-generator" "alpine"; then
+        if ! test_image "ats-pdf-generator" "alpine"; then
+            failed_tests+=("alpine")
         fi
     else
-        failed_builds+=("alpine-new")
+        failed_builds+=("alpine")
     fi
 
     # Build and test Optimized image
-    if build_image "docker/Dockerfile.optimized.new" "ats-pdf-generator" "optimized-new"; then
-        if ! test_image "ats-pdf-generator" "optimized-new"; then
-            failed_tests+=("optimized-new")
+    if build_image "docker/Dockerfile.optimized" "ats-pdf-generator" "optimized"; then
+        if ! test_image "ats-pdf-generator" "optimized"; then
+            failed_tests+=("optimized")
         fi
     else
-        failed_builds+=("optimized-new")
+        failed_builds+=("optimized")
     fi
 
     # Build and test Dev image
-    if build_image "docker/Dockerfile.dev.new" "ats-pdf-generator" "dev-new"; then
-        if ! test_image "ats-pdf-generator" "dev-new"; then
-            failed_tests+=("dev-new")
+    if build_image "docker/Dockerfile.dev" "ats-pdf-generator" "dev"; then
+        if ! test_image "ats-pdf-generator" "dev"; then
+            failed_tests+=("dev")
         fi
     else
-        failed_builds+=("dev-new")
+        failed_builds+=("dev")
     fi
 
     # Summary
@@ -127,9 +127,9 @@ main() {
     if [ ${#failed_builds[@]} -eq 0 ] && [ ${#failed_tests[@]} -eq 0 ]; then
         log_success "All Docker images built and tested successfully!"
         log_info "Available images:"
-        log_info "  - ats-pdf-generator:alpine-new (ultra-minimal)"
-        log_info "  - ats-pdf-generator:optimized-new (Debian slim)"
-        log_info "  - ats-pdf-generator:dev-new (development tools)"
+        log_info "  - ats-pdf-generator:alpine (ultra-minimal)"
+        log_info "  - ats-pdf-generator:optimized (Debian slim)"
+        log_info "  - ats-pdf-generator:dev (development tools)"
         return 0
     else
         log_error "Some builds or tests failed:"
