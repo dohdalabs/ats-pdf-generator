@@ -102,6 +102,9 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     needs: [quality, docker-test]
+    strategy:
+      matrix:
+        image: [alpine, optimized]
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -109,14 +112,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build multi-arch images for scanning
+      - name: Build ${{ matrix.image }} image for scanning (single arch)
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: docker/Dockerfile.optimized
-          platforms: linux/amd64,linux/arm64
+          file: docker/Dockerfile.${{ matrix.image }}
+          platforms: linux/amd64
           push: false
-          tags: ats-pdf-generator:optimized-scan
+          tags: ats-pdf-generator:${{ matrix.image }}-scan
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -125,38 +128,28 @@ jobs:
             UV_CACHE_DIR=/tmp/uv-cache
             BUILDKIT_INLINE_CACHE=1
 
-      - name: Build Alpine image for scanning
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile.alpine
-          platforms: linux/amd64,linux/arm64
-          push: false
-          tags: ats-pdf-generator:alpine-scan
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            GIT_SHA=${{ github.sha }}
-            VENDOR=DohDa Labs
-            UV_CACHE_DIR=/tmp/uv-cache
-            BUILDKIT_INLINE_CACHE=1
-
-      - name: Run Trivy vulnerability scanner
+      - name: Run Trivy vulnerability scanner (${{ matrix.image }})
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'ats-pdf-generator:alpine-scan'
+          image-ref: 'ats-pdf-generator:${{ matrix.image }}-scan'
           format: 'sarif'
-          output: 'trivy-results-alpine.sarif'
+          output: 'trivy-results-${{ matrix.image }}.sarif'
+          cache-dir: ~/.cache/trivy
         continue-on-error: true
 
-      - name: Run Trivy vulnerability scanner (Optimized)
-        uses: aquasecurity/trivy-action@master
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && hashFiles('trivy-results-${{ matrix.image }}.sarif') != ''
         with:
-          image-ref: 'ats-pdf-generator:optimized-scan'
-          format: 'sarif'
-          output: 'trivy-results-optimized.sarif'
+          sarif_file: 'trivy-results-${{ matrix.image }}.sarif'
         continue-on-error: true
 
+  security-scan-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [security-scan]
+    if: always()
+    steps:
       - name: Check SARIF files exist
         run: |
           echo "Checking for SARIF files..."
@@ -172,17 +165,10 @@ jobs:
             echo "❌ trivy-results-optimized.sarif not found"
           fi
 
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && hashFiles('trivy-results-alpine.sarif') != ''
-        with:
-          sarif_file: 'trivy-results-alpine.sarif'
-        continue-on-error: true
-
   publish:
     name: Publish (on main)
     runs-on: ubuntu-latest
-    needs: [quality, docker-test, security-scan]
+    needs: [quality, docker-test, security-scan-summary]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Checkout code
@@ -247,7 +233,7 @@ jobs:
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [quality, docker-test, security-scan, publish]
+    needs: [quality, docker-test, security-scan-summary, publish]
     if: always()
     steps:
       - name: Generate summary
