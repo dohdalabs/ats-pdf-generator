@@ -44,25 +44,21 @@ RUN apk add --no-cache \
     musl-dev \
     curl
 
-# Install uv using pip (more reliable in Docker)
-RUN pip install --no-cache-dir uv==0.7.3
+# Install uv using the official installer (faster and more reliable)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
 # Verify uv installation
 RUN uv --version
 
-# Create virtual environment with uv
-RUN uv venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Install Python dependencies
+# Set up project
 WORKDIR /build
-COPY pyproject.toml .
+COPY pyproject.toml uv.lock ./
 COPY src/ ./src/
 RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md
 
-# Install dependencies
-RUN uv pip install --no-deps . && uv pip install weasyprint
+# Create virtual environment and install dependencies using uv sync
+RUN uv sync --frozen --no-dev
 
 # Stage 2: Runtime stage
 FROM python:3.13-alpine
@@ -90,7 +86,7 @@ RUN apk add --no-cache \
     && fc-cache -fv
 
 # Copy virtual environment from builder
-COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /build/.venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Set environment variables
@@ -109,7 +105,7 @@ RUN adduser -D converter && \
     chown -R converter:converter /app
 
 # Copy the Python script (WORKDIR is already set)
-COPY --chown=converter:converter src/ats_converter.py ./
+COPY --chown=converter:converter src/ats_pdf_generator/ats_converter.py ./
 
 # Make the script executable
 RUN chmod +x /app/ats_converter.py
@@ -155,25 +151,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv using pip (more reliable in Docker)
-RUN pip install --no-cache-dir uv==0.7.3
+# Install uv using the official installer (faster and more reliable)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
 # Verify uv installation
 RUN uv --version
 
-# Create virtual environment with uv
-RUN uv venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Install Python dependencies
+# Set up project
 WORKDIR /build
-COPY pyproject.toml .
+COPY pyproject.toml uv.lock ./
 COPY src/ ./src/
 RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md
 
-# Install dependencies
-RUN uv pip install --no-deps . && uv pip install weasyprint
+# Create virtual environment and install dependencies using uv sync
+RUN uv sync --frozen --no-dev
 
 # Stage 2: Runtime stage
 FROM python:3.13-slim
@@ -205,7 +197,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean
 
 # Copy virtual environment from builder
-COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /build/.venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Set environment variables
@@ -224,7 +216,7 @@ RUN useradd -m -s /bin/bash converter && \
     chown -R converter:converter /app
 
 # Copy the Python script (WORKDIR is already set)
-COPY --chown=converter:converter src/ats_converter.py ./
+COPY --chown=converter:converter src/ats_pdf_generator/ats_converter.py ./
 
 # Make the script executable
 RUN chmod +x /app/ats_converter.py
