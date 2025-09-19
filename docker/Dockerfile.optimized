@@ -54,8 +54,7 @@ ARG VENDOR="DohDa Labs"
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install runtime dependencies
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     pandoc \
     fonts-liberation \
     fonts-noto-color-emoji \
