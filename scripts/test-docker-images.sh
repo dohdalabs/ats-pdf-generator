@@ -41,7 +41,7 @@ test_docker_image() {
     if ! docker build -t "$image_name:$image_tag" -f "docker/$test_name" \
         --build-arg GIT_SHA="test-build" \
         --build-arg VENDOR="Test Build" \
-        . > /dev/null 2>&1; then
+        . 2>&1; then
         log_error "Failed to build $test_name"
         return 1
     fi

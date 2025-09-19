@@ -46,8 +46,9 @@ RUN uv sync --frozen --no-dev
 # Stage 2: Runtime stage
 FROM python:3.13-slim
 
-# Re-declare build argument for this stage
+# Re-declare build arguments for this stage
 ARG GIT_SHA="unknown"
+ARG VENDOR="DohDa Labs"
 
 # Set shell with pipefail for better error handling
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
