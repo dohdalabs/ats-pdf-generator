@@ -285,13 +285,26 @@ docker build -f docker/Dockerfile.dev -t ats-pdf-generator:dev .
 
 ### Development with Docker
 
+**Note**: The development Docker image is not built in CI to optimize resource usage on free tiers. Developers should build it locally when needed.
+
 ```bash
-# Build development container
+# Build development container locally
 docker build -f docker/Dockerfile.dev -t ats-pdf-generator:dev .
+
+# Or using mise (recommended)
+mise run build-dev-image
 
 # Run development shell
 docker run -it --rm -v $(PWD):/app -w /app ats-pdf-generator:dev bash
 ```
+
+The development image includes:
+- All development dependencies (ruff, mypy, pytest, pre-commit)
+- Development tools and utilities
+- Git configuration for pre-commit hooks
+- Shell aliases for common development tasks
+
+**CI Optimization**: Only production images (alpine, optimized) are built and published in CI. The dev Dockerfile is validated for syntax correctness but not built to save ~14.5 minutes per CI run.
 
 ### Docker Compose for Development
 
