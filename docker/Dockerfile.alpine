@@ -5,12 +5,13 @@
 ARG GIT_SHA="unknown"
 ARG VENDOR="DohDa Labs"
 
-FROM python:3.13-alpine AS builder
+# Base stage with system dependencies (cached separately)
+FROM python:3.13-alpine AS base
 
 # Set shell with pipefail for better error handling
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
-# Install build dependencies
+# Install system dependencies (this layer is cached separately)
 RUN apk add --no-cache \
     build-base \
     pkgconfig \
@@ -25,6 +26,9 @@ RUN apk add --no-cache \
     fribidi-dev \
     musl-dev \
     curl
+
+# Dependencies stage (cached separately from application code)
+FROM base AS deps
 
 # Install uv using the official installer (faster and more reliable)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -42,8 +46,8 @@ RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized P
 # Create virtual environment and install dependencies using uv sync
 RUN uv sync --frozen --no-dev
 
-# Stage 2: Runtime stage
-FROM python:3.13-alpine
+# Stage 2: Runtime stage (reuses base stage for better caching)
+FROM base AS runtime
 
 # Re-declare build arguments for this stage
 ARG GIT_SHA="unknown"
@@ -52,23 +56,13 @@ ARG VENDOR="DohDa Labs"
 # Set shell with pipefail for better error handling
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
-# Install runtime dependencies
+# Install additional runtime dependencies (base stage already has build deps)
 RUN apk add --no-cache \
     pandoc \
     fontconfig \
     ttf-liberation \
     ttf-dejavu \
     ghostscript \
-    cairo \
-    pango \
-    gdk-pixbuf \
-    libffi \
-    jpeg \
-    libpng \
-    freetype \
-    harfbuzz \
-    fribidi \
-    fontconfig-dev \
     && fc-cache -fv
 
 # Copy virtual environment from builder

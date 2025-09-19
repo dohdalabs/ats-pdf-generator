@@ -5,12 +5,13 @@
 ARG GIT_SHA="unknown"
 ARG VENDOR="DohDa Labs"
 
-FROM python:3.13-slim AS builder
+# Base stage with system dependencies (cached separately)
+FROM python:3.13-slim AS base
 
 # Set shell with pipefail for better error handling
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Install build dependencies
+# Install system dependencies (this layer is cached separately)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
@@ -25,6 +26,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfribidi-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Dependencies stage (cached separately from application code)
+FROM base AS deps
 
 # Install uv using the official installer (faster and more reliable)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -42,8 +46,8 @@ RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized P
 # Create virtual environment and install dependencies using uv sync
 RUN uv sync --frozen --no-dev
 
-# Stage 2: Runtime stage
-FROM python:3.13-slim
+# Stage 2: Runtime stage (reuses base stage for better caching)
+FROM base AS runtime
 
 # Re-declare build arguments for this stage
 ARG GIT_SHA="unknown"
@@ -52,26 +56,13 @@ ARG VENDOR="DohDa Labs"
 # Set shell with pipefail for better error handling
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Install runtime dependencies
+# Install additional runtime dependencies (base stage already has build deps)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pandoc \
     fonts-liberation \
     fonts-noto-color-emoji \
     fonts-dejavu-core \
     ghostscript \
-    libcairo2 \
-    libpango-1.0-0 \
-    libgdk-pixbuf-xlib-2.0-0 \
-    libffi8 \
-    libjpeg62-turbo \
-    libpng16-16 \
-    libfreetype6 \
-    libharfbuzz0b \
-    libfribidi0 \
-    libpangoft2-1.0-0 \
-    libpangocairo-1.0-0 \
-    libgobject-2.0-0 \
-    libglib-2.0-0 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
     && fc-cache -f
