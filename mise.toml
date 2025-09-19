@@ -11,20 +11,22 @@ hadolint = "2.12.1-beta"
 
 [tasks]
 # Environment setup
-install = "uv venv && uv sync && uv run pre-commit install && uv run pre-commit install --hook-type commit-msg"
+install = "uv sync && uv run pre-commit install && uv run pre-commit install --hook-type commit-msg"
+install-prod = "uv sync --frozen --no-dev"
 setup-local = "scripts/setup-local-env.sh"
+uv-sync = "uv sync"
+uv-sync-frozen = "uv sync --frozen"
 
 # Code quality (individual)
 lint = "uv run ruff check ."
 format = "uv run ruff format ."
-typecheck = "uv run mypy src/"
+typecheck = "uv run mypy src/ats_pdf_generator/"
 test = "uv run pytest"
 shell-lint = "shellcheck install.sh src/*.sh || true"
 docker-lint = "hadolint --ignore DL3008,DL3009,DL3018,DL3045,DL4006 docker/Dockerfile.optimized docker/Dockerfile.alpine docker/Dockerfile.dev || true"
 
 # Comprehensive quality checks
-quality = "scripts/quality-check.sh"
-all-checks = "scripts/quality-check.sh"
+quality-check = "scripts/quality-check.sh"
 
 # PDF conversion
 convert = "scripts/convert-pdf.sh"
@@ -42,3 +44,11 @@ publish-image = "scripts/publish-image.sh"
 
 # Pre-commit
 pre-commit = "uv run pre-commit run --all-files"
+
+# UV-specific tasks
+uv-info = "uv --version && echo 'Python:' && uv run python --version && echo 'Virtual env:' && uv run which python"
+uv-tree = "uv tree"
+uv-lock = "uv lock"
+uv-add = "uv add"
+uv-remove = "uv remove"
+uv-update = "uv lock --upgrade"

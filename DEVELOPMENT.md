@@ -90,7 +90,7 @@ This script will:
 mise run install
 
 # Run comprehensive quality checks (Python, Shell, Docker, Security)
-mise run quality
+mise run quality-check
 
 # Build and test everything (Docker images, functionality tests)
 mise run build-test
@@ -161,7 +161,7 @@ The script-first approach was chosen to address the common problem of CI/CD logi
 
 ```bash
 # Run comprehensive quality checks (includes tests)
-mise run quality
+mise run quality-check
 
 # Run just the tests
 mise run test
@@ -191,7 +191,7 @@ mise run build-test
 
 ```bash
 # Run comprehensive quality checks (Python, Shell, Docker, Security)
-mise run quality
+mise run quality-check
 
 # Individual quality checks
 mise run lint          # Lint Python code
@@ -513,7 +513,7 @@ The project uses [Semantic Versioning](https://semver.org/):
 
 - [ ] Update version in `pyproject.toml`
 - [ ] Update `CHANGELOG.md` with new features/fixes
-- [ ] Test all functionality thoroughly (run `mise run quality` and `mise run build-test`)
+- [ ] Test all functionality thoroughly (run `mise run quality-check` and `mise run build-test`)
 - [ ] Update documentation if needed
 - [ ] Create git tag: `git tag v1.2.3`
 - [ ] Push tag: `git push origin v1.2.3`
