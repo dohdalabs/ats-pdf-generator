@@ -292,7 +292,7 @@ docker build -f docker/Dockerfile.dev -t ats-pdf-generator:dev .
 docker build -f docker/Dockerfile.dev -t ats-pdf-generator:dev .
 
 # Or using mise (recommended)
-mise run build-dev-image
+mise run build-image
 
 # Run development shell
 docker run -it --rm -v $(PWD):/app -w /app ats-pdf-generator:dev bash
