@@ -8,11 +8,13 @@ README.md
 QUICKSTART.md
 PDF_ENGINES.md
 *.md
+docs/
 
 # Scripts (we'll copy only what we need)
 install.sh
 docker-build.sh
 docker-md2pdf.sh
+scripts/
 
 # Sample files
 sample.md
@@ -25,11 +27,13 @@ __pycache__
 *.pyd
 .Python
 *.so
+.pytest_cache/
 
 # Virtual environments
 venv/
 env/
 ENV/
+.venv/
 
 # IDE files
 .vscode/
@@ -48,6 +52,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+tmp/
 
 # Docker files (except Dockerfile)
 docker-compose*.yml
@@ -56,3 +61,26 @@ docker-compose*.yml
 # Build artifacts
 *.pdf
 output/
+htmlcov/
+
+# Coverage and test reports
+.coverage
+.tox/
+.nox/
+
+# Local caches
+.cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Misc
+.DS_Store?
+Icon?
+Thumbs.db
+ehthumbs.db
+Desktop.ini

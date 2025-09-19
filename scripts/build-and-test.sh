@@ -47,8 +47,16 @@ build_and_test_images() {
 
             log_info "Building and testing $dockerfile"
 
+            # Get git SHA for build argument
+            local git_sha
+            git_sha=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+
             # Build the image
-            if docker build -f "$dockerfile" -t "$image_name:$tag" . > /dev/null 2>&1; then
+            if docker build \
+                --build-arg GIT_SHA="$git_sha" \
+                --build-arg VENDOR="DohDa Labs" \
+                -f "$dockerfile" \
+                -t "$image_name:$tag" . > /dev/null 2>&1; then
                 log_success "Successfully built $image_name:$tag"
 
                 # Test the image

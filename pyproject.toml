@@ -1,5 +1,5 @@
 [project]
-name = "ats-pdf-generator"
+name = "ats_pdf_generator"
 version = "1.0.0"
 description = "Convert Markdown documents to ATS-optimized PDFs for job applications"
 authors = [

@@ -11,7 +11,7 @@ hadolint = "2.12.1-beta"
 
 [tasks]
 # Environment setup
-install = "uv venv && uv pip install .[dev]"
+install = "uv venv && uv sync && uv run pre-commit install && uv run pre-commit install --hook-type commit-msg"
 setup-local = "scripts/setup-local-env.sh"
 
 # Code quality (individual)

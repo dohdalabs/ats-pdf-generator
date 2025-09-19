@@ -37,7 +37,15 @@ build_image() {
 
     log_info "Building $image_name:$image_tag from $dockerfile"
 
-    if docker build -f "$dockerfile" -t "$image_name:$image_tag" . > /dev/null 2>&1; then
+    # Get git SHA for build argument
+    local git_sha
+    git_sha=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+
+    if docker build \
+        --build-arg GIT_SHA="$git_sha" \
+        --build-arg VENDOR="DohDa Labs" \
+        -f "$dockerfile" \
+        -t "$image_name:$image_tag" . > /dev/null 2>&1; then
         log_success "Successfully built $image_name:$image_tag"
         return 0
     else

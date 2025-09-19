@@ -30,7 +30,7 @@ echo "📦 Installing dependencies..."
 uv venv
 # shellcheck source=/dev/null
 source .venv/bin/activate
-uv pip install .[dev]
+uv sync
 
 # Setup pre-commit
 echo "🔧 Setting up pre-commit hooks..."

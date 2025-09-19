@@ -58,8 +58,16 @@ check_docker() {
 build_image() {
     log_info "Building Docker image: ${IMAGE_NAME}:${VERSION}"
 
+    # Get git SHA for build argument
+    local git_sha
+    git_sha=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+
     # Build the optimized image
-    if docker build -f docker/Dockerfile.optimized -t "${IMAGE_NAME}:${VERSION}" .; then
+    if docker build \
+        --build-arg GIT_SHA="$git_sha" \
+        --build-arg VENDOR="DohDa Labs" \
+        -f docker/Dockerfile.optimized \
+        -t "${IMAGE_NAME}:${VERSION}" .; then
         log_success "Image built successfully: ${IMAGE_NAME}:${VERSION}"
     else
         log_error "Failed to build image"

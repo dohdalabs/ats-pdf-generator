@@ -1,13 +1,18 @@
 # ATS Document Converter - Optimized Version
 # Debian slim-based image with minimal dependencies
 
+# Build arguments for labels
+ARG GIT_SHA="unknown"
+ARG VENDOR="DohDa Labs"
+
 FROM python:3.13-slim AS builder
 
 # Set shell with pipefail for better error handling
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Install build dependencies and uv
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install build dependencies
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
     libcairo2-dev \
@@ -22,34 +27,34 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv using pip (more reliable in Docker)
-RUN pip install --no-cache-dir uv==0.7.3
+# Install uv using the official installer (faster and more reliable)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
 # Verify uv installation
 RUN uv --version
 
-# Create virtual environment with uv
-RUN uv venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Install Python dependencies
+# Set up project
 WORKDIR /build
-COPY pyproject.toml .
+COPY pyproject.toml uv.lock* ./
 COPY src/ ./src/
 RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md
 
-# Install dependencies
-RUN uv pip install --no-deps . && uv pip install weasyprint
+# Create virtual environment and install dependencies using uv sync
+RUN uv sync --frozen --no-dev
 
 # Stage 2: Runtime stage
 FROM python:3.13-slim
+
+# Re-declare build argument for this stage
+ARG GIT_SHA="unknown"
 
 # Set shell with pipefail for better error handling
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install -y --no-install-recommends \
     pandoc \
     fonts-liberation \
     fonts-noto-color-emoji \
@@ -69,16 +74,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgobject-2.0-0 \
     libglib-2.0-0 \
     && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && apt-get clean \
+    && fc-cache -f
 
 # Copy virtual environment from builder
-COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /build/.venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
+
+# Add OCI image labels
+LABEL org.opencontainers.image.source="https://github.com/dohdalabs/ats-pdf-generator" \
+      org.opencontainers.image.description="Convert Markdown to ATS-optimized PDFs" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.revision="${GIT_SHA}" \
+      org.opencontainers.image.title="ATS PDF Generator" \
+      org.opencontainers.image.vendor="${VENDOR}"
 
 # Create app directory
 WORKDIR /app
@@ -90,8 +104,9 @@ RUN mkdir -p /app/input /app/output /app/templates /app/css /app/tmp
 RUN useradd -m -s /bin/bash converter && \
     chown -R converter:converter /app
 
-# Copy the Python script (WORKDIR is already set)
+# Copy the Python script and templates (WORKDIR is already set)
 COPY --chown=converter:converter src/ats_converter.py ./
+COPY --chown=converter:converter templates/ /app/templates/
 
 # Make the script executable
 RUN chmod +x /app/ats_converter.py
