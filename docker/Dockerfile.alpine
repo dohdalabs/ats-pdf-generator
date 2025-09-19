@@ -35,7 +35,7 @@ RUN uv --version
 
 # Set up project
 WORKDIR /build
-COPY pyproject.toml uv.lock* ./
+COPY pyproject.toml uv.lock ./
 COPY src/ ./src/
 RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md
 
