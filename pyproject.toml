@@ -129,3 +129,8 @@ version = "1.0.0"
 version_files = [
     "pyproject.toml:version"
 ]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.3.0",
+]
