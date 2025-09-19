@@ -77,6 +77,9 @@ RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized P
 # Install dependencies including dev tools using uv sync
 RUN uv sync --frozen
 
+# Set up pre-commit hooks (optional)
+RUN uv add pre-commit
+
 # Remove README.md as it's not needed in the final image
 RUN rm README.md
 
@@ -86,9 +89,6 @@ RUN useradd -m -s /bin/bash developer && \
 
 # Create tmp directory for temporary files (CRITICAL: This was missing!)
 RUN mkdir -p /app/tmp && chown developer:developer /app/tmp
-
-# Set up pre-commit hooks (optional)
-RUN uv add pre-commit
 
 # Switch to non-root user
 USER developer
