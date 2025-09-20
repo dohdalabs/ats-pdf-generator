@@ -148,6 +148,17 @@ jobs:
             BUILDKIT_INLINE_CACHE=1
             BUILDKIT_MULTI_PLATFORM=0
 
+      - name: Cache Trivy vulnerability database
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ matrix.image }}-${{ hashFiles('**/Dockerfile*') }}-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            trivy-db-${{ matrix.image }}-${{ hashFiles('**/Dockerfile*') }}-${{ hashFiles('pyproject.toml') }}-
+            trivy-db-${{ matrix.image }}-${{ hashFiles('**/Dockerfile*') }}-
+            trivy-db-${{ matrix.image }}-
+            trivy-db-
+
       - name: Run Trivy vulnerability scanner (${{ matrix.image }})
         uses: aquasecurity/trivy-action@master
         with:
