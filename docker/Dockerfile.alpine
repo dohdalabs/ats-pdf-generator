@@ -65,8 +65,8 @@ RUN apk add --no-cache \
     ghostscript \
     && fc-cache -fv
 
-# Copy virtual environment from builder
-COPY --from=builder /build/.venv /opt/venv
+# Copy virtual environment from deps stage
+COPY --from=deps /build/.venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Set environment variables
