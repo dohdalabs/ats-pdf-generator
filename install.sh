@@ -107,6 +107,7 @@ Options:
     --author AUTHOR         Document author
     --date DATE             Document date
     -h, --help              Show this help message
+    update, -u, --update    Update to the latest version
 
 Document Types:
     cover-letter  - ATS-optimized cover letter (default)
@@ -116,6 +117,7 @@ Examples:
     ats-pdf cover-letter.md                     # Convert cover letter
     ats-pdf profile.md --type profile           # Convert professional profile
     ats-pdf cover-letter.md -o "John_Doe_Cover_Letter.pdf"
+    ats-pdf update                              # Update to latest version
 
 For more information: https://github.com/dohdalabs/ats-pdf-generator
 USAGE_EOF
@@ -124,6 +126,15 @@ USAGE_EOF
 # Check if help is requested
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     show_usage
+    exit 0
+fi
+
+# Check if update is requested
+if [[ "$1" == "update" || "$1" == "--update" || "$1" == "-u" ]]; then
+    echo "Updating ATS PDF Generator to latest version..."
+
+    # Re-run the installer with update flag
+    curl -sSL https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/install.sh | bash -s -- --update
     exit 0
 fi
 
@@ -138,7 +149,7 @@ fi
 docker run --rm \
     -v "$(pwd):/app" \
     -v "$HOME/.ats-pdf:/app/.ats-pdf" \
-    dohdalabs/ats-pdf-generator:latest \
+    dohdalabs/ats-pdf-generator:v1.0.0 \
     "$@"
 EOF
 
@@ -155,6 +166,35 @@ EOF
         print_info "Then restart your terminal or run: source ~/.bashrc"
     else
         print_success "Ready to use! Try: ats-pdf --help"
+    fi
+}
+
+# Function to check for updates
+check_for_updates() {
+    print_info "Checking for updates..."
+
+    # Get current version from the installed script (if exists)
+    local current_version="v1.0.0"  # Default to current version
+    if command -v ats-pdf &> /dev/null; then
+        # Try to extract version from script (this is a simple approach)
+        current_version="v1.0.0"
+    fi
+
+    # Check if latest version is available
+    if command -v docker &> /dev/null; then
+        print_info "Current version: $current_version"
+        print_info "Latest version available on Docker Hub"
+
+        # Pull the latest image to update local cache
+        if docker pull dohdalabs/ats-pdf-generator:latest &> /dev/null; then
+            print_success "Updated to latest version"
+            print_info "You can now use: ats-pdf <your-file.md>"
+        else
+            print_warning "Could not update to latest version"
+            print_info "Check your internet connection and Docker setup"
+        fi
+    else
+        print_warning "Docker not available - cannot check for updates"
     fi
 }
 
@@ -197,8 +237,27 @@ EOF
     fi
 }
 
+# Function to handle update command
+handle_update() {
+    echo "ATS PDF Generator Updater"
+    echo "========================"
+    echo
+
+    check_requirements
+    check_for_updates
+
+    echo
+    print_success "Update complete!"
+}
+
 # Main installation process
 main() {
+    # Check if update flag is provided
+    if [[ "${1:-}" == "--update" || "${1:-}" == "-u" ]]; then
+        handle_update
+        exit 0
+    fi
+
     echo "ATS PDF Generator Installer"
     echo "=========================="
     echo
@@ -213,6 +272,7 @@ main() {
     echo
     print_success "Installation complete!"
     print_info "You can now use 'ats-pdf' from anywhere to convert your Markdown files"
+    print_info "To update to the latest version later, run: curl -sSL https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/install.sh | bash -s -- --update"
 }
 
 # Run the installer

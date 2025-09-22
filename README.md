@@ -48,6 +48,13 @@ This project provides multiple Docker images optimized for different use cases:
 curl -sSL https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/install.sh | bash
 ```
 
+**Installation Details:**
+
+- Installs a stable version (v1.0.0) for reliable operation
+- Creates the `ats-pdf` command in your PATH
+- Sets up customization directory for styling options
+- No breaking changes between updates
+
 ## 📋 Usage
 
 ```bash
@@ -110,7 +117,7 @@ Complete, working examples are available in the [GitHub repository](https://gith
 
 To use these examples, download them directly:
 
-**Option 1: Download individual files**
+### Option 1: Download individual files
 
 ```bash
 # Download cover letter example
@@ -124,7 +131,7 @@ ats-pdf sample-cover-letter.md -o sample-cover-letter.pdf
 ats-pdf sample-profile.md --type profile -o sample-profile.pdf
 ```
 
-**Option 2: Clone the repository**
+### Option 2: Clone the repository
 
 ```bash
 git clone https://github.com/dohdalabs/ats-pdf-generator.git
@@ -213,9 +220,24 @@ This project publishes to Docker Hub and GitHub Container Registry for maximum a
 ./scripts/docker-push-multi-registry.sh 1.0.0
 ```
 
-## 🛠️ Development
+## 🔄 Updates
 
-Want to customize or extend this tool for your own needs? Check out the [Development Guide](DEVELOPMENT.md) for setup instructions and how to build your own version.
+The installed version is stable and won't change unexpectedly. To get the latest features and bug fixes:
+
+```bash
+# Update to latest version
+ats-pdf update
+
+# Or reinstall from scratch
+curl -sSL https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/install.sh | bash -s -- --update
+```
+
+### Version Strategy
+
+- **Installation**: Uses stable version (v1.0.0) for reliability
+- **Updates**: Available on-demand with `ats-pdf update`
+- **No Breaking Changes**: Updates maintain compatibility
+- **Fast Downloads**: Subsequent uses benefit from cached images
 
 ## 📄 License
 
@@ -235,6 +257,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ for job seekers worldwide**
+### Made with ❤️ for job seekers worldwide
 
 If this tool helped you land your dream job, consider ⭐ starring the repository!

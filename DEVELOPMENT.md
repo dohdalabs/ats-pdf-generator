@@ -12,7 +12,7 @@ This document is for technical reviewers and developers who want to understand t
 
 ## 🏗️ Project Structure
 
-```
+```text
 ├── src/                        # Source code
 │   ├── ats_converter.py        # Main Python converter
 │   └── ats-document-converter.sh # Shell wrapper script
@@ -90,8 +90,15 @@ This script will:
 # Install development dependencies and setup pre-commit hooks
 mise run install
 
-# Run comprehensive quality checks (Python, Shell, Docker, Security)
-mise run quality-check
+# Most common daily workflow
+mise run check          # Check all code (linting)
+mise run fix           # Auto-fix formatting issues
+mise run test          # Run tests
+
+# Run comprehensive quality checks (Python, Shell, Docker, Security, Markdown)
+mise run check-all      # Everything: linting, testing, security
+# or
+mise run quality-check # Same as above
 
 # Build and test everything (Docker images, functionality tests)
 mise run build-test
@@ -99,17 +106,96 @@ mise run build-test
 # Convert PDFs for testing
 mise run convert examples/sample-profile.md
 
-# Format code
-mise run format
-
-# Run individual checks
-mise run lint
-mise run test
+# Individual commands for specific needs
+mise run lint-python   # Python linting only
+mise run lint-shell    # Shell script linting
+mise run lint-docker   # Docker linting
+mise run lint-markdown # Markdown linting
+mise run format-python # Python formatting
+mise run format-markdown # Markdown formatting
 ```
 
-**Note**: The commit-msg hook enforces [Conventional Commits](https://www.conventionalcommits.org/) format for better changelog generation.
+## 🐳 Efficient Docker Development Workflow
 
-**Git Configuration**: This project uses rebase-based workflow to maintain clean commit history. Pulls use `git pull --rebase` to avoid unnecessary merge commits.
+### Why Volume Mounting Matters
+
+The development environment uses **volume mounting** so you can develop Python code without rebuilding the container every time. This is much faster than rebuilding images for code changes.
+
+### Development Environment Setup
+
+```bash
+# Build the development environment (one-time setup)
+mise run build-image
+
+# Start the development environment with volume mounting
+mise run dev-up
+
+# Open a shell in the running container (changes are live)
+mise run dev-shell
+
+# Or run individual commands without entering the container
+mise run dev-run examples/sample-profile.md -o test.pdf
+```
+
+### Daily Development Workflow
+
+**Most Efficient Approach:**
+
+```bash
+# 1. Start development environment (first time only)
+mise run dev-up
+
+# 2. In one terminal, watch for changes
+mise run dev-logs
+
+# 3. In another terminal, test your changes
+mise run dev-shell
+
+# Inside the container:
+python -m src.ats_pdf_generator.ats_converter --help
+python -m src.ats_pdf_generator.ats_converter examples/sample-profile.md -o test.pdf
+
+# 4. Your Python code changes are reflected immediately!
+# No container rebuild needed for Python changes
+```
+
+### Development Commands Reference
+
+```bash
+# Environment Management
+mise run dev-up        # Start development environment
+mise run dev-down      # Stop development environment
+mise run dev-restart   # Restart development environment
+mise run dev-logs      # View live logs
+mise run dev-shell     # Open shell in running container
+
+# Testing Commands
+mise run dev-run       # Run the converter module
+mise run dev-convert   # Convert a test file
+mise run test          # Run unit tests
+
+# Cleanup
+mise run docker-clean     # Clean dev images
+mise run docker-clean-all # Clean all Docker resources
+```
+
+### Volume Mounting Benefits
+
+- **Instant Code Changes**: Python changes are reflected immediately
+- **No Rebuild Time**: Skip Docker rebuilds during development
+- **Full Environment**: Access to all development tools
+- **Live Reloading**: Changes are reflected without container restart
+
+### When to Rebuild
+
+You only need to rebuild the development container when:
+
+- Dependencies change (`pyproject.toml` or `uv.lock`)
+- System libraries change
+- Dockerfile changes
+- You want to test the production image
+
+**Note**: The development environment mounts your entire project directory, so all changes to Python files, documentation, and configuration are reflected immediately.
 
 ## 🎯 Key Challenges Addressed
 
@@ -473,15 +559,6 @@ export DOCKER_BUILDKIT=1
 4. **Use the dev profile** for development work
 5. **Check logs** with `docker-compose logs` if conversion fails
 
-### Docker Setup
-
-The Docker setup provides:
-
-- **Production-Ready Images**: Multi-stage builds with optimized runtime stages
-- **Comprehensive CI**: Testing and security scanning
-- **Better Testing**: Local testing catches issues before CI
-- **Modern Tooling**: BuildKit cache mounts and OCI labels for better performance
-
 ## 🔍 Debugging
 
 ### Local Debugging
@@ -612,7 +689,7 @@ The project uses GitHub Actions with a script-first approach for automated quali
 
 **When checks run:**
 
-- ✅ **Quality & Build**: On push to main/develop branches and pull requests
+- ✅ **Quality & Build**: On push to main branch and pull requests
 - ✅ **Publish**: On push to main branch (latest images)
 - ✅ **Release**: On tag pushes (v*) with versioned images
 - ✅ **Pre-commit hooks**: Local development
