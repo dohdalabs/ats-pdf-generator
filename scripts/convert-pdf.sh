@@ -97,7 +97,7 @@ print_info "Converting: $input_file -> $output_file"
 
 # Build the Docker command
 docker_cmd="docker run --rm -v \"$(pwd)/$input_dir:/app/input\" -w /app ats-pdf-generator:dev"
-python_cmd="source .venv/bin/activate && python src/ats_converter.py input/$input_filename -o input/$(basename "$output_file")"
+python_cmd="source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py input/$input_filename -o input/$(basename "$output_file")"
 
 # Execute the conversion
 if eval "$docker_cmd bash -c \"$python_cmd\""; then

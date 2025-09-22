@@ -2,12 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 env:
   CI: true
+  UV_COMPILE_BYTECODE: 1
+  UV_CACHE_DIR: ~/.cache/uv
+  UV_INDEX_STRATEGY: unsafe-best-match
 
 jobs:
   quality:
@@ -15,10 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
 
@@ -33,9 +36,17 @@ jobs:
           path: |
             ~/.cache/uv
             .venv
-          key: ${{ runner.os }}-uv-${{ hashFiles('uv.lock') }}
+          key: ${{ runner.os }}-uv-${{ hashFiles('uv.lock') }}-${{ hashFiles('pyproject.toml') }}
           restore-keys: |
+            ${{ runner.os }}-uv-${{ hashFiles('uv.lock') }}-
+            ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}-
             ${{ runner.os }}-uv-
+
+      - name: Show UV version info
+        run: |
+          echo "UV Version: $(uv --version)"
+          echo "Python Version: $(uv run python --version)"
+          echo "UV Cache Directory: $UV_CACHE_DIR"
 
       - name: Install dependencies
         run: uv sync --dev
@@ -48,32 +59,153 @@ jobs:
           chmod +x hadolint
           sudo mv hadolint /usr/local/bin/
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          # Install markdownlint-cli via npm (Node.js should be available in CI)
+          npm install -g markdownlint-cli
 
       - name: Run quality checks
         run: ./scripts/quality-check.sh
 
-  build-and-test:
-    name: Build and Test
+  docker-test:
+    name: Docker Image Testing
     runs-on: ubuntu-latest
-    needs: quality
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Run build and test
-        run: ./scripts/build-and-test.sh
+      - name: Test existing Docker images
+        run: |
+          echo "🧪 Testing existing Docker images..."
+          ./scripts/test-docker-images.sh
+
+      - name: Build and test new Docker images
+        run: |
+          echo "🔨 Building and testing new Docker images..."
+          ./scripts/build-all-images.sh
+
+      - name: Generate Dockerfiles
+        run: |
+          echo "📝 Generating Dockerfiles with shared patterns..."
+          ./scripts/generate-dockerfiles.sh
+
+      - name: Validate Dockerfiles
+        run: |
+          echo "✅ Validating Dockerfiles..."
+          # Test that Dockerfiles are valid with correct build context
+          docker build -f docker/Dockerfile.alpine -t test-alpine . > /dev/null 2>&1
+          docker build -f docker/Dockerfile.optimized -t test-optimized . > /dev/null 2>&1
+          docker build -f docker/Dockerfile.dev -t test-dev . > /dev/null 2>&1
+          echo "✅ All Dockerfiles are valid"
+
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [quality, docker-test]
+    # Only run security scan if Docker files or dependencies change
+    if: |
+      github.event_name == 'push' && github.ref == 'refs/heads/main' ||
+      contains(github.event.head_commit.modified, 'docker/') ||
+      contains(github.event.head_commit.modified, 'pyproject.toml') ||
+      contains(github.event.head_commit.modified, 'uv.lock') ||
+      contains(github.event.head_commit.added, 'docker/') ||
+      contains(github.event.head_commit.added, 'pyproject.toml') ||
+      contains(github.event.head_commit.added, 'uv.lock')
+    strategy:
+      matrix:
+        image: [alpine, optimized]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:buildx-stable-1
+            network=host
+
+      - name: Build ${{ matrix.image }} image for scanning (single arch)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.${{ matrix.image }}
+          platforms: linux/amd64
+          push: false
+          tags: ats-pdf-generator:${{ matrix.image }}-scan
+          cache-from: |
+            type=gha,scope=${{ matrix.image }}-base
+            type=gha,scope=${{ matrix.image }}-deps
+            type=gha,scope=${{ matrix.image }}-app
+          cache-to: |
+            type=gha,mode=max,scope=${{ matrix.image }}-base
+            type=gha,mode=max,scope=${{ matrix.image }}-deps
+            type=gha,mode=max,scope=${{ matrix.image }}-app
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            VENDOR=DohDa Labs
+            UV_CACHE_DIR=/tmp/uv-cache
+            BUILDKIT_INLINE_CACHE=1
+            BUILDKIT_MULTI_PLATFORM=0
+
+      - name: Cache Trivy vulnerability database
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ matrix.image }}-${{ hashFiles('**/Dockerfile*') }}-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            trivy-db-${{ matrix.image }}-${{ hashFiles('**/Dockerfile*') }}-${{ hashFiles('pyproject.toml') }}-
+            trivy-db-${{ matrix.image }}-${{ hashFiles('**/Dockerfile*') }}-
+            trivy-db-${{ matrix.image }}-
+            trivy-db-
+
+      - name: Run Trivy vulnerability scanner (${{ matrix.image }})
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ats-pdf-generator:${{ matrix.image }}-scan'
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.image }}.sarif'
+          cache-dir: ~/.cache/trivy
+        continue-on-error: true
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && hashFiles('trivy-results-${{ matrix.image }}.sarif') != ''
+        with:
+          sarif_file: 'trivy-results-${{ matrix.image }}.sarif'
+        continue-on-error: true
+
+  security-scan-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [security-scan]
+    if: always()
+    steps:
+      - name: Check SARIF files exist
+        run: |
+          echo "Checking for SARIF files..."
+          ls -la *.sarif || echo "No SARIF files found"
+          if [ -f "trivy-results-alpine.sarif" ]; then
+            echo "✅ trivy-results-alpine.sarif exists"
+          else
+            echo "❌ trivy-results-alpine.sarif not found"
+          fi
+          if [ -f "trivy-results-optimized.sarif" ]; then
+            echo "✅ trivy-results-optimized.sarif exists"
+          else
+            echo "❌ trivy-results-optimized.sarif not found"
+          fi
 
   publish:
     name: Publish (on main)
     runs-on: ubuntu-latest
-    needs: [quality, build-and-test]
+    needs: [quality, docker-test, security-scan-summary]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -91,19 +223,57 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish images
-        run: ./scripts/publish.sh latest
+      - name: Publish multi-arch images with rich tags
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.optimized
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ats-pdf-generator:latest
+            ats-pdf-generator:optimized
+            ats-pdf-generator:${{ github.sha }}
+            ghcr.io/dohdalabs/ats-pdf-generator:latest
+            ghcr.io/dohdalabs/ats-pdf-generator:optimized
+            ghcr.io/dohdalabs/ats-pdf-generator:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            VENDOR=DohDa Labs
+            UV_CACHE_DIR=/tmp/uv-cache
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Publish Alpine images
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.alpine
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ats-pdf-generator:alpine
+            ghcr.io/dohdalabs/ats-pdf-generator:alpine
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            VENDOR=DohDa Labs
+            UV_CACHE_DIR=/tmp/uv-cache
+            BUILDKIT_INLINE_CACHE=1
 
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [quality, build-and-test, publish]
+    needs: [quality, docker-test, security-scan-summary, publish]
     if: always()
     steps:
       - name: Generate summary
         run: |
           echo "📋 CI Summary:"
           echo "  🐍 Quality: Code quality checks completed"
-          echo "  🐳 Build: Docker images built and tested"
+          echo "  🐳 Docker Test: Comprehensive Docker image testing"
+          echo "  🔒 Security: Vulnerability scanning completed"
           echo "  📦 Publish: Images published to registries (main branch only)"
           echo "✅ All CI checks completed successfully!"

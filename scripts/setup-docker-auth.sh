@@ -103,7 +103,7 @@ main() {
     echo ""
     log_info "Next steps:"
     echo "1. Build and push your image: ./scripts/docker-push-multi-registry.sh"
-    echo "2. Check the Registry Setup Guide: docs/REGISTRY_SETUP.md"
+    echo "2. Check the Docker Distribution Guide: docs/DOCKER_DISTRIBUTION.md"
     echo ""
     log_info "Registry URLs:"
     echo "  Docker Hub:        https://hub.docker.com/r/dohdalabs/ats-pdf-generator"

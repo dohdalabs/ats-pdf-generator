@@ -1,5 +1,6 @@
 # John Doe
-123 Main Street, City, State 12345 | (555) 123-4567 | john.doe@email.com | linkedin.com/in/johndoe
+
+123 Main Street, City, State 12345 | (555) 123-4567 | <john.doe@email.com> | linkedin.com/in/johndoe
 
 January 15, 2024
 

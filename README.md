@@ -31,12 +31,29 @@ This tool solves that problem by focusing on what actually matters: **content th
 - **Operating System**: macOS, Linux, or Windows with WSL2
 - **Architecture**: x64, ARM64, or other Docker-supported architectures
 
+### 🐳 Docker Images
+
+This project provides multiple Docker images optimized for different use cases:
+
+- **`ats-pdf-generator:alpine`** - Ultra-minimal Alpine Linux image (~50MB)
+- **`ats-pdf-generator:optimized`** - Debian slim-based optimized image (~100MB)
+- **`ats-pdf-generator:dev`** - Development environment with all tools
+
+**New in v2.0**: Enhanced Docker setup with reduced duplication and improved testing.
+
 ### Simple One-Line Installation
 
 ```bash
 # Install the utility (requires Docker)
 curl -sSL https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/install.sh | bash
 ```
+
+**Installation Details:**
+
+- Installs a stable version (v1.0.0) for reliable operation
+- Creates the `ats-pdf` command in your PATH
+- Sets up customization directory for styling options
+- No breaking changes between updates
 
 ## 📋 Usage
 
@@ -52,6 +69,7 @@ ats-pdf /path/to/your/document.md -o /path/to/output.pdf
 ```
 
 **Command Options:**
+
 ```bash
 ats-pdf [OPTIONS] <input_file>
 
@@ -77,12 +95,14 @@ docker run --rm -v $(pwd):/app ghcr.io/dohdalabs/ats-pdf-generator:latest profil
 ## 📝 Document Types
 
 ### Cover Letter (Default)
+
 - Optimized for standard business correspondence
 - Validates for proper salutations
 - Recommends keeping under 400 words
 - Professional formatting suitable for any industry
 
 ### Professional Profile
+
 - Optimized for summary/overview documents
 - Validates for profile structure
 - Clean, readable layout
@@ -97,7 +117,8 @@ Complete, working examples are available in the [GitHub repository](https://gith
 
 To use these examples, download them directly:
 
-**Option 1: Download individual files**
+### Option 1: Download individual files
+
 ```bash
 # Download cover letter example
 curl -O https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/examples/sample-cover-letter.md
@@ -110,7 +131,8 @@ ats-pdf sample-cover-letter.md -o sample-cover-letter.pdf
 ats-pdf sample-profile.md --type profile -o sample-profile.pdf
 ```
 
-**Option 2: Clone the repository**
+### Option 2: Clone the repository
+
 ```bash
 git clone https://github.com/dohdalabs/ats-pdf-generator.git
 cd ats-pdf-generator
@@ -122,10 +144,12 @@ ats-pdf examples/sample-cover-letter.md -o sample-cover-letter.pdf
 Write your content in standard Markdown. The tool includes special formatting for cover letters:
 
 **Cover Letter Special Formatting:**
+
 - `<div class="salutation">Dear [Name],</div>` - Properly formats the greeting
 - `<div class="signature">Sincerely,<br>Your Name</div>` - Professional signature block
 
 **Examples:**
+
 - Cover letters: [sample-cover-letter.md](examples/sample-cover-letter.md)
 - Professional profiles: [sample-profile.md](examples/sample-profile.md)
 
@@ -138,6 +162,7 @@ The default styling is already ATS-optimized, so most users don't need to custom
 ## 🐳 How It Works
 
 The tool uses Docker to ensure consistent, ATS-optimized results:
+
 - **No Setup Required**: Just install and use
 - **Consistent Output**: Same results on any system
 - **ATS Optimized**: Built-in fonts and formatting that work with tracking systems
@@ -159,6 +184,7 @@ Docker automatically selects the correct architecture for your system, so you ge
 The ATS PDF Generator is available on two public registries for maximum availability:
 
 ### Docker Hub (Primary Registry)
+
 ```bash
 # Latest optimized version
 docker pull dohdalabs/ats-pdf-generator:latest
@@ -168,6 +194,7 @@ docker pull dohdalabs/ats-pdf-generator:1.0.0
 ```
 
 ### GitHub Container Registry
+
 ```bash
 # Latest version
 docker pull ghcr.io/dohdalabs/ats-pdf-generator:latest
@@ -184,13 +211,33 @@ Want to customize or extend this tool for your own needs? Check out the [Develop
 
 ### Multi-Registry Publishing
 
-This project publishes to Docker Hub and GitHub Container Registry for maximum availability. For detailed setup instructions, see the [Registry Setup Guide](docs/REGISTRY_SETUP.md).
+This project publishes to Docker Hub and GitHub Container Registry for maximum availability. For detailed setup instructions, see the [Docker Distribution Guide](docs/DOCKER_DISTRIBUTION.md).
 
 **Quick Publishing:**
+
 ```bash
 # Build and push to both registries
 ./scripts/docker-push-multi-registry.sh 1.0.0
 ```
+
+## 🔄 Updates
+
+The installed version is stable and won't change unexpectedly. To get the latest features and bug fixes:
+
+```bash
+# Update to latest version
+ats-pdf update
+
+# Or reinstall from scratch
+curl -sSL https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/install.sh | bash -s -- --update
+```
+
+### Version Strategy
+
+- **Installation**: Uses stable version (v1.0.0) for reliability
+- **Updates**: Available on-demand with `ats-pdf update`
+- **No Breaking Changes**: Updates maintain compatibility
+- **Fast Downloads**: Subsequent uses benefit from cached images
 
 ## 📄 License
 
@@ -205,10 +252,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 💡 Support
 
 ### Documentation
+
 - [Examples](examples/) - Sample input and output files
 
 ---
 
-**Made with ❤️ for job seekers worldwide**
+### Made with ❤️ for job seekers worldwide
 
 If this tool helped you land your dream job, consider ⭐ starring the repository!

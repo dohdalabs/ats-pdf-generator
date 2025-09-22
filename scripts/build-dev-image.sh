@@ -7,8 +7,15 @@ set -e
 
 echo "🔨 Building Docker dev container..."
 
+# Get git SHA for build argument
+GIT_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+
 # Build the container
-docker build --no-cache -f docker/Dockerfile.dev -t ats-pdf-generator:dev .
+docker build --no-cache \
+  --build-arg GIT_SHA="$GIT_SHA" \
+  --build-arg VENDOR="DohDa Labs" \
+  -f docker/Dockerfile.dev \
+  -t ats-pdf-generator:dev .
 
 echo ""
 echo "📦 Container image size:"

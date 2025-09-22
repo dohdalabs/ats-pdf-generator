@@ -1,5 +1,6 @@
 # Sarah Johnson
-Senior Software Engineer | sarah.johnson@email.com | (555) 987-6543 | linkedin.com/in/sarahjohnson
+
+Senior Software Engineer | <sarah.johnson@email.com> | (555) 987-6543 | linkedin.com/in/sarahjohnson
 
 ## Professional Summary
 
@@ -35,7 +36,8 @@ Experienced software engineer with 8+ years of expertise in developing scalable 
 **Bachelor of Science in Computer Science**
 University of Technology | 2016
 
-**Certifications**
+### Certifications
+
 - AWS Certified Solutions Architect (2023)
 - Certified Scrum Master (2022)
 - React Developer Certification (2023)

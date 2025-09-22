@@ -4,12 +4,13 @@ services:
   # ATS Document Converter - Optimized Version
   ats-converter-optimized:
     build:
-      context: .
-      dockerfile: Dockerfile.optimized
+      context: ..
+      dockerfile: docker/Dockerfile.optimized
     image: ats-document-converter:optimized
     container_name: ats-document-converter-optimized
     volumes:
-      - .:/app
+      - ../examples:/app/input
+      - ../output:/app/output
     working_dir: /app
     environment:
       - PYTHONUNBUFFERED=1
@@ -17,25 +18,18 @@ services:
       - LANG=C.UTF-8
     # Remove container after execution
     restart: "no"
-    # Resource limits (reduced due to smaller image)
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
+
 
   # ATS Document Converter - Alpine Version (Minimal)
   ats-converter-alpine:
     build:
-      context: .
-      dockerfile: Dockerfile.alpine
+      context: ..
+      dockerfile: docker/Dockerfile.alpine
     image: ats-document-converter:alpine
     container_name: ats-document-converter-alpine
     volumes:
-      - .:/app
+      - ../examples:/app/input
+      - ../output:/app/output
     working_dir: /app
     environment:
       - PYTHONUNBUFFERED=1
@@ -43,26 +37,17 @@ services:
       - LANG=C.UTF-8
     # Remove container after execution
     restart: "no"
-    # Resource limits (minimal due to Alpine)
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.25'
-        reservations:
-          memory: 64M
-          cpus: '0.1'
 
   # Development service (using optimized version)
   ats-converter-dev:
     build:
-      context: .
-      dockerfile: Dockerfile.optimized
+      context: ..
+      dockerfile: docker/Dockerfile.dev
     image: ats-document-converter:dev-optimized
     container_name: ats-document-converter-dev
     volumes:
-      - .:/app
-    working_dir: /app
+      - ..:/workspace
+    working_dir: /workspace
     environment:
       - PYTHONUNBUFFERED=1
       - LC_ALL=C.UTF-8

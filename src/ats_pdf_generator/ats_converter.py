@@ -13,10 +13,22 @@ from pathlib import Path
 
 def main() -> None:
     """Simple wrapper to call pandoc with weasyprint engine"""
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or "--help" in sys.argv or "-h" in sys.argv:
+        print("ATS Document Converter")
+        print("Convert Markdown documents to ATS-optimized PDFs for job applications")
+        print("")
         print("Usage: python3 ats_converter.py input.md [options]")
-        print("This script calls pandoc with weasyprint for ATS-optimized documents")
-        sys.exit(1)
+        print("")
+        print("Options:")
+        print("  -o FILE, --output=FILE    Output file (default: input.pdf)")
+        print("  --css=FILE               Custom CSS file")
+        print("  --pdf-engine=ENGINE      PDF engine (default: weasyprint)")
+        print("  -h, --help               Show this help message")
+        print("")
+        print("Examples:")
+        print("  python3 ats_converter.py cover-letter.md -o cover-letter.pdf")
+        print("  python3 ats_converter.py profile.md --css custom.css")
+        sys.exit(0)
 
     # Preprocess: convert lines beginning with a bullet '•' to markdown list '- '
     args = sys.argv[1:]
@@ -24,14 +36,17 @@ def main() -> None:
     temp_files = []
     processed_args = []
 
-    # Ensure tmp directory exists
-    tmp_dir = Path("tmp")
-    tmp_dir.mkdir(exist_ok=True)
+    # Ensure tmp directory exists - use /app/tmp if available, otherwise use current directory
+    if Path("/app/tmp").exists():
+        tmp_dir = Path("/app/tmp")
+    else:
+        tmp_dir = Path("tmp")
+        tmp_dir.mkdir(exist_ok=True)
 
     for a in args:
         if a in files:
             src = Path(a)
-            tmp = Path(f"tmp/{src.stem}.preprocessed.md")
+            tmp = tmp_dir / f"{src.stem}.preprocessed.md"
             with (
                 src.open("r", encoding="utf-8") as f_in,
                 tmp.open("w", encoding="utf-8") as f_out,

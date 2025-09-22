@@ -46,8 +46,8 @@ check_python() {
         uv run pytest --cov=src --cov-report=xml --cov-report=term-missing
     else
         # Local development, use mise tasks
-        mise run lint
-        mise run format
+        mise run lint-python
+        mise run format-python
         mise run typecheck
         mise run test
     fi
@@ -90,6 +90,22 @@ check_docker() {
     log_success "Docker quality checks completed"
 }
 
+# Markdown linting
+check_markdown() {
+    log_info "📝 Running Markdown linting..."
+
+    if command -v markdownlint >/dev/null 2>&1; then
+        markdownlint "**/*.md" --config=.markdownlint.jsonc || {
+            log_warning "Markdown linting found issues (non-fatal)"
+            return 0
+        }
+    else
+        log_warning "markdownlint not found, skipping Markdown linting"
+    fi
+
+    log_success "Markdown linting completed"
+}
+
 # Security scan
 check_security() {
     log_info "🔒 Running security scan..."
@@ -116,6 +132,7 @@ main() {
     check_python || exit_code=1
     check_shell || exit_code=1
     check_docker || exit_code=1
+    check_markdown || exit_code=1
     check_security || exit_code=1
 
     # Summary
@@ -124,6 +141,7 @@ main() {
     echo "  🐍 Python: Linting, type checking, and tests"
     echo "  🐚 Shell: Scripts linted (warnings shown but not fatal)"
     echo "  🐳 Docker: Dockerfiles linted with lenient rules"
+    echo "  📝 Markdown: Documentation linted"
     echo "  🔒 Security: Vulnerability scan completed"
 
     if [ $exit_code -eq 0 ]; then
@@ -143,6 +161,7 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
     echo "  - Python: Linting, formatting, type checking, tests"
     echo "  - Shell: Script linting with shellcheck"
     echo "  - Docker: Dockerfile linting with hadolint"
+    echo "  - Markdown: Documentation linting with markdownlint"
     echo "  - Security: Vulnerability scanning with trivy"
     echo ""
     echo "Usage: $0"
