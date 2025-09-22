@@ -31,16 +31,6 @@ This tool solves that problem by focusing on what actually matters: **content th
 - **Operating System**: macOS, Linux, or Windows with WSL2
 - **Architecture**: x64, ARM64, or other Docker-supported architectures
 
-### 🐳 Docker Images
-
-This project provides multiple Docker images optimized for different use cases:
-
-- **`ats-pdf-generator:alpine`** - Ultra-minimal Alpine Linux image (~50MB)
-- **`ats-pdf-generator:optimized`** - Debian slim-based optimized image (~100MB)
-- **`ats-pdf-generator:dev`** - Development environment with all tools
-
-**New in v2.0**: Enhanced Docker setup with reduced duplication and improved testing.
-
 ### Simple One-Line Installation
 
 ```bash
