@@ -103,8 +103,8 @@ main() {
         ((failed_tests++))
     fi
 
-    # Test Optimized image
-    if ! test_docker_image "ats-pdf-generator" "optimized" "Dockerfile.optimized"; then
+    # Test Standard image
+    if ! test_docker_image "ats-pdf-generator" "standard" "Dockerfile.standard"; then
         ((failed_tests++))
     fi
 

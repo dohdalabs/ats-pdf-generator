@@ -38,8 +38,52 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Publish release images
-        run: ./scripts/publish.sh ${{ steps.version.outputs.VERSION }}
+      - name: Publish all image variants (standard, alpine, dev)
+        run: |
+          echo "🚀 Publishing all image variants for release ${{ steps.version.outputs.VERSION }}"
+
+          # Publish standard image (multi-arch)
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --push \
+            -f docker/Dockerfile.standard \
+            -t dohdalabs/ats-pdf-generator:${{ steps.version.outputs.VERSION }} \
+            -t dohdalabs/ats-pdf-generator:latest \
+            -t dohdalabs/ats-pdf-generator:standard \
+            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:${{ steps.version.outputs.VERSION }} \
+            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:latest \
+            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:standard \
+            --build-arg GIT_SHA=${{ github.sha }} \
+            --build-arg VENDOR="DohDa Labs" \
+            .
+
+          # Publish alpine image (multi-arch)
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --push \
+            -f docker/Dockerfile.alpine \
+            -t dohdalabs/ats-pdf-generator:alpine-${{ steps.version.outputs.VERSION }} \
+            -t dohdalabs/ats-pdf-generator:alpine \
+            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:alpine-${{ steps.version.outputs.VERSION }} \
+            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:alpine \
+            --build-arg GIT_SHA=${{ github.sha }} \
+            --build-arg VENDOR="DohDa Labs" \
+            .
+
+          # Publish dev image (multi-arch)
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --push \
+            -f docker/Dockerfile.dev \
+            -t dohdalabs/ats-pdf-generator:dev-${{ steps.version.outputs.VERSION }} \
+            -t dohdalabs/ats-pdf-generator:dev \
+            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:dev-${{ steps.version.outputs.VERSION }} \
+            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:dev \
+            --build-arg GIT_SHA=${{ github.sha }} \
+            --build-arg VENDOR="DohDa Labs" \
+            .
+
+          echo "✅ All image variants published successfully!"
 
       - name: Generate changelog
         id: changelog

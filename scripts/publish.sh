@@ -62,11 +62,11 @@ build_image() {
     local git_sha
     git_sha=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
 
-    # Build the optimized image
+    # Build the standard image
     if docker build \
         --build-arg GIT_SHA="$git_sha" \
         --build-arg VENDOR="DohDa Labs" \
-        -f docker/Dockerfile.optimized \
+        -f docker/Dockerfile.standard \
         -t "${IMAGE_NAME}:${VERSION}" .; then
         log_success "Image built successfully: ${IMAGE_NAME}:${VERSION}"
     else

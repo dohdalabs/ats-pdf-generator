@@ -89,7 +89,7 @@ uv run pytest
 # Build and test locally
 mise run build-test
 # or
-docker build -f docker/Dockerfile.optimized -t ats-pdf-generator:local .
+docker build -f docker/Dockerfile.standard -t ats-pdf-generator:local .
 ```
 
 ### Development Workflow

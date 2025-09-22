@@ -176,7 +176,7 @@ The ATS PDF Generator is available on two public registries for maximum availabi
 ### Docker Hub (Primary Registry)
 
 ```bash
-# Latest optimized version
+# Latest standard version
 docker pull dohdalabs/ats-pdf-generator:latest
 
 # Specific version

@@ -342,7 +342,7 @@ def generate_pdf(
             including contact details, experience, skills, etc.
         output_path: Path where the generated PDF should be saved
         template_path: Optional custom template path. If not provided,
-            uses the default ATS-optimized template.
+            uses the default ATS-standard template.
 
     Returns:
         bool: True if PDF generation successful, False otherwise

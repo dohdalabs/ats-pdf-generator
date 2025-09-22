@@ -1,5 +1,5 @@
-# ATS Document Converter - Optimized Version
-# Debian slim-based image with minimal dependencies
+# ATS Document Converter - Standard Version
+# Debian slim-based image with standard dependencies
 
 # Build arguments for labels
 ARG GIT_SHA="unknown"

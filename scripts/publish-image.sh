@@ -51,8 +51,8 @@ check_docker() {
 build_image() {
     log_info "Building Docker image: ${IMAGE_NAME}:${VERSION}"
 
-    # Build the optimized image
-    if docker build -f docker/Dockerfile.optimized -t "${IMAGE_NAME}:${VERSION}" .; then
+    # Build the standard image
+    if docker build -f docker/Dockerfile.standard -t "${IMAGE_NAME}:${VERSION}" .; then
         log_success "Image built successfully: ${IMAGE_NAME}:${VERSION}"
     else
         log_error "Failed to build image"

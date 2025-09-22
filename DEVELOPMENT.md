@@ -17,7 +17,7 @@ This document is for technical reviewers and developers who want to understand t
 │   ├── ats_converter.py        # Main Python converter
 │   └── ats-document-converter.sh # Shell wrapper script
 ├── docker/                     # Docker configuration
-│   ├── Dockerfile.optimized    # Production Docker image
+│   ├── Dockerfile.standard     # Production Docker image
 │   ├── Dockerfile.alpine       # Minimal Docker image
 │   └── Dockerfile.dev          # Development environment
 ├── templates/                  # CSS styling templates
@@ -342,7 +342,7 @@ The project uses multi-stage Docker builds to create optimized production images
 
 | Variant | Size | Base | Architecture | Use Case |
 |---------|------|------|--------------|----------|
-| `optimized` | ~577MB | Python 3.13-slim | Multi-stage build | **Production** - Best compatibility |
+| `standard` | ~577MB | Python 3.13-slim | Multi-stage build | **Production** - Best compatibility |
 | `alpine` | ~523MB | Python 3.13-alpine | Multi-stage build | Minimal size, resource-constrained |
 | `dev` | ~1.4GB | Python 3.13-slim | Single-stage | Development with all tools |
 
@@ -371,7 +371,7 @@ mise run build-image
 mise run build-test
 
 # Manual builds (if needed)
-docker build -f docker/Dockerfile.optimized -t ats-pdf-generator:optimized .
+docker build -f docker/Dockerfile.standard -t ats-pdf-generator:standard .
 docker build -f docker/Dockerfile.alpine -t ats-pdf-generator:alpine .
 docker build -f docker/Dockerfile.dev -t ats-pdf-generator:dev .
 ```
@@ -398,7 +398,7 @@ The development image includes:
 - Git configuration for pre-commit hooks
 - Shell aliases for common development tasks
 
-**CI Optimization**: Only production images (alpine, optimized) are built and published in CI. The dev Dockerfile is validated for syntax correctness but not built to save ~14.5 minutes per CI run.
+**CI Optimization**: Only production images (alpine, standard) are built and published in CI. The dev Dockerfile is validated for syntax correctness but not built to save ~14.5 minutes per CI run.
 
 ### Docker Compose for Development
 
@@ -408,7 +408,7 @@ The project includes Docker Compose files for easy development and testing:
 # Start development environment
 docker-compose -f docker/docker-compose.yml --profile dev up -d
 
-# Start optimized development environment
+# Start standard development environment
 docker-compose -f docker/docker-compose.optimized.yml --profile dev up -d
 
 # Run a conversion using compose
@@ -422,7 +422,7 @@ docker-compose -f docker/docker-compose.yml down
 
 - `ats-converter`: Production service for document conversion
 - `ats-converter-dev`: Development service with debug mode enabled
-- `ats-converter-optimized`: Optimized production service
+- `ats-converter-optimized`: Standard production service
 - `ats-converter-alpine`: Minimal Alpine-based service
 
 **Note**: For most development tasks, use the convenience scripts instead:
@@ -439,11 +439,11 @@ mise run build-test                         # Build and test everything
 **Simple Conversion:**
 
 ```bash
-# Run a single conversion using the optimized image
+# Run a single conversion using the standard image
 docker run --rm \
   -v $PWD/examples:/app/input \
   -v $PWD/output:/app/output \
-  ats-pdf-generator:optimized \
+  ats-pdf-generator:standard \
   /app/input/sample-profile.md -o /app/output/profile.pdf
 ```
 
@@ -485,8 +485,8 @@ All images support build-time labels:
 ```bash
 docker build \
   --build-arg GIT_SHA=$(git rev-parse HEAD) \
-  -f docker/Dockerfile.optimized \
-  -t ats-pdf-generator:optimized .
+  -f docker/Dockerfile.standard \
+  -t ats-pdf-generator:standard .
 ```
 
 #### Multi-Architecture Support
@@ -496,8 +496,8 @@ Images are built for both `linux/amd64` and `linux/arm64`:
 ```bash
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -f docker/Dockerfile.optimized \
-  -t ats-pdf-generator:optimized .
+  -f docker/Dockerfile.standard \
+  -t ats-pdf-generator:standard .
 ```
 
 #### Development Workflow
@@ -628,7 +628,7 @@ The project uses [Semantic Versioning](https://semver.org/):
 Once a tag is pushed, GitHub Actions will:
 
 1. **Build and Push Multi-Platform Images**:
-   - Builds both `Dockerfile.optimized` and `Dockerfile.alpine` variants
+   - Builds both `Dockerfile.standard` and `Dockerfile.alpine` variants
    - Supports `linux/amd64` and `linux/arm64` platforms
    - Pushes to both Docker Hub and GitHub Container Registry
    - Tags with version (e.g., `v1.2.3`) and `latest`
@@ -712,7 +712,7 @@ The project uses GitHub Actions with a script-first approach for automated quali
 
 **CSS Template System**: Separate CSS files for different document types, increasing maintainability but requiring more files.
 
-**Docker Image Variants**: Multiple image variants (optimized, alpine) provide flexibility but increase maintenance overhead.
+**Docker Image Variants**: Multiple image variants (standard, alpine) provide flexibility but increase maintenance overhead.
 
 ### Lessons Learned
 

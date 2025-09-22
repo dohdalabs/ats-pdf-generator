@@ -112,13 +112,13 @@ main() {
         failed_builds+=("alpine")
     fi
 
-    # Build and test Optimized image
-    if build_image "docker/Dockerfile.optimized" "ats-pdf-generator" "optimized"; then
-        if ! test_image "ats-pdf-generator" "optimized"; then
-            failed_tests+=("optimized")
+    # Build and test Standard image
+    if build_image "docker/Dockerfile.standard" "ats-pdf-generator" "standard"; then
+        if ! test_image "ats-pdf-generator" "standard"; then
+            failed_tests+=("standard")
         fi
     else
-        failed_builds+=("optimized")
+        failed_builds+=("standard")
     fi
 
     # Build and test Dev image
