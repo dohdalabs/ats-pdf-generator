@@ -1,12 +1,15 @@
 # ATS PDF Generator - Portfolio Overview
 
 ## TL;DR
+
 Built a command-line tool that converts Markdown documents to ATS-optimized PDFs using Python and Docker. Demonstrates modern Python development practices, containerization, and CI/CD automation for a personal productivity tool.
 
 ## Problem Solved
+
 Job seekers often struggle with Applicant Tracking Systems (ATS) that don't properly parse their resumes. I needed a reliable way to convert my Markdown-based documents into PDFs that would pass ATS screening while maintaining clean formatting. This tool solves my own workflow problem and could help other developers who maintain their resumes in Markdown.
 
 ## Technical Highlights
+
 - **Modern Python Stack**: Python 3.13 with uv for fast dependency management and type hints for safety
 - **Multi-Platform Containers**: Docker multi-stage builds supporting both Alpine (minimal) and Ubuntu (compatible)
 - **Automated Quality Gates**: GitHub Actions with testing, linting, type checking, and security scanning
@@ -22,6 +25,7 @@ Job seekers often struggle with Applicant Tracking Systems (ATS) that don't prop
 - **CI/CD Complexity**: Balanced automation power with build speed for a personal project context
 
 ## Key Technologies
+
 - **Python 3.13**: Latest Python with modern features and performance improvements
 - **uv**: Fast Python package manager, chosen for speed over pip
 - **Docker**: Multi-stage builds for both development and production images
@@ -31,6 +35,7 @@ Job seekers often struggle with Applicant Tracking Systems (ATS) that don't prop
 - **Linting**: ruff for fast Python linting and formatting
 
 ## Project Links
+
 - **Repository**: [ATS PDF Generator](https://github.com/dohdalabs/ats-pdf-generator)
 - **Documentation**: [README](README.md) | [Development Guide](DEVELOPMENT.md)
 - **Docker Hub**: [dohdalabs/ats-pdf-generator](https://hub.docker.com/r/dohdalabs/ats-pdf-generator)

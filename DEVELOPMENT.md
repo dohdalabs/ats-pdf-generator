@@ -77,6 +77,7 @@ If you prefer not to use mise, you can use the provided setup script:
 ```
 
 This script will:
+
 - Check for Python 3.13+
 - Install uv if needed
 - Create a virtual environment
@@ -113,6 +114,7 @@ mise run test
 ## 🎯 Key Challenges Addressed
 
 ### Script-First Architecture
+
 **Challenge**: Maintaining consistency between local development and CI/CD environments while reducing duplication.
 
 **Solution**: Implemented a script-first approach where all operations are reusable shell scripts called by both local tools (mise) and CI/CD systems (GitHub Actions). This eliminates duplication and ensures consistent behavior across environments.
@@ -120,6 +122,7 @@ mise run test
 **Impact**: Reduced CI/CD complexity, improved local testing capabilities, and easier maintenance of automation workflows.
 
 ### Multi-Stage Docker Optimization
+
 **Challenge**: Creating production-ready Docker images that are both secure and minimal while supporting multiple architectures.
 
 **Solution**: Implemented multi-stage builds with separate builder and runtime stages, using `uv` for fast dependency management and non-root users for security. Added BuildKit cache mounts and OCI labels for better performance and traceability.
@@ -127,6 +130,7 @@ mise run test
 **Impact**: Reduced image sizes by ~40%, improved build performance with caching, and enhanced security posture.
 
 ### Developer Experience Optimization
+
 **Challenge**: Reducing friction for new developers while maintaining comprehensive quality standards.
 
 **Solution**: Integrated `mise` for consistent tooling, created one-command setup scripts, and implemented comprehensive pre-commit hooks with automated quality checks.
@@ -224,6 +228,7 @@ pre-commit run ruff --all-files
 The project includes Docker tooling that addresses common issues with Docker duplication and early issue detection:
 
 **Key Improvements:**
+
 - ✅ **Reduced duplication** - 70% less code duplication across Dockerfiles
 - ✅ **Early issue detection** - Comprehensive local testing before CI
 - ✅ **Security scanning** - Automated vulnerability scanning
@@ -258,11 +263,13 @@ The project uses multi-stage Docker builds to create optimized production images
 ### Multi-Stage Build Strategy
 
 **Builder Stage:**
+
 - Installs build dependencies (gcc, pkg-config, development libraries)
 - Uses `uv` for fast Python dependency management
 - Creates virtual environment with all required packages
 
 **Runtime Stage:**
+
 - Minimal runtime dependencies only
 - Copies virtual environment from builder stage
 - Non-root user for security
@@ -299,6 +306,7 @@ docker run -it --rm -v $(PWD):/app -w /app ats-pdf-generator:dev bash
 ```
 
 The development image includes:
+
 - All development dependencies (ruff, mypy, pytest, pre-commit)
 - Development tools and utilities
 - Git configuration for pre-commit hooks
@@ -325,12 +333,14 @@ docker-compose -f docker/docker-compose.yml down
 ```
 
 **Available Services:**
+
 - `ats-converter`: Production service for document conversion
 - `ats-converter-dev`: Development service with debug mode enabled
 - `ats-converter-optimized`: Optimized production service
 - `ats-converter-alpine`: Minimal Alpine-based service
 
 **Note**: For most development tasks, use the convenience scripts instead:
+
 ```bash
 mise run convert examples/sample-profile.md  # PDF conversion
 mise run build-test                         # Build and test everything
@@ -341,6 +351,7 @@ mise run build-test                         # Build and test everything
 #### Quick Start Examples
 
 **Simple Conversion:**
+
 ```bash
 # Run a single conversion using the optimized image
 docker run --rm \
@@ -351,6 +362,7 @@ docker run --rm \
 ```
 
 **Using Docker Compose:**
+
 ```bash
 # Build and run conversion service
 cd docker
@@ -374,6 +386,7 @@ volumes:
 ```
 
 For development:
+
 ```yaml
 volumes:
   - .:/workspace            # Full project access
@@ -447,6 +460,7 @@ The Dockerfiles use BuildKit features for improved build performance:
 - Optimized layer caching
 
 Enable BuildKit:
+
 ```bash
 export DOCKER_BUILDKIT=1
 ```
@@ -535,6 +549,7 @@ The project uses [Semantic Versioning](https://semver.org/):
 ### Automated Release Process
 
 Once a tag is pushed, GitHub Actions will:
+
 1. **Build and Push Multi-Platform Images**:
    - Builds both `Dockerfile.optimized` and `Dockerfile.alpine` variants
    - Supports `linux/amd64` and `linux/arm64` platforms
@@ -553,17 +568,20 @@ Once a tag is pushed, GitHub Actions will:
 ## 📊 Performance Characteristics
 
 ### Build Performance
+
 - **Docker Build Time**: ~2-3 minutes (with cache)
 - **Local Development Setup**: ~30 seconds (with mise)
 - **CI/CD Pipeline**: ~5-8 minutes (quality checks + builds)
 
 ### Runtime Performance
+
 - **PDF Conversion Speed**: ~1-5 seconds per document
 - **Memory Usage**: ~128-256MB during conversion
 - **Image Size**: 523-577MB (production images)
 - **Startup Time**: <1 second (container startup)
 
 ### Quality Metrics
+
 - **PDF Output**: Professional, ATS-optimized formatting
 - **Font Rendering**: Consistent across platforms
 - **File Size**: Optimized for email attachments
@@ -573,11 +591,13 @@ Once a tag is pushed, GitHub Actions will:
 The project uses GitHub Actions with a script-first approach for automated quality checks and deployment:
 
 ### CI Workflow (`ci.yml`)
+
 - **Quality Checks**: Runs `scripts/quality-check.sh` (Python, Shell, Docker, Security)
 - **Build & Test**: Runs `scripts/build-and-test.sh` (Docker builds, functionality tests)
 - **Publish**: Runs `scripts/publish.sh` on main branch pushes
 
 ### Release Workflow (`release.yml`)
+
 - **Multi-Registry Publishing**: Uses `scripts/publish.sh` for Docker Hub and GitHub Container Registry
 - **Release Creation**: Automatically creates GitHub releases with changelog
 - **Docker Hub Updates**: Updates repository description and README
@@ -591,6 +611,7 @@ The project uses GitHub Actions with a script-first approach for automated quali
 **Automated Release Management**: Uses conventional commits and automated changelog generation to reduce manual release overhead.
 
 **When checks run:**
+
 - ✅ **Quality & Build**: On push to main/develop branches and pull requests
 - ✅ **Publish**: On push to main branch (latest images)
 - ✅ **Release**: On tag pushes (v*) with versioned images
