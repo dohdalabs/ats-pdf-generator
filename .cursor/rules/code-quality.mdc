@@ -1,0 +1,572 @@
+---
+description: "Performes Code Quality Checks"
+file_patterns: ["**/*"]
+---
+# Code Quality Rules
+
+## Overview
+
+This rule establishes code quality standards, testing requirements, and best practices for maintaining high-quality code in the ATS PDF Generator project.
+
+## Code Standards
+
+### Python Style Guide
+
+- **PEP 8** - Official Python style guide
+- **Ruff** - Fast Python linter and code formatter
+- **Black** - Consistent code formatting
+- **isort** - Organized import sorting
+- **Type Hints** - Comprehensive type annotations
+- **Docstrings** - Detailed documentation
+
+### Code Formatting
+
+```python
+# ✅ Good
+def process_profile_data(
+    profile: dict[str, any],
+    output_path: Path,
+    *,
+    validate: bool = True,
+) -> bool:
+    """
+    Process profile data and generate PDF.
+
+    Args:
+        profile: Profile data dictionary
+        output_path: Path to output PDF file
+        validate: Whether to validate input data
+
+    Returns:
+        True if processing successful, False otherwise
+
+    Raises:
+        ValidationError: If input validation fails
+        FileNotFoundError: If output directory doesn't exist
+    """
+    if validate:
+        validate_profile_data(profile)
+
+    # Main processing logic
+    return generate_pdf(profile, output_path)
+
+# ❌ Avoid
+def ProcessProfileData(profile, output_path, validate=True):
+    # Poor formatting and documentation
+    pass
+```
+
+### Import Organization
+
+```python
+# Standard library imports (alphabetical)
+import os
+import sys
+from pathlib import Path
+from typing import Any, Dict
+
+# Third-party imports (alphabetical)
+import click
+from jinja2 import Template
+from pydantic import BaseModel, ValidationError
+
+# Local imports (alphabetical)
+from ats_pdf_generator.config import settings
+from ats_pdf_generator.utils.file_utils import read_json_file
+from ats_pdf_generator.utils.validation import validate_profile_data
+```
+
+## Testing Standards
+
+### Test Coverage Requirements
+
+- **Minimum 90%** overall coverage
+- **100%** coverage for critical functions
+- **All branches** covered in conditionals
+- **All exceptions** tested
+
+### Test Categories
+
+- **Unit Tests** - Test individual functions
+- **Integration Tests** - Test component interactions
+- **End-to-End Tests** - Test complete workflows
+- **Performance Tests** - Test speed and resource usage
+- **Error Handling Tests** - Test exception scenarios
+
+### Test Naming Conventions
+
+```python
+# Unit tests
+def test_process_valid_profile():
+    """Test processing of valid profile data."""
+
+def test_process_invalid_profile_raises_error():
+    """Test that invalid profile raises ValidationError."""
+
+def test_process_missing_file_raises_filenotfound():
+    """Test that missing file raises FileNotFoundError."""
+
+# Integration tests
+def test_pdf_generation_workflow():
+    """Test complete PDF generation workflow."""
+
+def test_error_handling_workflow():
+    """Test error handling throughout the workflow."""
+
+# Performance tests
+def test_large_profile_performance(benchmark):
+    """Test performance with large profile data."""
+```
+
+### Test Structure
+
+```python
+def test_function_under_test():
+    """Test description."""
+
+    # Arrange
+    input_data = {"name": "John Doe", "email": "john@example.com"}
+    expected_output = "expected_result"
+
+    # Act
+    result = function_under_test(input_data)
+
+    # Assert
+    assert result == expected_output
+
+def test_function_with_side_effects():
+    """Test function with side effects."""
+
+    # Arrange
+    initial_state = get_current_state()
+
+    # Act
+    function_under_test()
+
+    # Assert
+    final_state = get_current_state()
+    assert final_state != initial_state
+```
+
+## Quality Gates
+
+### Pre-commit Checks
+
+```bash
+# Format code (includes import sorting)
+uv run ruff format src/
+
+# Lint code (includes import sorting checks)
+uv run ruff check src/
+
+# Type check
+uv run mypy src/
+
+# Security scan
+uv run bandit -r src/
+
+# Run tests
+uv run pytest
+```
+
+### CI Quality Gates
+
+- **Code formatting** - Black and ruff formatting pass
+- **Linting** - ruff passes with no errors
+- **Import sorting** - isort (via ruff) passes
+- **Type checking** - mypy passes with no errors
+- **Security scanning** - bandit passes with no high/critical issues
+- **Testing** - All tests pass with 90%+ coverage
+- **Performance** - No performance regressions
+
+### Manual Review Checklist
+
+- [ ] Code follows PEP 8 style guide
+- [ ] Imports are properly organized
+- [ ] Type hints are comprehensive
+- [ ] Docstrings are present and detailed
+- [ ] Error handling is comprehensive
+- [ ] Tests are comprehensive
+- [ ] Performance is acceptable
+- [ ] Security considerations addressed
+
+## Error Handling
+
+### Exception Hierarchy
+
+```python
+class ATSGeneratorError(Exception):
+    """Base exception for ATS PDF Generator."""
+
+class ValidationError(ATSGeneratorError):
+    """Raised when input validation fails."""
+
+class FileOperationError(ATSGeneratorError):
+    """Raised when file operations fail."""
+
+class TemplateError(ATSGeneratorError):
+    """Raised when template processing fails."""
+
+class ConfigurationError(ATSGeneratorError):
+    """Raised when configuration is invalid."""
+```
+
+### Error Handling Patterns
+
+```python
+def process_file(file_path: Path) -> None:
+    """Process a file with comprehensive error handling."""
+
+    try:
+        # Validate input
+        if not file_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+
+        # Process file
+        with open(file_path, 'r') as file:
+            data = file.read()
+
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {e}")
+        raise FileOperationError(f"Could not read file: {file_path}") from e
+
+    except PermissionError as e:
+        logger.error(f"Permission denied: {e}")
+        raise FileOperationError(f"Permission denied for file: {file_path}") from e
+
+    except Exception as e:
+        logger.error(f"Unexpected error processing file: {e}")
+        raise ATSGeneratorError(f"Failed to process file: {file_path}") from e
+```
+
+## Performance Standards
+
+### Performance Requirements
+
+- **Startup Time** - Application starts in <2 seconds
+- **Processing Time** - PDF generation <5 seconds for typical profiles
+- **Memory Usage** - Peak memory <100MB for typical profiles
+- **Error Rate** - <0.1% error rate in production
+
+### Performance Testing
+
+```python
+def test_pdf_generation_performance(benchmark):
+    """Test PDF generation performance."""
+
+    profile_data = create_large_profile()
+
+    # Benchmark the operation
+    result = benchmark(generate_pdf, profile_data, output_path)
+
+    # Assert performance requirements
+    assert benchmark.stats.stats.mean < 5.0  # Should complete in <5 seconds
+
+def test_memory_usage():
+    """Test memory usage during processing."""
+
+    profile_data = create_large_profile()
+
+    # Track memory usage
+    tracemalloc.start()
+    generate_pdf(profile_data, output_path)
+    current, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    # Assert memory requirements
+    assert peak < 100 * 1024 * 1024  # Should use <100MB
+```
+
+## Security Standards
+
+### Security Requirements
+
+- **Input Validation** - All inputs validated before processing
+- **Safe File Operations** - Secure file handling
+- **Dependency Security** - No known vulnerabilities
+- **Error Information** - No sensitive data in error messages
+
+### Security Testing
+
+```python
+def test_input_validation():
+    """Test input validation."""
+
+    # Test malicious input
+    malicious_input = {
+        "name": "John<script>alert('xss')</script>",
+        "file_path": "/etc/passwd"
+    }
+
+    # Should raise validation error
+    with pytest.raises(ValidationError):
+        process_profile_data(malicious_input)
+
+def test_file_path_traversal():
+    """Test file path traversal protection."""
+
+    # Attempt path traversal
+    malicious_path = "../../../etc/passwd"
+
+    # Should be blocked
+    with pytest.raises(SecurityError):
+        read_file(malicious_path)
+```
+
+## Documentation Standards
+
+### Code Documentation
+
+- **Module Level** - Every Python file has module docstring
+- **Function Level** - All public functions have docstrings
+- **Class Level** - All classes have docstrings
+- **Method Level** - All public methods have docstrings
+- **Inline Comments** - Complex logic explained
+
+### API Documentation
+
+```python
+def generate_pdf(
+    profile_data: Dict[str, Any],
+    output_path: Path,
+    template_path: Optional[Path] = None,
+) -> bool:
+    """
+    Generate PDF from profile data.
+
+    This function takes structured profile data and generates a
+    professionally formatted PDF document suitable for ATS systems.
+
+    Args:
+        profile_data: Dictionary containing profile information
+            including contact details, experience, skills, etc.
+        output_path: Path where the generated PDF should be saved
+        template_path: Optional custom template path. If not provided,
+            uses the default ATS-optimized template.
+
+    Returns:
+        bool: True if PDF generation successful, False otherwise
+
+    Raises:
+        ValidationError: If profile_data is invalid or incomplete
+        FileNotFoundError: If template file doesn't exist
+        PermissionError: If output directory is not writable
+        ATSGeneratorError: For other unexpected errors
+
+    Example:
+        >>> profile = {
+        ...     "name": "John Doe",
+        ...     "contact": {"email": "john@example.com"},
+        ...     "experience": [...]
+        ... }
+        >>> generate_pdf(profile, Path("output/resume.pdf"))
+        True
+    """
+```
+
+### Configuration Documentation
+
+- All configuration options documented
+- Environment variables explained
+- Default values specified
+- Validation rules described
+
+## Maintenance Standards
+
+### Code Metrics
+
+- **Cyclomatic Complexity** - Functions <10 complexity
+- **Function Length** - Functions <50 lines
+- **Class Size** - Classes <200 lines
+- **File Size** - Files <500 lines
+- **Test Coverage** - 90% minimum
+
+### Refactoring Guidelines
+
+- **Extract Functions** - Break down large functions
+- **Reduce Duplication** - Eliminate repeated code
+- **Improve Naming** - Use descriptive names
+- **Add Types** - Add type hints where missing
+- **Update Tests** - Update tests for refactored code
+
+### Dependency Management
+
+- **Regular Updates** - Update dependencies monthly
+- **Security Scanning** - Scan for vulnerabilities
+- **Compatibility Testing** - Test with dependency updates
+- **Lock Files** - Maintain dependency lock files
+
+## Best Practices
+
+### Clean Code Principles
+
+- **Meaningful Names** - Variables, functions, classes have clear names
+- **Small Functions** - Each function has single responsibility
+- **Clear Structure** - Code is easy to read and understand
+- **No Surprises** - Code behaves as expected
+- **Easy to Test** - Code is designed for testability
+
+### Defensive Programming
+
+- **Input Validation** - Validate all inputs
+- **Error Handling** - Handle expected errors gracefully
+- **Resource Management** - Clean up resources properly
+- **Security Considerations** - Consider security implications
+- **Edge Cases** - Handle edge cases appropriately
+
+### Performance Optimization
+
+- **Efficient Algorithms** - Use appropriate data structures
+- **Lazy Evaluation** - Compute values only when needed
+- **Caching** - Cache expensive operations
+- **Memory Management** - Avoid memory leaks
+- **I/O Optimization** - Minimize file operations
+
+## Quality Tools Configuration
+
+### 🔧 **Black** - Code Formatter
+
+**What it does**: Automatically formats Python code to a consistent style.
+
+**Why we use it**: Ensures consistent code formatting across the entire codebase without manual intervention.
+
+**Integration**: Works with isort for import organization and integrates with pre-commit hooks.
+
+```toml
+[tool.black]
+line-length = 88
+target-version = ['py313']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  \.eggs
+  | \.git
+  | \.venv
+  | build
+  | dist
+)/
+'''
+```
+
+### 📦 **isort** - Import Sorter
+
+**What it does**: Automatically sorts and organizes import statements.
+
+**Why we use it**: Keeps imports consistently organized and works seamlessly with Black formatting.
+
+**Integration**: Configured with "black" profile to match Black's import formatting.
+
+```toml
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["ats_pdf_generator"]
+```
+
+### ⚡ **Ruff** - Fast Linter (Replaces flake8)
+
+**What it does**: Fast Python linter that combines multiple linting tools in one.
+
+**Why we use it**: Much faster than running multiple separate linters, includes import sorting.
+
+**Integration**: Replaces flake8, includes isort functionality, and handles most linting rules.
+
+```toml
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+```
+
+### 🔍 **MyPy** - Type Checker
+
+**What it does**: Static type checking for Python code.
+
+**Why we use it**: Catches type-related bugs before runtime and improves code documentation.
+
+**Integration**: Updated for Python 3.13 support.
+
+```toml
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "weasyprint.*",
+]
+ignore_missing_imports = true
+```
+
+### Coverage Configuration
+
+```toml
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/tests/*", "*/venv/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
+```
+
+## Continuous Improvement
+
+### Code Review Checklist
+
+- [ ] Follows PEP 8 and project style guide
+- [ ] Has appropriate type hints
+- [ ] Includes comprehensive docstrings
+- [ ] Has adequate test coverage
+- [ ] Handles errors appropriately
+- [ ] Considers security implications
+- [ ] Meets performance requirements
+- [ ] Follows best practices
+
+### Regular Audits
+
+- **Monthly** - Review code quality metrics
+- **Quarterly** - Security dependency audit
+- **As Needed** - Performance optimization review
+- **Post-Release** - Code quality assessment
+
+### Improvement Process
+
+1. **Identify Issues** - Find areas for improvement
+2. **Plan Changes** - Create improvement plan
+3. **Implement Changes** - Make incremental improvements
+4. **Test Changes** - Ensure no regressions
+5. **Monitor Results** - Track improvement metrics
