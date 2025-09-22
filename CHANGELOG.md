@@ -82,3 +82,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - WeasyPrint integration for PDF generation
 - ATS compatibility research and implementation
 - Template development and testing
+
