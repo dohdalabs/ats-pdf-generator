@@ -231,9 +231,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ats-pdf-generator:latest
-            ats-pdf-generator:optimized
-            ats-pdf-generator:${{ github.sha }}
+            dohdalabs/ats-pdf-generator:latest
+            dohdalabs/ats-pdf-generator:optimized
+            dohdalabs/ats-pdf-generator:${{ github.sha }}
             ghcr.io/dohdalabs/ats-pdf-generator:latest
             ghcr.io/dohdalabs/ats-pdf-generator:optimized
             ghcr.io/dohdalabs/ats-pdf-generator:${{ github.sha }}
@@ -253,7 +253,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ats-pdf-generator:alpine
+            dohdalabs/ats-pdf-generator:alpine
             ghcr.io/dohdalabs/ats-pdf-generator:alpine
           cache-from: type=gha
           cache-to: type=gha,mode=max
