@@ -211,7 +211,7 @@ Want to customize or extend this tool for your own needs? Check out the [Develop
 
 ### Multi-Registry Publishing
 
-This project publishes to Docker Hub and GitHub Container Registry for maximum availability. For detailed setup instructions, see the [Registry Setup Guide](docs/REGISTRY_SETUP.md).
+This project publishes to Docker Hub and GitHub Container Registry for maximum availability. For detailed setup instructions, see the [Docker Distribution Guide](docs/DOCKER_DISTRIBUTION.md).
 
 **Quick Publishing:**
 
