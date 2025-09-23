@@ -1,21 +1,94 @@
 #!/bin/bash
-
+#
 # Generate Dockerfiles Script
-# Creates optimized Dockerfiles with shared patterns to reduce duplication
+#
+# SYNOPSIS
+#     generate-dockerfiles.sh
+#
+# DESCRIPTION
+#     Creates Dockerfiles with shared patterns and validates them before completion.
+#     Generates Alpine and Standard Dockerfiles for the ATS PDF Generator project
+#     with optimized multi-stage builds and proper security practices.
+#
+# OPTIONS
+#     None
+#
+# PREREQUISITES
+#     None (self-contained script)
+#
+# EXAMPLES
+#     generate-dockerfiles.sh                    # Generate all Dockerfiles
+#
+# EXIT STATUS
+#     0    All Dockerfiles generated and validated successfully
+#     1    Generation or validation failed
+#
+# AUTHOR
+#     Generated for ats-pdf-generator project
+#
+# SEE ALSO
+#     validate-dockerfiles.sh(1), hadolint(1)
 
 set -euo pipefail
+
+# Show usage if help requested
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    cat << EOF
+Generate Dockerfiles Script
+
+SYNOPSIS
+    $0 [--help|-h]
+
+DESCRIPTION
+    Creates Dockerfiles with shared patterns and validates them before completion.
+    Generates Alpine and Standard Dockerfiles for the ATS PDF Generator project
+    with optimized multi-stage builds and proper security practices.
+
+OPTIONS
+    --help, -h    Show this help message and exit
+
+PREREQUISITES
+    None (self-contained script)
+
+EXAMPLES
+    $0                    # Generate all Dockerfiles
+    $0 --help            # Show this help
+
+EXIT STATUS
+    0    All Dockerfiles generated and validated successfully
+    1    Generation or validation failed
+
+AUTHOR
+    Generated for ats-pdf-generator project
+
+SEE ALSO
+    validate-dockerfiles.sh(1), hadolint(1)
+EOF
+    exit 0
+fi
 
 # Colors for output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# Print informational message with blue prefix
+# Arguments: $1 - message to display
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
 
+# Print success message with green prefix
+# Arguments: $1 - message to display
 log_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+# Print error message with red prefix
+# Arguments: $1 - message to display
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
 }
 
 # Common Dockerfile header
@@ -125,10 +198,10 @@ EOF
 
 log_success "Generated Alpine Dockerfile"
 
-# Common Dockerfile header for optimized
-cat > docker/Dockerfile.optimized.new << 'EOF'
-# ATS Document Converter - Optimized Version
-# Debian slim-based image with minimal dependencies
+# Common Dockerfile header for standard
+cat > docker/Dockerfile.standard.new << 'EOF'
+# ATS Document Converter - Standard Version
+# Debian slim-based image with standard dependencies
 
 FROM python:3.13-slim AS builder
 
@@ -234,12 +307,48 @@ ENTRYPOINT ["python3", "/app/ats_converter.py"]
 CMD ["--help"]
 EOF
 
-log_success "Generated Optimized Dockerfile"
+log_success "Generated Standard Dockerfile"
+
+# Validate the generated Dockerfiles using hadolint
+log_info "Validating generated Dockerfiles with hadolint..."
+
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check if validate-dockerfiles.sh script exists
+if [ ! -f "$SCRIPT_DIR/validate-dockerfiles.sh" ]; then
+    log_error "validate-dockerfiles.sh script not found in $SCRIPT_DIR. Cannot validate Dockerfiles."
+    exit 1
+fi
+
+# Collect generated Dockerfiles to validate
+validation_files=()
+if [ -f "docker/Dockerfile.alpine.new" ]; then
+    validation_files+=("docker/Dockerfile.alpine.new")
+fi
+if [ -f "docker/Dockerfile.standard.new" ]; then
+    validation_files+=("docker/Dockerfile.standard.new")
+fi
+if [ -f "docker/Dockerfile.dev.new" ]; then
+    validation_files+=("docker/Dockerfile.dev.new")
+fi
+
+# Run the validation script with specific files
+if [ ${#validation_files[@]} -gt 0 ]; then
+    if ! "$SCRIPT_DIR/validate-dockerfiles.sh" "${validation_files[@]}"; then
+        log_error "Dockerfile validation failed"
+        exit 1
+    fi
+else
+    log_warning "No generated Dockerfiles found to validate"
+fi
+
+log_success "All generated Dockerfiles passed validation!"
 
 log_info "Generated new Dockerfiles with shared patterns:"
 log_info "  - docker/Dockerfile.alpine.new"
-log_info "  - docker/Dockerfile.optimized.new"
-log_info "  - docker/Dockerfile.dev.new (already created)"
+log_info "  - docker/Dockerfile.standard.new"
+log_info "  - docker/Dockerfile.dev.new (if exists)"
 
 log_info "Next steps:"
 log_info "  1. Test the new Dockerfiles"
