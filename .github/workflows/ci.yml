@@ -85,6 +85,14 @@ jobs:
           echo "🔨 Building and testing new Docker images..."
           ./scripts/build-all-images.sh
 
+      - name: Install hadolint
+        run: |
+          echo "📦 Installing hadolint for Dockerfile validation..."
+          curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o hadolint
+          chmod +x hadolint
+          sudo mv hadolint /usr/local/bin/
+          echo "✅ hadolint installed: $(hadolint --version)"
+
       - name: Generate and Validate Dockerfiles
         run: |
           echo "📝 Generating Dockerfiles with shared patterns..."
