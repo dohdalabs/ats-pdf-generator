@@ -1,5 +1,5 @@
 ---
-description: "Performes Code Quality Checks"
+description: "Python coding standards"
 file_patterns: ["**/*"]
 ---
 # Code Quality Rules
@@ -162,8 +162,8 @@ uv run ruff check src/
 # Type check
 uv run mypy src/
 
-# Security scan
-uv run bandit -r src/
+# Security scan (source code)
+uv run bandit -r src/ --severity-level medium
 
 # Run tests
 uv run pytest

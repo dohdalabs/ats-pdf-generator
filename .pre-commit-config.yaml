@@ -42,10 +42,11 @@ repos:
     hooks:
       - id: markdownlint
         name: markdownlint
-        entry: markdownlint
+        entry: ./scripts/quality/check-markdown.sh
         language: system
         files: \.md$
-        args: [--config=.markdownlint.jsonc, --fix]
+        pass_filenames: false
+        always_run: true
 
   - repo: local
     hooks:
