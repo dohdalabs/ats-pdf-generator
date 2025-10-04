@@ -62,7 +62,7 @@ repos:
     hooks:
       - id: dockerfile-lint
         name: Dockerfile lint
-        entry: hadolint
+        entry: ./scripts/quality/check-docker.sh
         language: system
         files: docker/Dockerfile
         pass_filenames: false

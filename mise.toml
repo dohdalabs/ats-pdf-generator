@@ -23,8 +23,8 @@ test = "uv run pytest"
 
 # 📝 Individual Linting
 lint-python = "uv run ruff check ."
-lint-shell = "shellcheck install.sh src/*.sh || true"
-lint-docker = "hadolint --ignore DL3008,DL3009,DL3018,DL3045,DL4006 docker/Dockerfile.optimized docker/Dockerfile.alpine docker/Dockerfile.dev || true"
+lint-shell = "./scripts/quality/check-shell.sh"
+lint-docker = "./scripts/quality/check-docker.sh"
 lint-markdown = "./scripts/quality/check-markdown.sh"
 lint = "mise run lint-python"  # Shortcut for most common linting
 
