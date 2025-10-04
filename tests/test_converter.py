@@ -5,8 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
-from src.ats_converter import main
+from ats_pdf_generator.ats_converter import main
 
 
 class TestATSConverter:
@@ -14,7 +13,7 @@ class TestATSConverter:
 
     def test_converter_import(self) -> None:
         """Test that the converter module can be imported."""
-        from src import ats_converter
+        from ats_pdf_generator import ats_converter
 
         assert ats_converter is not None
 
