@@ -177,11 +177,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/trivy
-          key: trivy-db-${{ matrix.image }}-${{ hashFiles('**/Dockerfile*') }}-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('uv.lock') }}
+          key: trivy-db-${{ runner.os }}-${{ github.run_id }}
           restore-keys: |
-            trivy-db-${{ matrix.image }}-${{ hashFiles('**/Dockerfile*') }}-${{ hashFiles('pyproject.toml') }}-
-            trivy-db-${{ matrix.image }}-${{ hashFiles('**/Dockerfile*') }}-
-            trivy-db-${{ matrix.image }}-
+            trivy-db-${{ runner.os }}-
             trivy-db-
 
       - name: Run Trivy vulnerability scanner (${{ matrix.image }})
@@ -287,18 +285,3 @@ jobs:
             VENDOR=DohDa Labs
             UV_CACHE_DIR=/tmp/uv-cache
             BUILDKIT_INLINE_CACHE=1
-
-  summary:
-    name: CI Summary
-    runs-on: ubuntu-latest
-    needs: [quality, docker-test, security-scan-summary, publish]
-    if: always()
-    steps:
-      - name: Generate summary
-        run: |
-          echo "📋 CI Summary:"
-          echo "  🐍 Quality: Code quality checks completed"
-          echo "  🐳 Docker Test: Comprehensive Docker image testing"
-          echo "  🔒 Security: Vulnerability scanning completed"
-          echo "  📦 Publish: Images published to registries (main branch only)"
-          echo "✅ All CI checks completed successfully!"

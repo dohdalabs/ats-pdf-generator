@@ -1,0 +1,20 @@
+# Trivy ignore file
+# Add patterns to ignore specific vulnerabilities or files
+
+# Ignore development dependencies in node_modules
+node_modules/
+
+# Ignore Python virtual environments
+.venv/
+venv/
+env/
+
+# Ignore build artifacts
+dist/
+build/
+*.egg-info/
+
+# Ignore test files
+tests/
+test_*/
+*_test.py
