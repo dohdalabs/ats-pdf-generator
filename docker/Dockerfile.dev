@@ -75,13 +75,9 @@ COPY examples/ ./examples/
 RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md
 
 # Install dependencies including dev tools using uv sync
-RUN uv sync --frozen
-
-# Set up pre-commit hooks (optional)
-RUN uv add pre-commit
-
-# Remove README.md as it's not needed in the final image
-RUN rm README.md
+RUN uv sync --frozen && \
+    uv add pre-commit && \
+    rm README.md
 
 # Create a non-root user for development
 RUN useradd -m -s /bin/bash developer && \

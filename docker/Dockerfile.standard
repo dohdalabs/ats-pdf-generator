@@ -30,6 +30,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Dependencies stage (cached separately from application code)
 FROM base AS deps
 
+# Set shell with pipefail for better error handling
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Install uv using the official installer (faster and more reliable)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
@@ -41,10 +44,8 @@ RUN uv --version
 WORKDIR /build
 COPY pyproject.toml uv.lock ./
 COPY src/ ./src/
-RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md
-
-# Create virtual environment and install dependencies using uv sync
-RUN uv sync --frozen --no-dev
+RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md && \
+    uv sync --frozen --no-dev
 
 # Stage 2: Runtime stage (reuses base stage for better caching)
 FROM base AS runtime
@@ -98,11 +99,9 @@ RUN useradd -m -s /bin/bash converter && \
 COPY --chown=converter:converter src/ats_pdf_generator/ats_converter.py ./
 COPY --chown=converter:converter templates/ /app/templates/
 
-# Make the script executable
-RUN chmod +x /app/ats_converter.py
-
-# Verify the file exists and is executable
-RUN ls -la /app/ats_converter.py
+# Make the script executable and verify it exists
+RUN chmod +x /app/ats_converter.py && \
+    ls -la /app/ats_converter.py
 
 # Switch to non-root user
 USER converter
