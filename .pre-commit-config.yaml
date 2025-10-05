@@ -12,26 +12,6 @@ repos:
       - id: check-json
       - id: check-toml
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.0
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [types-requests, types-click]
-        args: [--ignore-missing-imports]
-
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.6
-    hooks:
-      - id: shellcheck
-        args: [--severity=warning]
-
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v3.20.0
     hooks:
@@ -40,31 +20,37 @@ repos:
 
   - repo: local
     hooks:
-      - id: markdownlint
-        name: markdownlint
+      - id: python-quality
+        name: Python Quality Checks
+        entry: ./scripts/quality/check-python.sh
+        language: system
+        files: \.(py)$
+        pass_filenames: true
+
+  - repo: local
+    hooks:
+      - id: shell-quality
+        name: Shell Quality Checks
+        entry: ./scripts/quality/check-shell.sh
+        language: system
+        files: \.(sh|bash)$
+        pass_filenames: true
+
+  - repo: local
+    hooks:
+      - id: markdown-quality
+        name: Markdown Quality Checks
         entry: ./scripts/quality/check-markdown.sh
         language: system
         files: \.md$
-        pass_filenames: false
-        always_run: true
+        pass_filenames: true
 
   - repo: local
     hooks:
-      - id: pytest
-        name: pytest
-        entry: pytest
-        language: system
-        pass_filenames: false
-        always_run: true
-        stages: [manual]
-
-  - repo: local
-    hooks:
-      - id: dockerfile-lint
-        name: Dockerfile lint
+      - id: docker-quality
+        name: Docker Quality Checks
         entry: ./scripts/quality/check-docker.sh
         language: system
         files: docker/Dockerfile
-        pass_filenames: false
-        always_run: true
+        pass_filenames: true
         stages: [manual]

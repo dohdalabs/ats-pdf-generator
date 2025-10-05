@@ -1,9 +1,53 @@
 #!/bin/bash
 
-# ATS PDF Generator Installer
-# Simple one-liner installer for the ATS PDF Generator utility
+# ATS PDF Generator Installer Script
+#
+# This script provides a quick and easy way to install or update the ATS PDF Generator utility.
+# Usage:
+#   curl -sSL https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/install.sh | bash
+#   or download and run: ./install.sh
+#
+# Purpose:
+#   - Installs the ATS PDF Generator tool for converting Markdown resumes to ATS-friendly PDFs.
+#   - Supports updating to the latest version and displaying help.
+#   - Designed for a smooth, no-sudo, one-liner installation experience.
 
 set -e
+
+# Function to show usage
+show_usage() {
+    cat << 'USAGE_EOF'
+SYNOPSIS
+    install.sh [OPTIONS]
+
+DESCRIPTION
+    ATS PDF Generator Installer - Simple one-liner installer for the ATS PDF Generator utility.
+    This script installs the ATS PDF Generator tool that converts Markdown files to
+    ATS-compatible PDFs for job applications.
+
+OPTIONS
+    -h, --help              Show this help message and exit
+    update, -u, --update    Update to the latest version
+
+EXAMPLES
+    # Install the ATS PDF Generator
+    curl -sSL https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/install.sh | bash
+
+    # Update to the latest version
+    curl -sSL https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/install.sh | bash -s -- --update
+
+    # Show help
+    ./install.sh --help
+
+For more information: https://github.com/dohdalabs/ats-pdf-generator
+USAGE_EOF
+}
+
+# Check if help is requested (must be first)
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    show_usage
+    exit 0
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -92,42 +136,6 @@ set -e
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Function to show usage
-show_usage() {
-    cat << 'USAGE_EOF'
-ATS PDF Generator
-Convert your Markdown content to ATS-compatible PDFs
-
-Usage: ats-pdf [OPTIONS] <input_file>
-
-Options:
-    -o, --output FILE        Output PDF file (default: input.pdf)
-    --type TYPE             Document type (cover-letter, profile)
-    --title TITLE           Document title
-    --author AUTHOR         Document author
-    --date DATE             Document date
-    -h, --help              Show this help message
-    update, -u, --update    Update to the latest version
-
-Document Types:
-    cover-letter  - ATS-optimized cover letter (default)
-    profile       - Professional profile/summary document
-
-Examples:
-    ats-pdf cover-letter.md                     # Convert cover letter
-    ats-pdf profile.md --type profile           # Convert professional profile
-    ats-pdf cover-letter.md -o "John_Doe_Cover_Letter.pdf"
-    ats-pdf update                              # Update to latest version
-
-For more information: https://github.com/dohdalabs/ats-pdf-generator
-USAGE_EOF
-}
-
-# Check if help is requested
-if [[ "$1" == "-h" || "$1" == "--help" ]]; then
-    show_usage
-    exit 0
-fi
 
 # Check if update is requested
 if [[ "$1" == "update" || "$1" == "--update" || "$1" == "-u" ]]; then

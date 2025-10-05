@@ -1,0 +1,15 @@
+# Shell scripts that should skip help validation
+# Add script names (just the filename, not the path) to this file
+# to exempt them from help validation requirements
+
+# Utility scripts (meant to be sourced, not executed)
+common.sh
+logging.sh
+ci.sh
+
+# Scripts that are wrappers or have special execution contexts
+ats-document-converter.sh
+
+# Add more script names here as needed
+# Example:
+# my-special-script.sh
