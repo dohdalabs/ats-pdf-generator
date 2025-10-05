@@ -25,6 +25,47 @@ set -euo pipefail
 # Get the directory of this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Function to show usage
+show_usage() {
+    cat << 'USAGE_EOF'
+SYNOPSIS
+    check-markdown.sh [OPTIONS]
+
+DESCRIPTION
+    Markdown Quality & Formatting Script for ATS PDF Generator.
+    This script runs markdownlint on all Markdown files (.md and .mdc) in the project
+    to check for style and formatting issues. It is intended to be used
+    as part of your local development workflow or in CI to ensure
+    consistent Markdown quality across the codebase.
+
+OPTIONS
+    -h, --help              Show this help message and exit
+    --fix                   Auto-fix formatting issues where possible
+
+EXAMPLES
+    # Lint Markdown files
+    ./scripts/quality/check-markdown.sh
+
+    # Auto-fix formatting issues
+    ./scripts/quality/check-markdown.sh --fix
+
+    # Show help
+    ./scripts/quality/check-markdown.sh --help
+
+Requirements:
+    - Node.js and pnpm must be installed (see mise.toml for managed setup)
+    - markdownlint is installed via pnpm
+
+For more information: https://github.com/dohdalabs/ats-pdf-generator
+USAGE_EOF
+}
+
+# Check if help is requested
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    show_usage
+    exit 0
+fi
+
 
 
 # Source utilities
@@ -38,13 +79,30 @@ init_logger --format "%d [%l] %m"
 # Main Markdown quality check function
 main() {
     local fix_mode=false
+    local files_to_check=()
 
-    # Check for --fix argument
-    if [ "${1:-}" = "--fix" ]; then
-        fix_mode=true
-        log_info "📝 Running Markdown formatting (fix mode)..."
+    # Parse arguments
+    for arg in "$@"; do
+        if [ "$arg" = "--fix" ]; then
+            fix_mode=true
+        else
+            files_to_check+=("$arg")
+        fi
+    done
+
+    if [ ${#files_to_check[@]} -eq 0 ]; then
+        if [ "$fix_mode" = true ]; then
+            log_info "📝 Running Markdown formatting (fix mode) on all files..."
+        else
+            log_info "📝 Running Markdown quality checks on all files..."
+        fi
+        files_to_check=("**/*.md" "**/*.mdc")
     else
-        log_info "📝 Running Markdown quality checks..."
+        if [ "$fix_mode" = true ]; then
+            log_info "📝 Running Markdown formatting (fix mode) on specific files: ${files_to_check[*]}"
+        else
+            log_info "📝 Running Markdown quality checks on specific files: ${files_to_check[*]}"
+        fi
     fi
 
     # Check if pnpm is available (for markdownlint-cli)
@@ -67,11 +125,21 @@ main() {
         config_file=""
     fi
 
-    # Find all Markdown files (including .mdc files)
+    # Use provided files or find all Markdown files
     local markdown_files=()
-    while IFS= read -r -d '' file; do
-        markdown_files+=("$file")
-    done < <(find . \( -name "*.md" -o -name "*.mdc" \) -type f -print0)
+    if [ ${#files_to_check[@]} -eq 0 ] || [ "${files_to_check[0]}" = "**/*.md" ]; then
+        # Find all Markdown files (including .mdc files)
+        while IFS= read -r -d '' file; do
+            markdown_files+=("$file")
+        done < <(find . \( -name "*.md" -o -name "*.mdc" \) -type f -print0)
+    else
+        # Use provided files, filtering for markdown files
+        for file in "${files_to_check[@]}"; do
+            if [[ "$file" =~ \.(md|mdc)$ ]]; then
+                markdown_files+=("$file")
+            fi
+        done
+    fi
 
     if [ ${#markdown_files[@]} -eq 0 ]; then
         log_warning "No Markdown files (.md or .mdc) found to check"
