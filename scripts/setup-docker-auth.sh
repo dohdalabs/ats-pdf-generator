@@ -112,17 +112,35 @@ main() {
 
 # Show usage if help requested
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-    echo "Registry Setup Script for ATS PDF Generator"
-    echo ""
-    echo "This script sets up authentication for multiple Docker registries:"
-    echo "  - Docker Hub"
-    echo "  - GitHub Container Registry (ghcr.io)"
-    echo ""
-    echo "Prerequisites:"
-    echo "  - Docker must be running"
-    echo "  - For GitHub: Set GITHUB_TOKEN and GITHUB_USERNAME environment variables"
-    echo ""
-    echo "Usage: $0"
+    cat << 'USAGE_EOF'
+SYNOPSIS
+    setup-docker-auth.sh [OPTIONS]
+
+DESCRIPTION
+    Registry Setup Script for ATS PDF Generator.
+    This script sets up authentication for multiple Docker registries to enable
+    pushing and pulling Docker images for the ATS PDF Generator project.
+
+OPTIONS
+    -h, --help              Show this help message and exit
+
+EXAMPLES
+    # Set up Docker registry authentication
+    ./scripts/setup-docker-auth.sh
+
+    # Show help
+    ./scripts/setup-docker-auth.sh --help
+
+Prerequisites:
+    - Docker must be running
+    - For GitHub: Set GITHUB_TOKEN and GITHUB_USERNAME environment variables
+
+Supported Registries:
+    - Docker Hub
+    - GitHub Container Registry (ghcr.io)
+
+For more information: https://github.com/dohdalabs/ats-pdf-generator
+USAGE_EOF
     exit 0
 fi
 
