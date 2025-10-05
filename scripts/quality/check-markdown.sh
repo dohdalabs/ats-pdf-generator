@@ -4,7 +4,7 @@
 # ----------------------------------------
 # Markdown Quality & Formatting Script
 #
-# This script runs markdownlint on all Markdown files in the project
+# This script runs markdownlint on all Markdown files (.md and .mdc) in the project
 # to check for style and formatting issues. It is intended to be used
 # as part of your local development workflow or in CI to ensure
 # consistent Markdown quality across the codebase.
@@ -67,18 +67,18 @@ main() {
         config_file=""
     fi
 
-    # Find all Markdown files
+    # Find all Markdown files (including .mdc files)
     local markdown_files=()
     while IFS= read -r -d '' file; do
         markdown_files+=("$file")
-    done < <(find . -name "*.md" -type f -print0)
+    done < <(find . \( -name "*.md" -o -name "*.mdc" \) -type f -print0)
 
     if [ ${#markdown_files[@]} -eq 0 ]; then
-        log_warning "No Markdown files found to check"
+        log_warning "No Markdown files (.md or .mdc) found to check"
         exit 0
     fi
 
-    log_info "Found ${#markdown_files[@]} Markdown file(s) to check"
+    log_info "Found ${#markdown_files[@]} Markdown file(s) (.md and .mdc) to check"
 
     # Run markdownlint on all Markdown files using pnpm dlx
     local failed=0
@@ -95,8 +95,8 @@ main() {
         cmd_args+=("--fix")
     fi
 
-    # Run markdownlint
-    if ! pnpm dlx markdownlint-cli '**/*.md' "${cmd_args[@]}"; then
+    # Run markdownlint (--dot flag includes dot-directories like .cursor/)
+    if ! pnpm dlx markdownlint-cli '**/*.{md,mdc}' --dot "${cmd_args[@]}"; then
         if [ "$fix_mode" = true ]; then
             log_warning "Markdown formatting completed with issues (non-fatal)"
         else
