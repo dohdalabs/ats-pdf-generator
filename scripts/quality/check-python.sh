@@ -25,6 +25,45 @@ set -euo pipefail
 # Get the directory of this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Function to show usage
+show_usage() {
+    cat << 'USAGE_EOF'
+SYNOPSIS
+    check-python.sh [OPTIONS]
+
+DESCRIPTION
+    Python Quality Check Script for ATS PDF Generator.
+    This script runs all Python quality checks for the project, including:
+    - Linting (ruff)
+    - Code formatting (ruff format)
+    - Type checking (mypy)
+    - Testing (pytest with coverage)
+
+OPTIONS
+    -h, --help              Show this help message and exit
+
+EXAMPLES
+    # Run all Python quality checks
+    ./scripts/quality/check-python.sh
+
+    # Show help
+    ./scripts/quality/check-python.sh --help
+
+Requirements:
+    - Python virtual environment must be set up with 'uv sync'
+    - All dependencies installed via 'uv'
+    - Recommended: Use 'mise' to manage Python version and tools
+
+For more information: https://github.com/dohdalabs/ats-pdf-generator
+USAGE_EOF
+}
+
+# Check if help is requested
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    show_usage
+    exit 0
+fi
+
 # Source utilities
 source "$SCRIPT_DIR/../utils/logging.sh"
 source "$SCRIPT_DIR/../utils/ci.sh"
@@ -35,7 +74,15 @@ init_logger --format "%d [%l] %m"
 
 # Main Python quality check function
 main() {
-    log_info "🐍 Running Python quality checks..."
+    # Get list of files to check (if any provided)
+    local files_to_check=("$@")
+
+    if [ ${#files_to_check[@]} -eq 0 ]; then
+        log_info "🐍 Running Python quality checks on all files..."
+        files_to_check=(".")
+    else
+        log_info "🐍 Running Python quality checks on specific files: ${files_to_check[*]}"
+    fi
 
     # Check if UV is available
     if ! command -v uv >/dev/null 2>&1; then
@@ -52,11 +99,13 @@ main() {
     if is_ci; then
         # In CI, use direct commands for better error reporting
         log_step "Running ruff linting..."
-        uv run ruff check .
+        uv run ruff check "${files_to_check[@]}"
 
         log_step "Checking code formatting..."
-        uv run ruff format --check .
+        uv run ruff format --check "${files_to_check[@]}"
 
+        # For type checking and tests, we still run on the whole project
+        # as they need the full context
         log_step "Running type checking..."
         uv run mypy src/
 
