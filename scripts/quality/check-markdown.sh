@@ -148,9 +148,21 @@ main() {
 
     log_info "Found ${#markdown_files[@]} Markdown file(s) (.md and .mdc) to check"
 
+    # Determine if we are checking specific files (not the glob defaults)
+    local checking_specific=true
+    if [ ${#files_to_check[@]} -eq 0 ] || [ "${files_to_check[0]}" = "**/*.md" ]; then
+        checking_specific=false
+    fi
+
     # Run markdownlint on all Markdown files using pnpm dlx
     local failed=0
     local cmd_args=()
+    local ignore_args=()
+
+    # Only include --dot when scanning entire repo (not needed for explicit files)
+    if [ "$checking_specific" = false ]; then
+        cmd_args+=("--dot")
+    fi
 
     # Add config file if it exists
     if [ -n "$config_file" ]; then
@@ -163,14 +175,28 @@ main() {
         cmd_args+=("--fix")
     fi
 
-    # Run markdownlint (--dot flag includes dot-directories like .cursor/)
-    if ! pnpm dlx markdownlint-cli '**/*.{md,mdc}' --dot "${cmd_args[@]}"; then
-        if [ "$fix_mode" = true ]; then
-            log_warning "Markdown formatting completed with issues (non-fatal)"
-        else
-            log_warning "Markdown linting found issues (non-fatal)"
-        fi
-        ((failed++))
+    # When checking specific files, bypass .markdownlintignore (which may ignore tmp/)
+    if [ "$checking_specific" = true ]; then
+        ignore_args+=("--ignore-path" "/dev/null")
+    fi
+
+    # Determine execution mode based on --fix (stdin not supported with --fix)
+    if [ "$fix_mode" = true ]; then
+        for file in "${markdown_files[@]}"; do
+            log_info "Formatting $file..."
+            if ! pnpm dlx markdownlint-cli "${ignore_args[@]}" "${cmd_args[@]}" "$file"; then
+                log_warning "Markdown formatting completed with issues (non-fatal)"
+                failed=1
+            fi
+        done
+    else
+        for file in "${markdown_files[@]}"; do
+            log_info "Checking $file..."
+            if ! pnpm dlx markdownlint-cli "${ignore_args[@]}" "${cmd_args[@]}" "$file"; then
+                log_warning "Markdown linting found issues (non-fatal)"
+                failed=1
+            fi
+        done
     fi
 
     if [ $failed -eq 0 ]; then
