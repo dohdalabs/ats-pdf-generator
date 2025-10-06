@@ -484,6 +484,9 @@ cmd_validate() {
         return 1
     fi
 
+    # Shared hadolint arguments (mirrors scripts/quality/check-docker.sh)
+    local hadolint_common_args=(--ignore DL3008 --ignore DL3018)
+
     # Validate each Dockerfile directly
     local total_failed=0
     for dockerfile in "${dockerfiles[@]}"; do
@@ -495,7 +498,7 @@ cmd_validate() {
 
         log_info "Validating $dockerfile with hadolint..."
 
-        if hadolint "$dockerfile"; then
+        if hadolint "${hadolint_common_args[@]}" "$dockerfile"; then
             log_success "$dockerfile passed hadolint analysis"
         else
             log_error "$dockerfile failed hadolint analysis"
