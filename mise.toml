@@ -19,7 +19,7 @@ setup-local = "scripts/setup-local-env.sh"
 # 🔧 Most Common Quick Actions
 check = "mise run lint-python && mise run lint-shell && mise run lint-docker && mise run lint-markdown"  # Check all code
 fix = "mise run format-python && mise run format-markdown"  # Auto-fix formatting issues
-pytest = "uv run pytest"
+test-python = "uv run pytest"  # Python unit tests
 
 # 📝 Individual Linting
 lint-python = "uv run ruff check ."
@@ -34,6 +34,7 @@ format-markdown = "./scripts/quality/check-markdown.sh --fix"
 # 🔍 Additional Checks
 check-python = "mise run lint-python && mise run typecheck"
 typecheck = "uv run mypy src/ats_pdf_generator/"
+check-security = "scripts/quality/check-security.sh"
 
 # ✅ Comprehensive Quality Checks
 check-all = "scripts/quality-check.sh"  # Everything: linting, testing, security

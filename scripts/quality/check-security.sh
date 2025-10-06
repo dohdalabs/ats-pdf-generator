@@ -24,9 +24,8 @@ SYNOPSIS
 
 DESCRIPTION
     Run a Trivy filesystem scan against the current repository using the
-    project's recommended settings. When Trivy is not installed, the script
-    exits successfully after printing installation guidance so local
-    workflows remain smooth.
+    project's recommended settings. Uses Docker for local development and
+    direct binary for CI environments.
 
 OPTIONS
     -h, --help              Show this help message and exit
@@ -59,27 +58,49 @@ fi
 main() {
     log_info "🔒 Running security checks..."
 
-    # Check if trivy is available
-    if ! command -v trivy >/dev/null 2>&1; then
-        log_warning "trivy not found, skipping security checks"
-        log_info "To install trivy:"
-        log_info "  - Development: mise install (managed by mise.toml)"
-        log_info "  - CI: Install via your CI environment"
-        log_info "  - Manual: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh"
-        exit 0
-    fi
+    if is_ci; then
+        # In CI, use direct trivy binary (should be installed by CI)
+        if ! command -v trivy >/dev/null 2>&1; then
+            log_error "trivy not found in CI environment"
+            exit 1
+        fi
 
-    log_step "Running trivy filesystem scan..."
+        log_step "Running trivy filesystem scan (CI mode)..."
 
-    # Set cache directory for better performance
-    export TRIVY_CACHE_DIR="${TRIVY_CACHE_DIR:-$HOME/.cache/trivy}"
-    mkdir -p "$TRIVY_CACHE_DIR"
+        # Set cache directory for better performance
+        export TRIVY_CACHE_DIR="${TRIVY_CACHE_DIR:-$HOME/.cache/trivy}"
+        mkdir -p "$TRIVY_CACHE_DIR"
 
-    # Run trivy filesystem scan with optimized settings
-    if ! trivy fs . --cache-dir "$TRIVY_CACHE_DIR" --format table --severity HIGH,CRITICAL; then
-        log_warning "Security scan found issues (non-fatal)"
-        log_info "Review the trivy output above for security vulnerabilities"
-        exit 0
+        # Run trivy filesystem scan with optimized settings
+        if ! trivy fs . --cache-dir "$TRIVY_CACHE_DIR" --format table --severity HIGH,CRITICAL; then
+            log_warning "Security scan found issues (non-fatal)"
+            log_info "Review the trivy output above for security vulnerabilities"
+            exit 0
+        fi
+    else
+        # Local development, use Docker
+        log_step "Running trivy filesystem scan (Docker mode)..."
+
+        # Check if Docker is available
+        if ! command -v docker >/dev/null 2>&1; then
+            log_warning "Docker not found, skipping security checks"
+            log_info "To run security checks locally:"
+            log_info "  - Install Docker: https://docs.docker.com/get-docker/"
+            log_info "  - Or install trivy directly: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh"
+            exit 0
+        fi
+
+        # Run trivy via Docker with volume mounting for cache
+        if ! docker run --rm \
+            -v "$(pwd):/workspace" \
+            -v "$HOME/.cache/trivy:/root/.cache/trivy" \
+            -w /workspace \
+            aquasec/trivy:0.67.0 \
+            fs . --format table --severity HIGH,CRITICAL; then
+            log_warning "Security scan found issues (non-fatal)"
+            log_info "Review the trivy output above for security vulnerabilities"
+            exit 0
+        fi
     fi
 
     log_success "Security checks completed - no critical issues found"

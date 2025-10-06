@@ -104,7 +104,7 @@ check_python() {
         mise run lint-python
         mise run format-python
         mise run typecheck
-        mise run test
+        mise run test-python
     fi
 
     log_success "Python quality checks completed"
@@ -163,13 +163,13 @@ check_markdown() {
 check_security() {
     log_info "🔒 Running security scan..."
 
-    if command -v trivy >/dev/null 2>&1; then
-        trivy fs . --format table --severity HIGH,CRITICAL || {
+    if [ -f "./scripts/quality/check-security.sh" ]; then
+        if ! ./scripts/quality/check-security.sh; then
             log_warning "Security scan found issues (non-fatal)"
             return 0
-        }
+        fi
     else
-        log_warning "trivy not found, skipping security scan"
+        log_warning "check-security.sh not found, skipping security scan"
     fi
 
     log_success "Security scan completed"

@@ -123,7 +123,7 @@ main() {
         mise run typecheck
 
         log_step "Running tests via mise..."
-        mise run test
+        mise run test-python
     fi
 
     log_success "Python quality checks completed"
