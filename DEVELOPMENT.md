@@ -207,6 +207,14 @@ The project provides comprehensive automation for common development tasks:
 
 For specific script usage, see the [Docker Management Guide](docs/DOCKER_MANAGEMENT.md) and run `./scripts/quality-check.sh --help` for available options.
 
+**Available Scripts**:
+
+- `./scripts/quality-check.sh` - Comprehensive quality checks (Python, shell, Docker, Markdown, security)
+- [`./scripts/docker-manager.sh`](./scripts/docker-manager.sh) - Unified Docker operations (build, test, validate, publish)
+- `./scripts/setup-local-env.sh` - One-command local development setup
+- `./scripts/convert-pdf.sh` - PDF conversion utility
+- `./scripts/benchmark-security-tools.sh` - Security tool performance testing
+
 **Script Standards**: All scripts follow consistent standards defined in `.cursor/rules/script-standards.mdc` and are validated in CI to ensure they have proper `--help` options and meet quality requirements.
 
 ### Architectural Benefits
