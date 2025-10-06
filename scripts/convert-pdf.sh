@@ -1,109 +1,126 @@
 #!/bin/bash
+set -euo pipefail
 
-# ATS PDF Generator - Development Convenience Script
-# Simple wrapper for converting documents using the dev Docker image
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/utils/logging.sh"
+source "$SCRIPT_DIR/utils/common.sh"
 
-set -e
-
-# Colors for output
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
-
-print_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
+init_logger
 
 show_usage() {
-    cat << EOF
-ATS PDF Generator - Development Convenience Script
+    cat <<'USAGE_EOF'
+SYNOPSIS
+    convert-pdf.sh [OPTIONS] <input_file>
 
-Usage: $0 <input_file> [options]
+DESCRIPTION
+    Convert a Markdown file into a PDF using the development Docker image. The
+    script mounts the working directory into the container and writes the
+    resulting PDF next to the source file.
 
-Options:
-    -o, --output FILE        Output PDF file (default: input.pdf)
-    --type TYPE             Document type (cover-letter, profile)
-    -h, --help              Show this help message
+OPTIONS
+    -o, --output FILE        Name of the generated PDF (defaults to input basename)
+    --type TYPE             Document type hint (cover-letter, profile)
+    -h, --help              Show this help message and exit
 
-Examples:
-    $0 cover-letter.md                     # Convert cover letter
-    $0 profile.md --type profile           # Convert professional profile
-    $0 cover-letter.md -o "John_Doe_Cover_Letter.pdf"
+EXAMPLES
+    ./scripts/convert-pdf.sh examples/sample-cover-letter.md
+    ./scripts/convert-pdf.sh examples/sample-profile.md --type profile
+    ./scripts/convert-pdf.sh examples/sample-cover-letter.md -o build/cover.pdf
 
-This script uses the development Docker image with uv for fast conversions.
-EOF
+For more information: https://github.com/dohdalabs/ats-pdf-generator
+USAGE_EOF
 }
 
-# Check if input file is provided
-if [ $# -eq 0 ] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+if ! parse_common_flags "$@"; then
+    show_usage
+    exit 2
+fi
+
+if [ ${#COMMON_FLAGS_REMAINING[@]} -gt 0 ]; then
+    set -- "${COMMON_FLAGS_REMAINING[@]}"
+else
+    set --
+fi
+
+if [ "$COMMON_FLAG_SHOW_HELP" = true ]; then
     show_usage
     exit 0
 fi
 
-# Parse arguments
-input_file="$1"
-shift
+if [ $# -eq 0 ]; then
+    show_usage
+    exit 2
+fi
 
-output_file=""
+INPUT_FILE=""
+OUTPUT_FILE=""
+DOCUMENT_TYPE=""
 
-while [[ $# -gt 0 ]]; do
-    case $1 in
+while [ $# -gt 0 ]; do
+    case "$1" in
         -o|--output)
-            output_file="$2"
+            OUTPUT_FILE="$2"
             shift 2
             ;;
         --type)
-            # Document type parameter (currently unused)
+            DOCUMENT_TYPE="$2"
             shift 2
             ;;
-        *)
-            print_error "Unknown option: $1"
+        --)
+            shift
+            break
+            ;;
+        -*)
+            log_error "Unknown option: $1"
             show_usage
-            exit 1
+            exit 2
+            ;;
+        *)
+            INPUT_FILE="$1"
+            shift
+            break
             ;;
     esac
+
 done
 
-# Validate input file
-if [ ! -f "$input_file" ]; then
-    print_error "Input file not found: $input_file"
+if [ -z "$INPUT_FILE" ]; then
+    log_error "Missing input file"
+    show_usage
+    exit 2
+fi
+
+if [ ! -f "$INPUT_FILE" ]; then
+    log_error "Input file not found: $INPUT_FILE"
     exit 1
 fi
 
-# Set default output file if not specified
-if [ -z "$output_file" ]; then
-    output_file="${input_file%.md}.pdf"
+if [ $# -gt 0 ]; then
+    log_error "Unexpected positional arguments: $*"
+    show_usage
+    exit 2
 fi
 
-# Get the directory of the input file
-input_dir=$(dirname "$input_file")
-input_filename=$(basename "$input_file")
+if [ -z "$OUTPUT_FILE" ]; then
+    OUTPUT_FILE="${INPUT_FILE%.md}.pdf"
+fi
 
-print_info "Converting: $input_file -> $output_file"
+INPUT_DIR="$(dirname "$INPUT_FILE")"
+INPUT_FILENAME="$(basename "$INPUT_FILE")"
+OUTPUT_BASENAME="$(basename "$OUTPUT_FILE")"
 
-# Build the Docker command
-docker_cmd="docker run --rm -v \"$(pwd)/$input_dir:/app/input\" -w /app ats-pdf-generator:dev"
-python_cmd="source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py input/$input_filename -o input/$(basename "$output_file")"
+log_info "Converting: $INPUT_FILE -> $OUTPUT_FILE"
+if [ -n "$DOCUMENT_TYPE" ]; then
+    log_info "Document type: $DOCUMENT_TYPE"
+fi
 
-# Execute the conversion
-if eval "$docker_cmd bash -c \"$python_cmd\""; then
-    print_success "Conversion completed successfully!"
-    print_info "Output file: $output_file"
+DOCKER_CMD="docker run --rm -v \"$(pwd)/$INPUT_DIR:/app/input\" -w /app ats-pdf-generator:dev"
+PYTHON_CMD="source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py input/$INPUT_FILENAME -o input/$OUTPUT_BASENAME"
+
+if eval "$DOCKER_CMD bash -c \"$PYTHON_CMD\""; then
+    log_success "Conversion completed successfully"
+    log_info "Output file: $OUTPUT_FILE"
 else
-    print_error "Conversion failed!"
+    log_error "Conversion failed"
     exit 1
 fi

@@ -1,46 +1,117 @@
 #!/bin/bash
-# benchmark-security-tools.sh
-# Security tools performance benchmarking script
-
 set -euo pipefail
 
-# Configuration
-IMAGE="${1:-ats-pdf-generator:alpine}"
-ITERATIONS="${2:-3}"
-OUTPUT_DIR="${3:-./benchmark-results}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+source "$SCRIPT_DIR/utils/logging.sh"
+source "$SCRIPT_DIR/utils/common.sh"
 
-# Create output directory
+init_logger
+
+IMAGE="ats-pdf-generator:alpine"
+ITERATIONS=3
+OUTPUT_DIR="./benchmark-results"
+
+show_usage() {
+    cat <<'USAGE_EOF'
+SYNOPSIS
+    benchmark-security-tools.sh [OPTIONS]
+
+DESCRIPTION
+    Benchmark container security scanners using a specified image. Measures
+    execution time across multiple iterations and records results to disk.
+
+OPTIONS
+    -h, --help              Show this help message and exit
+    --image NAME            Container image to scan (default: ats-pdf-generator:alpine)
+    --iterations N          Number of iterations per tool (default: 3)
+    --output DIR            Directory to store benchmark results (default: ./benchmark-results)
+
+EXAMPLES
+    ./scripts/benchmark-security-tools.sh
+    ./scripts/benchmark-security-tools.sh --image my-image:latest --iterations 5
+
+For more information: https://github.com/dohdalabs/ats-pdf-generator
+USAGE_EOF
+}
+
+if ! parse_common_flags "$@"; then
+    show_usage
+    exit 2
+fi
+
+if [ ${#COMMON_FLAGS_REMAINING[@]} -gt 0 ]; then
+    set -- "${COMMON_FLAGS_REMAINING[@]}"
+else
+    set --
+fi
+
+if [ "$COMMON_FLAG_SHOW_HELP" = true ]; then
+    show_usage
+    exit 0
+fi
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --image)
+            IMAGE="$2"
+            shift 2
+            ;;
+        --iterations)
+            ITERATIONS="$2"
+            shift 2
+            ;;
+        --output)
+            OUTPUT_DIR="$2"
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            log_error "Unknown option: $1"
+            show_usage
+            exit 2
+            ;;
+        *)
+            log_error "Unexpected argument: $1"
+            show_usage
+            exit 2
+            ;;
+    esac
+
+done
+
+if [ $# -gt 0 ]; then
+    log_error "Unexpected positional arguments: $*"
+    exit 2
+fi
+
+if ! command -v bc >/dev/null 2>&1; then
+    log_error "bc (calculator) not found. Install bc to run benchmarks"
+    exit 1
+fi
+
 mkdir -p "$OUTPUT_DIR"
 
-echo -e "${BLUE}🔍 Security Tools Performance Benchmark${NC}"
-echo "======================================"
-echo "Image: $IMAGE"
-echo "Iterations: $ITERATIONS"
-echo "Output Directory: $OUTPUT_DIR"
-echo ""
+log_info "🔍 Security Tools Performance Benchmark"
+log_info "Image: $IMAGE"
+log_info "Iterations: $ITERATIONS"
+log_info "Output Directory: $OUTPUT_DIR"
 
-# Function to run benchmark
 run_benchmark() {
     local tool_name="$1"
     local command="$2"
     local output_file="$OUTPUT_DIR/${tool_name}-benchmark.txt"
 
-    echo -e "${YELLOW}Testing $tool_name...${NC}"
+    log_info "Testing $tool_name..."
 
-    # Check if tool is available
-    if ! command -v "$tool_name" &> /dev/null; then
-        echo -e "${RED}❌ $tool_name not found. Skipping...${NC}"
+    if ! command -v "$tool_name" >/dev/null 2>&1; then
+        log_warning "$tool_name not found. Skipping"
         return 1
     fi
 
-    # Run benchmark
     {
         echo "Tool: $tool_name"
         echo "Image: $IMAGE"
@@ -54,16 +125,16 @@ run_benchmark() {
     local max_time=0
 
     for ((i=1; i<=ITERATIONS; i++)); do
-        echo "  Iteration $i/$ITERATIONS..."
+        log_info "  Iteration $i/$ITERATIONS..."
 
-        # Measure time
-        local start_time
+        local start_time end_time duration
         start_time=$(date +%s.%N)
-        eval "$command" >> "$output_file" 2>&1
-        local end_time
+        if ! eval "$command" >> "$output_file" 2>&1; then
+            log_error "$tool_name command failed"
+            return 1
+        fi
         end_time=$(date +%s.%N)
 
-        local duration
         duration=$(echo "$end_time - $start_time" | bc)
         total_time=$(echo "$total_time + $duration" | bc)
 
@@ -75,7 +146,7 @@ run_benchmark() {
             max_time=$duration
         fi
 
-        echo "    Duration: ${duration}s"
+        log_info "    Duration: ${duration}s"
     done
 
     local avg_time
@@ -90,43 +161,23 @@ run_benchmark() {
         echo "Total Time: ${total_time}s"
     } >> "$output_file"
 
-    echo -e "${GREEN}✅ $tool_name benchmark complete${NC}"
-    echo "  Average: ${avg_time}s"
-    echo "  Min: ${min_time}s"
-    echo "  Max: ${max_time}s"
-    echo ""
+    log_success "$tool_name benchmark complete"
+    log_info "  Average: ${avg_time}s"
+    log_info "  Min: ${min_time}s"
+    log_info "  Max: ${max_time}s"
 }
 
-# Check if bc is available
-if ! command -v bc &> /dev/null; then
-    echo -e "${RED}❌ bc (calculator) not found. Please install bc to run benchmarks.${NC}"
-    exit 1
-fi
-
-# Run benchmarks for each tool
-echo -e "${BLUE}Starting benchmarks...${NC}"
-echo ""
-
-# Trivy benchmark
 run_benchmark "trivy" "trivy image --format table --quiet $IMAGE"
-
-# Grype benchmark
 run_benchmark "grype" "grype $IMAGE --quiet"
-
-# Docker Scout benchmark (if available)
-if command -v docker &> /dev/null; then
+if command -v docker >/dev/null 2>&1; then
     run_benchmark "docker-scout" "docker scout cves $IMAGE --quiet"
 fi
-
-# Snyk benchmark (if available)
-if command -v snyk &> /dev/null; then
+if command -v snyk >/dev/null 2>&1; then
     run_benchmark "snyk" "snyk container test $IMAGE --quiet"
 fi
 
-# Generate summary report
-echo -e "${BLUE}📊 Generating summary report...${NC}"
+log_info "📊 Generating summary report..."
 SUMMARY_FILE="$OUTPUT_DIR/benchmark-summary.txt"
-
 {
     echo "Security Tools Benchmark Summary"
     echo "================================"
@@ -136,7 +187,6 @@ SUMMARY_FILE="$OUTPUT_DIR/benchmark-summary.txt"
     echo ""
 } > "$SUMMARY_FILE"
 
-# Extract results from individual files
 {
     for file in "$OUTPUT_DIR"/*-benchmark.txt; do
         if [[ -f "$file" ]]; then
@@ -148,12 +198,7 @@ SUMMARY_FILE="$OUTPUT_DIR/benchmark-summary.txt"
     done
 } >> "$SUMMARY_FILE"
 
-echo -e "${GREEN}✅ Benchmark complete!${NC}"
-echo "Results saved to: $OUTPUT_DIR"
-echo "Summary report: $SUMMARY_FILE"
-echo ""
-echo -e "${YELLOW}📋 Next steps:${NC}"
-echo "1. Review individual benchmark files in $OUTPUT_DIR"
-echo "2. Check summary report: $SUMMARY_FILE"
-echo "3. Compare results and select best performing tool"
-echo "4. Create GitHub issue with findings"
+log_success "Benchmark complete"
+log_info "Results saved to: $OUTPUT_DIR"
+log_info "Summary report: $SUMMARY_FILE"
+log_info "Next steps: review benchmarks, compare tools, document findings"

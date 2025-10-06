@@ -97,6 +97,17 @@ The CI pipeline consists of 6 main jobs:
 - **Purpose**: Executes all quality checks (linting, formatting, type checking)
 - **Why needed**: Centralized quality validation that can be run locally and in CI
 
+**High-Level Overview of Tasks Performed by `quality-check.sh`:**
+
+- **Python Code Quality:** Runs `ruff` for linting and formatting, and `mypy` for static type checking.
+- **Python Tests:** Executes the test suite using `pytest` to ensure code correctness.
+- **Shell Script Linting:** Uses `shellcheck` to analyze shell scripts for common errors and best practices.
+- **Markdown Linting:** Runs `markdownlint-cli` to check Markdown files for style and formatting issues.
+- **Dockerfile Linting:** Uses `hadolint` to validate Dockerfiles against best practices and common mistakes.
+- **Security Scanning:** Invokes `trivy` to scan for vulnerabilities in dependencies and Docker images (if applicable).
+
+All these checks are run in sequence, and the script will fail if any check does not pass, ensuring code quality before merging or deployment.
+
 ---
 
 ## Job 2: Docker Image Testing (`docker-test`)

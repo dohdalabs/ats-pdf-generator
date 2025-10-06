@@ -14,7 +14,36 @@ source "$SCRIPT_DIR/../utils/ci.sh"
 source "$SCRIPT_DIR/../utils/common.sh"
 
 # Initialize logger
-init_logger --format "%d [%l] %m"
+init_logger
+
+# Display usage information
+show_usage() {
+    cat <<'USAGE_EOF'
+SYNOPSIS
+    check-docker.sh [OPTIONS]
+
+DESCRIPTION
+    Run hadolint against every Dockerfile in the repository with the
+    project's standard configuration. When hadolint is unavailable, the
+    script exits successfully after printing installation guidance so that
+    local development can continue.
+
+OPTIONS
+    -h, --help              Show this help message and exit
+
+EXAMPLES
+    ./scripts/quality/check-docker.sh
+    ./scripts/quality/check-docker.sh --help
+
+For more information: https://github.com/dohdalabs/ats-pdf-generator
+USAGE_EOF
+}
+
+# Handle help requests
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    show_usage
+    exit 0
+fi
 
 # Main Docker quality check function
 main() {

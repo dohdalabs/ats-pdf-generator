@@ -60,21 +60,29 @@ For more information: https://github.com/dohdalabs/ats-pdf-generator
 USAGE_EOF
 }
 
-# Check if help is requested
-if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-    show_usage
-    exit 0
-fi
-
-
-
 # Source utilities
 source "$SCRIPT_DIR/../utils/logging.sh"
 source "$SCRIPT_DIR/../utils/ci.sh"
 source "$SCRIPT_DIR/../utils/common.sh"
 
+if ! parse_common_flags "$@"; then
+    show_usage
+    exit 2
+fi
+
+if [ ${#COMMON_FLAGS_REMAINING[@]} -gt 0 ]; then
+    set -- "${COMMON_FLAGS_REMAINING[@]}"
+else
+    set --
+fi
+
+if [ "$COMMON_FLAG_SHOW_HELP" = true ]; then
+    show_usage
+    exit 0
+fi
+
 # Initialize logger
-init_logger --format "%d [%l] %m"
+init_logger
 
 # Main Markdown quality check function
 main() {
@@ -82,21 +90,44 @@ main() {
     local files_to_check=()
 
     # Parse arguments
-    for arg in "$@"; do
-        if [ "$arg" = "--fix" ]; then
-            fix_mode=true
-        else
-            files_to_check+=("$arg")
-        fi
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --fix)
+                fix_mode=true
+                shift
+                ;;
+            --)
+                shift
+                while [ $# -gt 0 ]; do
+                    files_to_check+=("$1")
+                    shift
+                done
+                break
+                ;;
+            -*)
+                log_error "Unknown option: $1"
+                show_usage
+                exit 2
+                ;;
+            *)
+                files_to_check+=("$1")
+                shift
+                ;;
+        esac
     done
 
+    local checking_specific=true
     if [ ${#files_to_check[@]} -eq 0 ]; then
+        checking_specific=false
+        files_to_check=("**/*.md" "**/*.mdc")
+    fi
+
+    if [ "$checking_specific" = false ]; then
         if [ "$fix_mode" = true ]; then
             log_info "📝 Running Markdown formatting (fix mode) on all files..."
         else
             log_info "📝 Running Markdown quality checks on all files..."
         fi
-        files_to_check=("**/*.md" "**/*.mdc")
     else
         if [ "$fix_mode" = true ]; then
             log_info "📝 Running Markdown formatting (fix mode) on specific files: ${files_to_check[*]}"
@@ -127,7 +158,7 @@ main() {
 
     # Use provided files or find all Markdown files
     local markdown_files=()
-    if [ ${#files_to_check[@]} -eq 0 ] || [ "${files_to_check[0]}" = "**/*.md" ]; then
+    if [ "$checking_specific" = false ]; then
         # Find all Markdown files (including .mdc files)
         while IFS= read -r -d '' file; do
             markdown_files+=("$file")
@@ -147,12 +178,6 @@ main() {
     fi
 
     log_info "Found ${#markdown_files[@]} Markdown file(s) (.md and .mdc) to check"
-
-    # Determine if we are checking specific files (not the glob defaults)
-    local checking_specific=true
-    if [ ${#files_to_check[@]} -eq 0 ] || [ "${files_to_check[0]}" = "**/*.md" ]; then
-        checking_specific=false
-    fi
 
     # Run markdownlint on all Markdown files using pnpm dlx
     local failed=0

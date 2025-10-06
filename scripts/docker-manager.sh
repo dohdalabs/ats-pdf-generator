@@ -839,7 +839,7 @@ cmd_publish() {
 # Main function
 main() {
     # Initialize logger
-    init_logger --format "%d [%l] %m"
+    init_logger
 
     # Parse global options
     while [[ $# -gt 0 ]]; do

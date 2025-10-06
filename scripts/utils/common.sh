@@ -19,6 +19,16 @@
 # code duplication and ensure consistent behavior.
 # ----------------------------------------
 
+# shellcheck disable=SC2034
+# Shared flag state used by parse_common_flags. Scripts sourcing this file
+# should treat these as read-only outputs after invoking the parser.
+COMMON_FLAG_SHOW_HELP=false
+# shellcheck disable=SC2034
+COMMON_FLAG_VERBOSE=false
+# shellcheck disable=SC2034
+COMMON_FLAG_QUIET=false
+COMMON_FLAGS_REMAINING=()
+
 # Get the directory of the current script
 get_script_dir() {
     local script_path="${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
@@ -232,4 +242,77 @@ parse_args() {
                 ;;
         esac
     done
+}
+
+# Parse common flags shared across scripts
+# Resets shared COMMON_FLAG_* variables, applies logging configuration, and
+# returns the remaining positional arguments via COMMON_FLAGS_REMAINING.
+# Usage: if ! parse_common_flags "$@"; then ...; fi
+parse_common_flags() {
+    COMMON_FLAG_SHOW_HELP=false
+    COMMON_FLAG_VERBOSE=false
+    COMMON_FLAG_QUIET=false
+    COMMON_FLAGS_REMAINING=()
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                COMMON_FLAG_SHOW_HELP=true
+                shift
+                ;;
+            -q|--quiet)
+                COMMON_FLAG_QUIET=true
+                LOG_QUIET=true
+                shift
+                ;;
+            -v|--verbose)
+                COMMON_FLAG_VERBOSE=true
+                set_log_level debug >/dev/null 2>&1 || true
+                shift
+                ;;
+            --log-level)
+                if [[ $# -lt 2 ]]; then
+                    echo "Missing value for --log-level" >&2
+                    return 1
+                fi
+                if command -v set_log_level >/dev/null 2>&1; then
+                    if ! set_log_level "$2" >/dev/null 2>&1; then
+                        echo "Invalid log level: $2" >&2
+                        return 1
+                    fi
+                else
+                    LOG_LEVEL="$2"
+                fi
+                shift 2
+                ;;
+            --color|--colour)
+                LOG_COLOR=true
+                shift
+                ;;
+            --no-color|--no-colour)
+                LOG_COLOR=false
+                shift
+                ;;
+            --)
+                shift
+                while [[ $# -gt 0 ]]; do
+                    COMMON_FLAGS_REMAINING+=("$1")
+                    shift
+                done
+                break
+                ;;
+            *)
+                COMMON_FLAGS_REMAINING+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    if [[ ${#COMMON_FLAGS_REMAINING[@]} -gt 0 ]]; then
+        set -- "${COMMON_FLAGS_REMAINING[@]}"
+        COMMON_FLAGS_REMAINING=("$@")
+    else
+        COMMON_FLAGS_REMAINING=()
+    fi
+    return 0
 }

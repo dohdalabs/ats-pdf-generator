@@ -14,7 +14,46 @@ source "$SCRIPT_DIR/../utils/ci.sh"
 source "$SCRIPT_DIR/../utils/common.sh"
 
 # Initialize logger
-init_logger --format "%d [%l] %m"
+init_logger
+
+# Display usage information
+show_usage() {
+    cat <<'USAGE_EOF'
+SYNOPSIS
+    check-security.sh [OPTIONS]
+
+DESCRIPTION
+    Run a Trivy filesystem scan against the current repository using the
+    project's recommended settings. When Trivy is not installed, the script
+    exits successfully after printing installation guidance so local
+    workflows remain smooth.
+
+OPTIONS
+    -h, --help              Show this help message and exit
+
+EXAMPLES
+    ./scripts/quality/check-security.sh
+    ./scripts/quality/check-security.sh --help
+
+For more information: https://github.com/dohdalabs/ats-pdf-generator
+USAGE_EOF
+}
+
+if ! parse_common_flags "$@"; then
+    show_usage
+    exit 2
+fi
+
+if [ ${#COMMON_FLAGS_REMAINING[@]} -gt 0 ]; then
+    set -- "${COMMON_FLAGS_REMAINING[@]}"
+else
+    set --
+fi
+
+if [ "$COMMON_FLAG_SHOW_HELP" = true ]; then
+    show_usage
+    exit 0
+fi
 
 # Main security check function
 main() {

@@ -56,7 +56,7 @@ source "$SCRIPT_DIR/../utils/ci.sh"
 source "$SCRIPT_DIR/../utils/common.sh"
 
 # Initialize logger
-init_logger --format "%d [%l] %m"
+init_logger
 
 # Validate a single script's help options
 validate_script_help() {
