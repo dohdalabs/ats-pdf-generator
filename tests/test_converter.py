@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
 from ats_pdf_generator.ats_converter import main
 
 
