@@ -10,45 +10,18 @@ This document is for technical reviewers and developers who want to understand t
 - **Comprehensive CI/CD**: Automated quality checks, security scanning, and multi-registry publishing
 - **Developer Experience Focus**: One-command setup with `mise` and comprehensive automation scripts
 
-## 🏗️ Project Structure
+## 🏗️ Key Components
 
-```text
-├── src/                        # Source code
-│   ├── ats_converter.py        # Main Python converter
-│   └── ats-document-converter.sh # Shell wrapper script
-├── docker/                     # Docker configuration
-│   ├── Dockerfile.standard     # Production Docker image
-│   ├── Dockerfile.alpine       # Minimal Docker image
-│   └── Dockerfile.dev          # Development environment
-├── templates/                  # CSS styling templates
-│   ├── ats-cover-letter.css    # Cover letter styling
-│   ├── ats-profile.css         # Profile styling
-│   └── ats-document.css        # General document styling
-├── examples/                   # Sample files
-│   ├── sample-cover-letter.md  # Example cover letter
-│   └── sample-profile.md       # Example profile
-├── scripts/                      # Development and automation scripts
-│   ├── quality-check.sh        # Comprehensive quality checks
-│   ├── build-and-test.sh       # Build and test automation
-│   ├── publish.sh              # Multi-registry publishing
-│   ├── publish-image.sh        # Legacy multi-registry publishing
-│   ├── convert-pdf.sh          # PDF conversion utility
-│   ├── setup-local-env.sh      # Local environment setup
-│   ├── build-dev-image.sh      # Docker image building
-│   ├── setup-docker-auth.sh    # Registry authentication
-│   └── check-summary.sh        # Quality check summary
-├── tests/                       # Test suite
-│   └── test_converter.py       # Unit tests
-├── .github/                     # GitHub Actions workflows
-│   └── workflows/              # CI/CD automation
-│       ├── ci.yml              # Main CI pipeline
-│       └── release.yml         # Release automation
-├── install.sh                   # One-line installer script
-├── pyproject.toml               # Python project configuration
-├── mise.toml                    # mise configuration
-├── .pre-commit-config.yaml      # Pre-commit hooks
-└── README.md                    # User-focused documentation
-```
+The project follows a clean separation of concerns:
+
+- **`src/`** - Core Python application code
+- **`docker/`** - Multi-stage Docker images (Alpine, Standard, Dev)
+- **`templates/`** - CSS styling for different document types
+- **`scripts/`** - Development automation (see [Docker Management](docs/DOCKER_MANAGEMENT.md))
+- **`tests/`** - Unit tests and validation
+- **`.github/workflows/`** - CI/CD automation
+
+For detailed Docker operations, see the [Docker Management Guide](docs/DOCKER_MANAGEMENT.md).
 
 ## 🛠️ Development Environment Setup
 
@@ -223,22 +196,25 @@ You only need to rebuild the development container when:
 
 **Impact**: New developer onboarding time reduced from hours to minutes, with consistent quality standards enforced automatically.
 
-### Key Scripts
+### Development Automation
 
-- **`scripts/quality-check.sh`**: Comprehensive quality checks (Python, Shell, Docker, Security)
-- **`scripts/build-and-test.sh`**: Build all Docker images and run functionality tests
-- **`scripts/publish.sh`**: Multi-registry publishing with authentication handling
-- **`scripts/convert-pdf.sh`**: PDF conversion using Docker containers
-- **`scripts/setup-local-env.sh`**: Local Python environment setup
-- **`scripts/build-dev-image.sh`**: Build development Docker image
-- **`scripts/setup-docker-auth.sh`**: Setup Docker registry authentication
+The project provides comprehensive automation for common development tasks:
+
+- **Quality Assurance**: Automated linting, formatting, security scanning, and testing
+- **Docker Operations**: Unified interface for building, testing, and managing container images
+- **CI/CD Pipeline**: Automated quality checks, security scanning, and multi-registry publishing
+- **Environment Setup**: One-command local development environment configuration
+
+For specific script usage, see the [Docker Management Guide](docs/DOCKER_MANAGEMENT.md) and run `./scripts/quality-check.sh --help` for available options.
+
+**Script Standards**: All scripts follow consistent standards defined in `.cursor/rules/script-standards.mdc` and are validated in CI to ensure they have proper `--help` options and meet quality requirements.
 
 ### Architectural Benefits
 
 - **Consistency**: Same scripts work locally and in CI environments
 - **Maintainability**: Changes in one place affect all environments
 - **Testability**: Scripts can be tested independently of CI/CD systems
-- **Clarity**: Self-documenting with `--help` options for all scripts
+- **Clarity**: Self-documenting with `--help` options for all scripts (enforced by CI)
 - **Reduced Complexity**: GitHub Actions workflows are simple script calls
 
 ### Implementation Notes
