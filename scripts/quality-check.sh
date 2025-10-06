@@ -6,7 +6,7 @@ source "$SCRIPT_DIR/utils/logging.sh"
 source "$SCRIPT_DIR/utils/common.sh"
 source "$SCRIPT_DIR/utils/ci.sh"
 
-init_logger
+init_logger --script-name "$(basename "$0")"
 
 show_usage() {
     cat <<'USAGE_EOF'

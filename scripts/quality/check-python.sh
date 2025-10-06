@@ -70,7 +70,7 @@ source "$SCRIPT_DIR/../utils/ci.sh"
 source "$SCRIPT_DIR/../utils/common.sh"
 
 # Initialize logger
-init_logger
+init_logger --script-name "$(basename "$0")"
 
 # Main Python quality check function
 main() {

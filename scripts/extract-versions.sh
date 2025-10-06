@@ -8,7 +8,7 @@ MISE_TOML="$PROJECT_ROOT/mise.toml"
 source "$SCRIPT_DIR/utils/logging.sh"
 source "$SCRIPT_DIR/utils/common.sh"
 
-init_logger
+init_logger --script-name "$(basename "$0")"
 
 show_usage() {
     cat <<'USAGE_EOF'

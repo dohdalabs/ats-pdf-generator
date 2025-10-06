@@ -82,7 +82,7 @@ if [ "$COMMON_FLAG_SHOW_HELP" = true ]; then
 fi
 
 # Initialize logger
-init_logger
+init_logger --script-name "$(basename "$0")"
 
 # Main Markdown quality check function
 main() {

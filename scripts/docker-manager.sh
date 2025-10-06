@@ -839,7 +839,7 @@ cmd_publish() {
 # Main function
 main() {
     # Initialize logger
-    init_logger
+    init_logger --script-name "$(basename "$0")"
 
     # Parse global options
     while [[ $# -gt 0 ]]; do

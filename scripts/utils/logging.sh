@@ -22,6 +22,7 @@ LOG_UTC=false
 LOG_QUIET=false
 LOG_JOURNAL=false
 LOG_TAG=""
+LOG_SCRIPT_NAME=""
 LOG_COLOR=true
 
 # Color codes
@@ -93,6 +94,10 @@ init_logger() {
                 LOG_COLOR=false
                 shift
                 ;;
+            --script-name)
+                LOG_SCRIPT_NAME="$2"
+                shift 2
+                ;;
             *)
                 echo "Unknown option: $1" >&2
                 return 1
@@ -103,6 +108,11 @@ init_logger() {
     # Set default tag if not provided
     if [[ -z "$LOG_TAG" ]]; then
         LOG_TAG="$script_name"
+    fi
+
+    if [[ -z "$LOG_SCRIPT_NAME" ]]; then
+        echo "init_logger: --script-name is required" >&2
+        return 1
     fi
 
     # Create log file directory if needed
@@ -143,7 +153,14 @@ format_message() {
     local level="$1"
     local message="$2"
     local script_name
-    script_name=$(basename "${BASH_SOURCE[2]:-unknown}")
+
+    if [[ -n "$LOG_TAG" ]]; then
+        script_name="$LOG_TAG"
+    elif [[ -n "$LOG_SCRIPT_NAME" ]]; then
+        script_name="$LOG_SCRIPT_NAME"
+    else
+        script_name=$(basename "${BASH_SOURCE[2]:-unknown}")
+    fi
 
     local formatted="$LOG_FORMAT"
     formatted="${formatted//%d/$(get_timestamp)}"

@@ -14,7 +14,7 @@ source "$SCRIPT_DIR/../utils/ci.sh"
 source "$SCRIPT_DIR/../utils/common.sh"
 
 # Initialize logger
-init_logger
+init_logger --script-name "$(basename "$0")"
 
 # Display usage information
 show_usage() {
