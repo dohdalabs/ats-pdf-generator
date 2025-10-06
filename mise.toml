@@ -65,7 +65,6 @@ docker-clean = "docker rmi ats-pdf-generator:dev 2>/dev/null || true"
 docker-clean-all = "docker system prune -f && docker image prune -f"
 
 # 🚀 Publishing & Deployment
-setup-auth = "scripts/setup-docker-auth.sh"
 publish = "scripts/docker-manager.sh publish"  # Publish to all registries
 
 # 🔧 Development Tools
