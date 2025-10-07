@@ -91,7 +91,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Run quality checks (excluding security)
-        run: ./scripts/quality-check.sh --skip-security
+        run: ./scripts/check-all.sh --skip-security
 
   docker-test:
     name: Docker Image Testing
