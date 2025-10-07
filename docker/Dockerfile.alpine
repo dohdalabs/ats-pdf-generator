@@ -8,8 +8,8 @@ ARG VENDOR="DohDa Labs"
 # Base stage with system dependencies (cached separately)
 FROM python:3.13-alpine AS base
 
-# Set shell with error handling (ash doesn't support -o pipefail in SHELL)
-SHELL ["/bin/sh", "-e", "-c"]
+# Set shell with error handling and pipefail support
+SHELL ["/bin/ash", "-e", "-o", "pipefail", "-c"]
 
 # Install system dependencies (this layer is cached separately)
 RUN apk add --no-cache \
@@ -30,11 +30,11 @@ RUN apk add --no-cache \
 # Dependencies stage (cached separately from application code)
 FROM base AS deps
 
-# Set shell with error handling (ash doesn't support -o pipefail in SHELL)
-SHELL ["/bin/ash", "-e", "-c"]
+# Set shell with error handling and pipefail support
+SHELL ["/bin/ash", "-e", "-o", "pipefail", "-c"]
 
 # Install uv using the official installer (faster and more reliable)
-RUN set -o pipefail && curl -LsSf https://astral.sh/uv/install.sh | sh
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
 # Verify uv installation
@@ -44,7 +44,7 @@ RUN uv --version
 WORKDIR /build
 COPY pyproject.toml uv.lock ./
 COPY src/ ./src/
-RUN set -o pipefail && printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md && \
+RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized PDFs for job applications.\n' > README.md && \
     uv sync --frozen --no-dev
 
 # Stage 2: Runtime stage (reuses base stage for better caching)
@@ -54,8 +54,8 @@ FROM base AS runtime
 ARG GIT_SHA="unknown"
 ARG VENDOR="DohDa Labs"
 
-# Set shell with error handling (ash doesn't support -o pipefail in SHELL)
-SHELL ["/bin/ash", "-e", "-c"]
+# Set shell with error handling and pipefail support
+SHELL ["/bin/ash", "-e", "-o", "pipefail", "-c"]
 
 # Install additional runtime dependencies (base stage already has build deps)
 RUN apk add --no-cache \
