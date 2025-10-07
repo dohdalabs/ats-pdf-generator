@@ -128,11 +128,11 @@ jobs:
           sudo apt-get install -y shellcheck
           # Install hadolint (pin version)
           HADOLINT_VERSION=v2.14.0
-          curl -fsSL https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-linux-x86_64 -o hadolint
-          curl -fsSL https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-linux-x86_64.sha256 -o hadolint.sha256
-          sha256sum -c hadolint.sha256
-          chmod +x hadolint
-          sudo mv hadolint /usr/local/bin/
+          curl -fsSL https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-linux-x86_64 -o hadolint-linux-x86_64
+          curl -fsSL https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-linux-x86_64.sha256 -o hadolint-linux-x86_64.sha256
+          sha256sum -c hadolint-linux-x86_64.sha256
+          chmod +x hadolint-linux-x86_64
+          sudo mv hadolint-linux-x86_64 /usr/local/bin/hadolint
       - name: Run Trivy security scan
         uses: aquasecurity/trivy-action@master
         with:
