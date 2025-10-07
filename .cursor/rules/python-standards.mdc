@@ -1,0 +1,185 @@
+---
+globs: *.py
+alwaysApply: false
+---
+# Python Coding Standards for AI Assistants
+
+## Core Principles
+
+- **PEP 8 compliance** - Follow official Python style guide
+- **Type hints required** - All functions must have type annotations
+- **Comprehensive docstrings** - Document all public functions/classes
+- **Error handling** - Handle exceptions appropriately
+- **Clean imports** - Organize imports properly
+
+## Essential Patterns
+
+### Function Definition
+
+```python
+def process_data(
+    data: dict[str, Any],
+    output_path: Path,
+    *,
+    validate: bool = True,
+) -> bool:
+    """Process data and return success status.
+
+    Args:
+        data: Input data dictionary
+        output_path: Output file path
+        validate: Whether to validate input
+
+    Returns:
+        True if successful, False otherwise
+
+    Raises:
+        ValidationError: If validation fails
+    """
+    if validate:
+        validate_data(data)
+    return generate_output(data, output_path)
+```
+
+### Import Organization
+
+```python
+# Standard library
+import os
+from pathlib import Path
+from typing import Any, Dict
+
+# Third-party
+import click
+from pydantic import BaseModel
+
+# Local
+from ats_pdf_generator.utils import validate_data
+```
+
+### Error Handling
+
+```python
+def safe_file_operation(file_path: Path) -> str:
+    """Read file with proper error handling."""
+    try:
+        return file_path.read_text()
+    except FileNotFoundError:
+        raise FileOperationError(f"File not found: {file_path}")
+    except PermissionError:
+        raise FileOperationError(f"Permission denied: {file_path}")
+```
+
+## Testing Requirements
+
+- **90% minimum coverage** for all code
+- **100% coverage** for critical functions
+- **Test all exceptions** and error paths
+- **Use descriptive test names** starting with `test_`
+
+### Test Structure
+
+```python
+def test_function_behavior():
+    """Test specific function behavior."""
+    # Arrange
+    input_data = {"key": "value"}
+    expected = "expected_result"
+
+    # Act
+    result = function_under_test(input_data)
+
+    # Assert
+    assert result == expected
+
+def test_error_handling():
+    """Test error conditions."""
+    with pytest.raises(ValidationError):
+        function_under_test(invalid_data)
+```
+
+## Code Quality Checklist
+
+When generating Python code, ensure:
+
+- [ ] **Type hints** on all function parameters and return values
+- [ ] **Docstrings** for all public functions/classes
+- [ ] **Error handling** with appropriate exception types
+- [ ] **Import organization** (stdlib, third-party, local)
+- [ ] **PEP 8 compliance** (line length, naming, spacing)
+- [ ] **Input validation** for all external inputs
+- [ ] **Resource cleanup** (use context managers)
+
+## Exception Handling
+
+### Custom Exceptions
+
+```python
+class ATSGeneratorError(Exception):
+    """Base exception for ATS PDF Generator."""
+
+class ValidationError(ATSGeneratorError):
+    """Input validation failed."""
+
+class FileOperationError(ATSGeneratorError):
+    """File operation failed."""
+```
+
+### Error Handling Pattern
+
+```python
+def process_file(file_path: Path) -> str:
+    """Process file with proper error handling."""
+    try:
+        return file_path.read_text()
+    except FileNotFoundError as e:
+        raise FileOperationError(f"File not found: {file_path}") from e
+    except PermissionError as e:
+        raise FileOperationError(f"Permission denied: {file_path}") from e
+```
+
+## Security & Performance
+
+### Security Requirements
+
+- **Input validation** for all external inputs
+- **Safe file operations** (no path traversal)
+- **No sensitive data** in error messages
+- **Use context managers** for resource cleanup
+
+### Performance Guidelines
+
+- **Functions <50 lines** for readability
+- **Use appropriate data structures** for efficiency
+- **Minimize I/O operations** where possible
+- **Cache expensive operations** when appropriate
+
+## Documentation Standards
+
+### Docstring Format
+
+```python
+def function_name(param: Type) -> ReturnType:
+    """Brief description of function.
+
+    Longer description if needed.
+
+    Args:
+        param: Description of parameter
+
+    Returns:
+        Description of return value
+
+    Raises:
+        ExceptionType: When this exception is raised
+    """
+```
+
+## Best Practices Summary
+
+- **Single responsibility** - Each function does one thing
+- **Meaningful names** - Variables and functions are self-documenting
+- **Fail fast** - Validate inputs early
+- **Use type hints** - Improves code clarity and catches errors
+- **Handle exceptions** - Don't let errors crash the application
+- **Write tests** - Ensure code works as expected

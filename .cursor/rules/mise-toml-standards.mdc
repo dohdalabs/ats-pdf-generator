@@ -1,0 +1,109 @@
+---
+globs: mise.toml
+alwaysApply: false
+---
+
+# Mise.toml Task Naming Standards
+
+## Core Rule: `{action}-{language/tool}` Pattern
+
+**ALWAYS** use this pattern for mise.toml tasks. Examples:
+
+- `test-python` - Python unit tests
+- `test-docker` - Docker image tests
+- `lint-python` - Python linting
+- `format-python` - Python formatting
+- `typecheck-python` - Python type checking
+- `check-python` - All Python quality checks
+- `check-all` - All quality checks across languages
+- `format-all` - Auto-fix formatting issues
+- `convert-pdf` - PDF conversion
+- `security-docker` - Docker security scanning
+- `build-docker` - Docker builds
+- `validate-docker` - Validate Dockerfiles
+- `info-docker` - Show Docker image info
+- `clean-docker` - Clean Docker images
+- `publish-docker` - Publish Docker images
+- `shell-docker` - Docker shell access
+
+## Actions
+
+- `test-*` - Testing and validation
+- `lint-*` - Static analysis
+- `format-*` - Code formatting
+- `check-*` - Comprehensive quality checks (all checks for language/tool)
+- `security-*` - Security scanning
+- `build-*` - Building artifacts
+- `publish-*` - Publishing
+
+## Language/Tool Suffixes
+
+- `python` - Python operations
+- `shell` - Shell scripts
+- `docker` - Docker/containers
+- `markdown` - Documentation
+- `security` - Security scanning
+- `all` - Cross-language operations
+
+## Rules
+
+- ✅ Use kebab-case: `test-python`
+- ✅ Group with comments: `# Testing`
+- ✅ Include inline comments for complex tasks
+- ❌ Never use generic names: `test`, `lint`, `build`
+- ❌ Never mix patterns: `pytest` alongside `test-python`
+- ❌ Never use camelCase or snake_case
+
+## Common Patterns
+
+```toml
+# Testing
+test-python = "uv run pytest"
+test-docker = "scripts/docker-manager.sh test --all"
+
+# Building
+build-docker = "scripts/docker-manager.sh build --all"
+
+# Docker Operations
+validate-docker = "scripts/docker-manager.sh validate"
+info-docker = "scripts/docker-manager.sh info"
+clean-docker = "scripts/docker-manager.sh clean --all"
+
+# Linting
+lint-python = "uv run ruff check ."
+lint-shell = "./scripts/quality/check-shell.sh"
+
+# Type Checking
+typecheck-python = "uv run mypy src/ats_pdf_generator/"
+
+# Formatting
+format-python = "uv run ruff format ."
+format-markdown = "./scripts/quality/check-markdown.sh --fix"
+format-all = "mise run format-python && mise run format-markdown"
+
+# Comprehensive Quality Checks
+check-python = "mise run lint-python && mise run format-python && mise run typecheck-python && mise run test-python"
+check-docker = "mise run lint-docker && mise run test-docker"
+check-markdown = "mise run lint-markdown && mise run format-markdown"
+
+# Security Scanning
+security-docker = "scripts/quality/check-security.sh"
+
+# PDF Operations
+convert-pdf = "scripts/convert-pdf.sh"
+
+# Publishing
+publish-docker = "scripts/docker-manager.sh publish"
+
+# Shell Access
+shell-docker = "docker run --rm -it -v \"$(pwd):/app\" -w /app ats-pdf-generator:dev bash"
+```
+
+## Migration
+
+When renaming tasks:
+
+1. Update all script references
+2. Update CI/CD workflows
+3. Test task execution
+4. Remove deprecated tasks

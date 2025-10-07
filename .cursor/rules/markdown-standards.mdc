@@ -1,0 +1,51 @@
+---
+globs: "**/*.md"
+alwaysApply: false
+---
+
+# Markdown Standards
+
+## Quality Requirements
+
+**ALL markdown files MUST pass markdownlint before being committed.**
+
+### Required Checks
+
+- Run `./scripts/quality/check-markdown.sh --fix <file>` as the first step before committing to automatically resolve violations
+- If issues remain, manually fix all markdownlint violations
+- Ensure proper heading hierarchy
+- Use consistent formatting
+
+### Common Rules
+
+- **MD022**: Blank lines around headings
+- **MD032**: Blank lines around lists
+- **MD031**: Blank lines around fenced code blocks
+- **MD013**: Line length limits (disabled in project)
+- **MD033**: HTML tags (disabled in project)
+- **MD041**: First line heading (disabled in project)
+
+### Formatting Standards
+
+- Use blank lines around all headings
+- Use blank lines around all lists
+- Use blank lines around all fenced code blocks
+- Use consistent heading hierarchy (H1 → H2 → H3 → H4)
+- Use kebab-case for file names
+- Include table of contents for long documents
+
+### AI Assistant Guidelines
+
+- Always run markdownlint after editing markdown files
+- Fix all violations before completing changes
+- Use consistent formatting patterns
+- Include proper heading structure
+- Add blank lines for readability
+
+### Validation Command
+
+```bash
+./scripts/quality/check-markdown.sh <filename>
+```
+
+**Note**: This file itself must pass markdownlint validation.
