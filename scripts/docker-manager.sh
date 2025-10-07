@@ -241,7 +241,7 @@ if not os.access(tmp_dir, os.W_OK):
     print('ERROR: /app/tmp is not writable')
     exit(1)
 print('SUCCESS: /app/tmp exists and is writable')
-" > /dev/null 2>&1; then
+"; then
         log_error "Permission issue in $image_name:$image_tag - /app/tmp not accessible"
         return 1
     fi
