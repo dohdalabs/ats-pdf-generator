@@ -123,6 +123,7 @@ jobs:
 
       - name: Install additional tools
         run: |
+          #TODO: Check if shellcheck is already installed before running through apt-get
           sudo apt-get update
           # Install shellcheck
           sudo apt-get install -y shellcheck
@@ -139,7 +140,6 @@ jobs:
           scan-type: 'fs'
           scan-ref: '.'
           format: 'table'
-          exit-code: '0'
           severity: 'HIGH,CRITICAL'
           ignore-unfixed: true
 
