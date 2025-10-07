@@ -17,8 +17,7 @@ install-prod = "uv sync --frozen --no-dev"
 setup-local = "scripts/setup-local-env.sh"
 
 # 🔧 Most Common Quick Actions
-check = "mise run lint-python && mise run lint-shell && mise run lint-docker && mise run lint-markdown"  # Check all code
-fix = "mise run format-python && mise run format-markdown"  # Auto-fix formatting issues
+format-all = "mise run format-python && mise run format-markdown"  # Auto-fix formatting issues
 test-python = "uv run pytest"  # Python unit tests
 
 # 📝 Individual Linting
@@ -32,23 +31,27 @@ format-python = "uv run ruff format ."
 format-markdown = "./scripts/quality/check-markdown.sh --fix"
 
 # 🔍 Additional Checks
-check-python = "mise run lint-python && mise run typecheck"
-typecheck = "uv run mypy src/ats_pdf_generator/"
-check-security = "scripts/quality/check-security.sh"
+check-python = "mise run lint-python && mise run format-python && mise run typecheck-python && mise run test-python"
+check-docker = "mise run lint-docker && mise run test-docker"
+check-markdown = "mise run lint-markdown && mise run format-markdown"
+typecheck-python = "uv run mypy src/ats_pdf_generator/"
+
+# 🔒 Security Scanning
+security-docker = "scripts/quality/check-security.sh"
 
 # ✅ Comprehensive Quality Checks
-check-all = "scripts/quality-check.sh"  # Everything: linting, testing, security
+check-all = "scripts/check-all.sh"  # Everything: linting, testing, security
 
 # 📄 PDF Operations
-convert = "scripts/convert-pdf.sh"
+convert-pdf = "scripts/convert-pdf.sh"
 
 # 🐳 Docker Operations
-build = "scripts/docker-manager.sh build --all"  # Build all images
-test = "scripts/docker-manager.sh test --all"  # Test all images
-validate = "scripts/docker-manager.sh validate"  # Validate Dockerfiles
-info = "scripts/docker-manager.sh info"  # Show Docker image info
-clean = "scripts/docker-manager.sh clean --all"  # Clean all project images
-shell = "docker run --rm -it -v \"$(pwd):/app\" -w /app ats-pdf-generator:dev bash"
+build-docker = "scripts/docker-manager.sh build --all"  # Build all images
+test-docker = "scripts/docker-manager.sh test --all"  # Test all images
+validate-docker = "scripts/docker-manager.sh validate"  # Validate Dockerfiles
+info-docker = "scripts/docker-manager.sh info"  # Show Docker image info
+clean-docker = "scripts/docker-manager.sh clean --all"  # Clean all project images
+shell-docker = "docker run --rm -it -v \"$(pwd):/app\" -w /app ats-pdf-generator:dev bash"
 
 # 🚀 Development Environment (Efficient Workflow)
 dev-up = "docker-compose -f docker/docker-compose.yml --profile dev up -d ats-converter-dev"
@@ -66,7 +69,7 @@ docker-clean = "docker rmi ats-pdf-generator:dev 2>/dev/null || true"
 docker-clean-all = "docker system prune -f && docker image prune -f"
 
 # 🚀 Publishing & Deployment
-publish = "scripts/docker-manager.sh publish"  # Publish to all registries
+publish-docker = "scripts/docker-manager.sh publish"  # Publish to all registries
 
 # 🔧 Development Tools
 pre-commit = "uv run pre-commit run --all-files"

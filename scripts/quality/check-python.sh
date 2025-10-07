@@ -120,7 +120,7 @@ main() {
         mise run format-python
 
         log_step "Running type checking via mise..."
-        mise run typecheck
+        mise run typecheck-python
 
         log_step "Running tests via mise..."
         mise run test-python

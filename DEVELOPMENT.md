@@ -64,20 +64,19 @@ This script will:
 mise run install
 
 # Most common daily workflow
-mise run check          # Check all code (linting)
-mise run fix           # Auto-fix formatting issues
-mise run test          # Run tests
+mise run check-all      # Check all code (linting)
+mise run format-all     # Auto-fix formatting issues
+mise run test-docker   # Run Docker tests
 
 # Run comprehensive quality checks (Python, Shell, Docker, Security, Markdown)
 mise run check-all      # Everything: linting, testing, security
-# or
-mise run quality-check # Same as above
+
 
 # Build and test everything (Docker images, functionality tests)
-mise run build-test
+mise run build-docker && mise run test-docker
 
 # Convert PDFs for testing
-mise run convert examples/sample-profile.md
+mise run convert-pdf examples/sample-profile.md
 
 # Individual commands for specific needs
 mise run lint-python   # Python linting only
@@ -205,11 +204,11 @@ The project provides comprehensive automation for common development tasks:
 - **CI/CD Pipeline**: Automated quality checks, security scanning, and multi-registry publishing
 - **Environment Setup**: One-command local development environment configuration
 
-For specific script usage, see the [Docker Management Guide](docs/DOCKER_MANAGEMENT.md) and run `./scripts/quality-check.sh --help` for available options.
+For specific script usage, see the [Docker Management Guide](docs/DOCKER_MANAGEMENT.md) and run `./scripts/check-all.sh --help` for available options.
 
 **Available Scripts**:
 
-- `./scripts/quality-check.sh` - Comprehensive quality checks (Python, shell, Docker, Markdown, security)
+- `./scripts/check-all.sh` - Comprehensive quality checks (Python, shell, Docker, Markdown, security)
 - [`./scripts/docker-manager.sh`](./scripts/docker-manager.sh) - Unified Docker operations (build, test, validate, publish)
 - `./scripts/setup-local-env.sh` - One-command local development setup
 - `./scripts/convert-pdf.sh` - PDF conversion utility
@@ -235,7 +234,7 @@ The script-first approach was chosen to address the common problem of CI/CD logi
 
 ```bash
 # Run comprehensive quality checks (includes tests)
-mise run quality-check
+mise run check-all
 
 # Run just the tests
 mise run test
@@ -250,14 +249,14 @@ pytest tests/test_converter.py
 pytest -v tests/
 
 # Build and test everything (Docker images, functionality tests)
-mise run build-test
+mise run build-docker && mise run test-docker
 ```
 
 ### Test Structure
 
 - `tests/test_converter.py` - Unit tests for the main converter
-- `scripts/build-and-test.sh` - Integration tests for Docker builds and PDF generation
-- `scripts/quality-check.sh` - Comprehensive quality checks including tests
+- `scripts/docker-manager.sh` - Docker operations including builds, tests, and validation
+- `scripts/check-all.sh` - Comprehensive quality checks including tests
 
 ## 🔧 Development Tools
 
@@ -265,13 +264,13 @@ mise run build-test
 
 ```bash
 # Run comprehensive quality checks (Python, Shell, Docker, Security)
-mise run quality-check
+mise run check-all
 
 # Individual quality checks
 mise run lint          # Lint Python code
 mise run format        # Format code
-mise run typecheck     # Type checking
-mise run test          # Run tests
+mise run typecheck-python     # Python type checking
+mise run test-docker   # Run Docker tests
 mise run shell-lint    # Lint shell scripts
 mise run docker-lint   # Lint Dockerfiles
 ```
@@ -307,17 +306,8 @@ The project includes Docker tooling that addresses common issues with Docker dup
 ### Docker Development Tools
 
 ```bash
-# Test all Docker images
-./scripts/test-docker-images.sh
-
-# Build and test new Docker images
-./scripts/build-all-images.sh
-
-# Generate Dockerfiles with shared patterns
-./scripts/generate-dockerfiles.sh
-
 # Build and test all Docker images
-./scripts/build-and-test-enhanced.sh
+./scripts/docker-manager.sh build --all --test
 ```
 
 ### Image Architecture
@@ -352,7 +342,7 @@ The project uses multi-stage Docker builds to create optimized production images
 mise run build-image
 
 # Build and test everything (all images + functionality tests)
-mise run build-test
+mise run build-docker && mise run test-docker
 
 # Manual builds (if needed)
 docker build -f docker/Dockerfile.standard -t ats-pdf-generator:standard .
@@ -412,8 +402,8 @@ docker-compose -f docker/docker-compose.yml down
 **Note**: For most development tasks, use the convenience scripts instead:
 
 ```bash
-mise run convert examples/sample-profile.md  # PDF conversion
-mise run build-test                         # Build and test everything
+mise run convert-pdf examples/sample-profile.md  # PDF conversion
+mise run build-docker && mise run test-docker                         # Build and test everything
 ```
 
 ### Docker Usage Guide
@@ -601,11 +591,11 @@ The project uses [Semantic Versioning](https://semver.org/):
 
 - [ ] Update version in `pyproject.toml`
 - [ ] Update `CHANGELOG.md` with new features/fixes
-- [ ] Test all functionality thoroughly (run `mise run quality-check` and `mise run build-test`)
+- [ ] Test all functionality thoroughly (run `mise run check-all` and `mise run build-docker && mise run test-docker`)
 - [ ] Update documentation if needed
 - [ ] Create git tag: `git tag v1.2.3`
 - [ ] Push tag: `git push origin v1.2.3`
-- [ ] GitHub Actions automatically builds and publishes Docker images using `scripts/publish.sh`
+- [ ] GitHub Actions automatically builds and publishes Docker images using `scripts/docker-manager.sh publish`
 
 ### Automated Release Process
 
@@ -653,15 +643,16 @@ The project uses GitHub Actions with a script-first approach for automated quali
 
 ### CI Workflow (`ci.yml`)
 
-- **Quality Checks**: Runs `scripts/quality-check.sh` (Python, Shell, Docker, Security)
-- **Build & Test**: Runs `scripts/build-and-test.sh` (Docker builds, functionality tests)
-- **Publish**: Runs `scripts/publish.sh` on main branch pushes
+- **Security Scanning**: Runs Trivy security scan via GitHub Action
+- **Quality Checks**: Runs `scripts/check-all.sh` (Python, Shell, Docker, Markdown)
+- **Docker Testing**: Runs `scripts/docker-manager.sh build --all --test` (Docker builds and tests)
+- **Docker Validation**: Validates Dockerfiles with hadolint
 
 ### Release Workflow (`release.yml`)
 
-- **Multi-Registry Publishing**: Uses `scripts/publish.sh` for Docker Hub and GitHub Container Registry
+- **Multi-Registry Publishing**: Uses `scripts/docker-manager.sh publish` for Docker Hub and GitHub Container Registry
+- **Multi-Variant Support**: Publishes standard, alpine, and dev image variants
 - **Release Creation**: Automatically creates GitHub releases with changelog
-- **Docker Hub Updates**: Updates repository description and README
 
 ### CI/CD Architecture Decisions
 

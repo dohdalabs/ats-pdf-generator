@@ -11,7 +11,7 @@ init_logger --script-name "$(basename "$0")"
 show_usage() {
     cat <<'USAGE_EOF'
 SYNOPSIS
-    quality-check.sh [OPTIONS]
+    check-all.sh [OPTIONS]
 
 DESCRIPTION
     Run the full suite of project quality checks, including Python linting,
@@ -25,12 +25,12 @@ OPTIONS
     --skip-shell            Skip shell script linting
     --skip-docker           Skip Dockerfile linting
     --skip-markdown         Skip Markdown linting
-    --skip-security         Skip Trivy security scan
+    --skip-security         Skip security scans
 
 EXAMPLES
-    ./scripts/quality-check.sh
-    ./scripts/quality-check.sh --skip-security
-    CI=true ./scripts/quality-check.sh --skip-markdown
+    ./scripts/check-all.sh
+    ./scripts/check-all.sh --skip-security
+    CI=true ./scripts/check-all.sh --skip-markdown
 
 For more information: https://github.com/dohdalabs/ats-pdf-generator
 USAGE_EOF

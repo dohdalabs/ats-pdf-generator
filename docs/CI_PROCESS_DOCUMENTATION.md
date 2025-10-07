@@ -93,11 +93,11 @@ The CI pipeline consists of 6 main jobs:
 
 #### 8. Run Quality Checks
 
-- **Script**: `./scripts/quality-check.sh`
+- **Script**: `./scripts/check-all.sh`
 - **Purpose**: Executes all quality checks (linting, formatting, type checking)
 - **Why needed**: Centralized quality validation that can be run locally and in CI
 
-**High-Level Overview of Tasks Performed by `quality-check.sh`:**
+**High-Level Overview of Tasks Performed by `check-all.sh`:**
 
 - **Python Code Quality:** Runs `ruff` for linting and formatting, and `mypy` for static type checking.
 - **Python Tests:** Executes the test suite using `pytest` to ensure code correctness.
