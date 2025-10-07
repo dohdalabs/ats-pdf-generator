@@ -75,18 +75,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-.npm
 .yarn-integrity
 package-lock.json
 yarn.lock
 
 # Node.js cache
-.npm
 .eslintcache
 
 # Build and distribution
-dist/
-build/
 out/
 
 # Local development
@@ -96,8 +92,6 @@ out/
 .env.production.local
 
 # Editor directories and files
-.vscode/
-.idea/
 *.suo
 *.ntvs*
 *.njsproj
