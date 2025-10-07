@@ -4,6 +4,8 @@ alwaysApply: false
 ---
 # Python Coding Standards for AI Assistants
 
+**Python Version Policy**: This project requires Python 3.13+.
+
 ## Core Principles
 
 - **PEP 8 compliance** - Follow official Python style guide
@@ -47,7 +49,7 @@ def process_data(
 # Standard library
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 # Third-party
 import click

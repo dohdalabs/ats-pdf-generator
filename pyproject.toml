@@ -7,15 +7,13 @@ authors = [
 ]
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Text Processing :: Markup",
     "Topic :: Software Development :: Documentation",
@@ -45,7 +43,7 @@ build-backend = "hatchling.build"
 packages = ["src/ats_pdf_generator"]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py313"
 line-length = 88
 
 [tool.ruff.lint]
@@ -57,6 +55,7 @@ select = [
     "B",  # flake8-bugbear
     "C4", # flake8-comprehensions
     "UP", # pyupgrade
+    "UP037", # quoted-annotation (Python 3.13+)
 ]
 ignore = [
     "E501",  # line too long, handled by black
@@ -67,7 +66,7 @@ ignore = [
 "__init__.py" = ["F401"]
 
 [tool.black]
-target-version = ['py311']
+target-version = ['py313']
 line-length = 88
 include = '\.pyi?$'
 extend-exclude = '''
@@ -91,7 +90,7 @@ line_length = 88
 known_first_party = ["ats_pdf_generator"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
