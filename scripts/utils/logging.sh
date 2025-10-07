@@ -204,7 +204,7 @@ log_message() {
     formatted=$(format_message "$level" "$message")
 
     # Console output
-    if [[ "$LOG_QUIET" != "true" && "$console_only" != "true" ]]; then
+    if [[ "$LOG_QUIET" != "true" || "$console_only" == "true" ]]; then
         if [[ "$LOG_COLOR" == "true" && -t 1 ]]; then
             local color
             color=$(get_color "$level")

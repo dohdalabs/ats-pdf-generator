@@ -71,11 +71,11 @@ main() {
         export TRIVY_CACHE_DIR="${TRIVY_CACHE_DIR:-$HOME/.cache/trivy}"
         mkdir -p "$TRIVY_CACHE_DIR"
 
-        # Run trivy filesystem scan with optimized settings
-        if ! trivy fs . --cache-dir "$TRIVY_CACHE_DIR" --format table --severity HIGH,CRITICAL; then
-            log_warning "Security scan found issues (non-fatal)"
+        # Run trivy filesystem scan with optimized settings (include dev dependencies)
+        if ! trivy fs . --cache-dir "$TRIVY_CACHE_DIR" --format table --severity HIGH,CRITICAL --include-dev-deps; then
+            log_error "Security scan found HIGH/CRITICAL vulnerabilities"
             log_info "Review the trivy output above for security vulnerabilities"
-            exit 0
+            exit 1
         fi
     else
         # Local development, use Docker
@@ -90,16 +90,16 @@ main() {
             exit 0
         fi
 
-        # Run trivy via Docker with volume mounting for cache
+        # Run trivy via Docker with volume mounting for cache (include dev dependencies)
         if ! docker run --rm \
             -v "$(pwd):/workspace" \
             -v "$HOME/.cache/trivy:/root/.cache/trivy" \
             -w /workspace \
             aquasec/trivy:0.67.0 \
-            fs . --format table --severity HIGH,CRITICAL; then
-            log_warning "Security scan found issues (non-fatal)"
+            fs . --format table --severity HIGH,CRITICAL --include-dev-deps; then
+            log_error "Security scan found HIGH/CRITICAL vulnerabilities"
             log_info "Review the trivy output above for security vulnerabilities"
-            exit 0
+            exit 1
         fi
     fi
 

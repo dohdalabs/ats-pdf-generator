@@ -157,6 +157,7 @@ check_markdown() {
         }
     else
         log_warning "markdownlint not found, skipping Markdown linting"
+        return 0
     fi
 
     log_success "Markdown linting completed"

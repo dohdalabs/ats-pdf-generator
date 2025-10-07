@@ -76,7 +76,6 @@ RUN printf '# ATS PDF Generator\n\nConvert Markdown documents to ATS-optimized P
 
 # Install dependencies including dev tools using uv sync
 RUN uv sync --frozen && \
-    uv add pre-commit && \
     rm README.md
 
 # Create a non-root user for development

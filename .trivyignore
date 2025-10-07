@@ -1,13 +1,21 @@
 # Trivy ignore file
 # Add patterns to ignore specific vulnerabilities or files
 
-# Ignore development dependencies in node_modules
-node_modules/
+# Note: Removed broad node_modules/ ignore to allow scanning of all dependencies
+# Use .trivyignore.yaml for targeted vulnerability ignores if needed
 
-# Ignore Python virtual environments
-.venv/
-venv/
-env/
+# Ignore local development artifacts (minimal, explicit paths)
+# Note: Removed broad virtual environment ignores to allow dependency scanning
+# Local editor/build cache directories only
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
 
 # Ignore build artifacts
 dist/

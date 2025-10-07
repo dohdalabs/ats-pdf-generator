@@ -7,6 +7,7 @@ Optimized for cover letters and professional profiles.
 """
 
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -24,36 +25,190 @@ class ConversionError(ATSGeneratorError):
     """PDF conversion failed."""
 
 
+def _create_fallback_css(css_path: str) -> None:
+    """Create a fallback CSS file with basic styling.
+
+    Args:
+        css_path: Path where the fallback CSS file should be created
+
+    Raises:
+        FileOperationError: If the CSS file cannot be created
+    """
+    fallback_content = """/* Fallback CSS for ATS PDF Generator */
+body {
+    font-family: Arial, sans-serif;
+    font-size: 12pt;
+    line-height: 1.4;
+    margin: 1in;
+    color: #000;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: bold;
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+}
+
+h1 { font-size: 18pt; }
+h2 { font-size: 16pt; }
+h3 { font-size: 14pt; }
+
+p {
+    margin-bottom: 0.5em;
+    text-align: justify;
+}
+
+ul, ol {
+    margin-bottom: 0.5em;
+    padding-left: 1.5em;
+}
+
+li {
+    margin-bottom: 0.25em;
+}
+
+strong, b {
+    font-weight: bold;
+}
+
+em, i {
+    font-style: italic;
+}
+
+/* Ensure proper page breaks */
+.page-break {
+    page-break-before: always;
+}
+
+/* Basic table styling */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1em;
+}
+
+th, td {
+    border: 1px solid #000;
+    padding: 0.25em;
+    text-align: left;
+}
+
+th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+"""
+
+    try:
+        with open(css_path, "w", encoding="utf-8") as f:
+            f.write(fallback_content)
+    except OSError as e:
+        raise FileOperationError(f"Cannot create CSS file {css_path}: {e}") from e
+
+
 def _determine_css_file(files: list[str]) -> str:
-    """Determine the appropriate CSS file based on document content.
+    """Determine the appropriate CSS file based on file content and names.
+
+    Always returns a valid CSS file path or creates a fallback CSS file.
 
     Args:
         files: List of markdown files to analyze
 
     Returns:
-        Path to the appropriate CSS file
+        Path to the appropriate CSS file (guaranteed to exist)
+
+    Raises:
+        FileOperationError: If CSS templates directory doesn't exist and can't be created
     """
-    # Default to cover letter CSS
-    css_file = "templates/ats-cover-letter.css"
+    # Define CSS templates and their associated keywords
+    css_templates = {
+        "templates/ats-profile.css": {
+            "filename_keywords": ["profile", "summary", "overview", "background"],
+            "content_keywords": [
+                "profile",
+                "summary",
+                "overview",
+                "background",
+                "experience",
+                "skills",
+            ],
+        },
+        "templates/ats-cover-letter.css": {
+            "filename_keywords": ["cover", "letter", "application"],
+            "content_keywords": [
+                "dear",
+                "sincerely",
+                "application",
+                "position",
+                "role",
+            ],
+        },
+        "templates/ats-document.css": {
+            "filename_keywords": ["document", "general"],
+            "content_keywords": ["document", "content"],
+        },
+    }
 
-    # Check if we can determine document type from content or filename
-    if files:
-        first_file = files[0]
+    # Default CSS file
+    default_css = "templates/ats-cover-letter.css"
+
+    # Validate that templates directory exists
+    templates_dir = Path("templates")
+    if not templates_dir.exists():
         try:
-            with open(first_file, encoding="utf-8") as f:
-                content = f.read().lower()
-                # Look for profile indicators
-                if any(
-                    keyword in content
-                    for keyword in ["profile", "summary", "overview", "background"]
-                ):
-                    profile_css = "templates/ats-profile.css"
-                    if os.path.exists(profile_css):
-                        css_file = profile_css
-        except OSError:
-            pass  # Fall back to default CSS
+            templates_dir.mkdir(exist_ok=True)
+        except OSError as e:
+            raise FileOperationError(f"Cannot create templates directory: {e}") from e
 
-    return css_file
+    # Check if any CSS templates exist
+    available_templates = [
+        css_path for css_path in css_templates.keys() if os.path.exists(css_path)
+    ]
+
+    # If no templates exist, create a fallback CSS file
+    if not available_templates:
+        fallback_css = "templates/ats-fallback.css"
+        _create_fallback_css(fallback_css)
+        return fallback_css
+
+    # If no files provided, return first available template or default
+    if not files:
+        return default_css if os.path.exists(default_css) else available_templates[0]
+
+    # First pass: Check filenames for definitive signals
+    for file_path in files:
+        filename_lower = os.path.basename(file_path).lower()
+
+        # Check each CSS template's filename keywords
+        for css_path, config in css_templates.items():
+            if os.path.exists(css_path):
+                for keyword in config["filename_keywords"]:
+                    # Use word boundary matching to avoid substring matches
+                    pattern = r"\b" + re.escape(keyword) + r"\b"
+                    if re.search(pattern, filename_lower):
+                        return css_path
+
+    # Second pass: Analyze content if filename didn't provide definitive match
+    for file_path in files:
+        try:
+            with open(file_path, encoding="utf-8") as f:
+                content = f.read().lower()
+
+                # Check each CSS template's content keywords
+                for css_path, config in css_templates.items():
+                    if os.path.exists(css_path):
+                        # Use word boundary matching for content analysis
+                        for keyword in config["content_keywords"]:
+                            pattern = r"\b" + re.escape(keyword) + r"\b"
+                            if re.search(pattern, content):
+                                return css_path
+
+        except OSError:
+            # Skip files that can't be read, continue with others
+            continue
+
+    # If no match found, return default CSS or first available template
+    return default_css if os.path.exists(default_css) else available_templates[0]
 
 
 def main() -> None:
@@ -128,8 +283,7 @@ def main() -> None:
     # Add default CSS if not specified
     if "--css" not in " ".join(sys.argv):
         css_file: str = _determine_css_file(files)
-        if os.path.exists(css_file):
-            cmd.extend(["--css", css_file])
+        cmd.extend(["--css", css_file])
 
     try:
         # Execute pandoc command

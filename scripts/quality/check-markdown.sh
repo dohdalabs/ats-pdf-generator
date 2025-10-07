@@ -54,7 +54,7 @@ EXAMPLES
 
 Requirements:
     - Node.js and pnpm must be installed (see mise.toml for managed setup)
-    - markdownlint is installed via pnpm
+    - markdownlint-cli is installed via pnpm dependencies
 
 For more information: https://github.com/dohdalabs/ats-pdf-generator
 USAGE_EOF
@@ -209,7 +209,7 @@ main() {
     if [ "$fix_mode" = true ]; then
         for file in "${markdown_files[@]}"; do
             log_info "Formatting $file..."
-            if ! pnpm exec markdownlint "${ignore_args[@]}" "${cmd_args[@]}" "$file" >/dev/null 2>&1; then
+            if ! pnpm exec markdownlint "${ignore_args[@]}" "${cmd_args[@]}" "$file"; then
                 log_warning "Markdown formatting completed with issues (non-fatal)"
                 failed=1
             fi
@@ -217,7 +217,7 @@ main() {
     else
         for file in "${markdown_files[@]}"; do
             log_info "Checking $file..."
-            if ! pnpm exec markdownlint "${ignore_args[@]}" "${cmd_args[@]}" "$file" >/dev/null 2>&1; then
+            if ! pnpm exec markdownlint "${ignore_args[@]}" "${cmd_args[@]}" "$file"; then
                 log_warning "Markdown linting found issues (non-fatal)"
                 failed=1
             fi
@@ -229,6 +229,8 @@ main() {
     else
         log_warning "Markdown files had issues (non-fatal)"
     fi
+
+    exit $failed
 }
 
 main "$@"

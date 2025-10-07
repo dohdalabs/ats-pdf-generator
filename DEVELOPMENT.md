@@ -64,12 +64,9 @@ This script will:
 mise run install
 
 # Most common daily workflow
-mise run check-all      # Check all code (linting)
+mise run check-all      # Comprehensive quality checks: Python linting/formatting/typecheck/tests, shell linting, Docker linting, Markdown linting, security scans
 mise run format-all     # Auto-fix formatting issues
 mise run test-docker   # Run Docker tests
-
-# Run comprehensive quality checks (Python, Shell, Docker, Security, Markdown)
-mise run check-all      # Everything: linting, testing, security
 
 
 # Build and test everything (Docker images, functionality tests)
@@ -651,7 +648,7 @@ The project uses GitHub Actions with a script-first approach for automated quali
 ### Release Workflow (`release.yml`)
 
 - **Multi-Registry Publishing**: Uses `scripts/docker-manager.sh publish` for Docker Hub and GitHub Container Registry
-- **Multi-Variant Support**: Publishes standard, alpine, and dev image variants
+- **Multi-Variant Support**: Publishes standard and alpine image variants (dev variant validated for syntax only)
 - **Release Creation**: Automatically creates GitHub releases with changelog
 
 ### CI/CD Architecture Decisions

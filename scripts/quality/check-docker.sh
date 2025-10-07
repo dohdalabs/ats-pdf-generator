@@ -87,7 +87,8 @@ main() {
     if [ $failed -eq 0 ]; then
         log_success "All Dockerfiles passed quality checks"
     else
-        log_warning "$failed Dockerfile(s) had issues (non-fatal)"
+        log_error "$failed Dockerfile(s) had issues"
+        exit 1
     fi
 }
 

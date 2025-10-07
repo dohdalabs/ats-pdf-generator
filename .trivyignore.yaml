@@ -1,0 +1,17 @@
+# Trivy ignore configuration for targeted vulnerability suppression
+# This file allows ignoring specific CVEs or package:version combinations
+# while still scanning all dependencies for security vulnerabilities
+
+# Example format for ignoring specific vulnerabilities:
+# vulnerabilities:
+#   - CVE-2023-12345
+#   - CVE-2023-67890
+
+# Example format for ignoring specific package versions:
+# packages:
+#   - package-name:version
+
+# Currently no known false positives to ignore
+# Add entries here as needed when legitimate false positives are identified
+vulnerabilities: []
+packages: []

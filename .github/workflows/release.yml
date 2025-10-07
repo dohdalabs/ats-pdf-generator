@@ -40,21 +40,34 @@ jobs:
 
       - name: Publish all image variants using docker-manager.sh
         run: |
+          set -euo pipefail
           echo "🚀 Publishing all image variants for release ${{ steps.version.outputs.VERSION }}"
+
+          # Verify docker-manager.sh exists and is executable
+          if [ ! -f "./scripts/docker-manager.sh" ]; then
+            echo "❌ Error: docker-manager.sh script not found at ./scripts/docker-manager.sh"
+            exit 1
+          fi
+
+          if [ ! -x "./scripts/docker-manager.sh" ]; then
+            echo "❌ Error: docker-manager.sh script is not executable"
+            exit 1
+          fi
+
+          # Unified publish approach: Build and publish each variant using --dockerfile flag
+          # This approach ensures consistent tagging and reduces duplication
 
           # Build and publish standard image
           echo "📦 Building and publishing standard image..."
-          ./scripts/docker-manager.sh publish ${{ steps.version.outputs.VERSION }}
+          ./scripts/docker-manager.sh publish ${{ steps.version.outputs.VERSION }} --dockerfile=Dockerfile.standard
 
           # Build and publish alpine image
           echo "📦 Building and publishing alpine image..."
-          ./scripts/docker-manager.sh build --alpine
-          ./scripts/docker-manager.sh publish ${{ steps.version.outputs.VERSION }}-alpine --no-build
+          ./scripts/docker-manager.sh publish ${{ steps.version.outputs.VERSION }}-alpine --dockerfile=Dockerfile.alpine
 
           # Build and publish dev image
           echo "📦 Building and publishing dev image..."
-          ./scripts/docker-manager.sh build --dev
-          ./scripts/docker-manager.sh publish ${{ steps.version.outputs.VERSION }}-dev --no-build
+          ./scripts/docker-manager.sh publish ${{ steps.version.outputs.VERSION }}-dev --dockerfile=Dockerfile.dev
 
           echo "✅ All image variants published successfully!"
 

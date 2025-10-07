@@ -60,17 +60,93 @@ get_ci_info() {
     echo "CI Provider: $provider"
     if is_ci; then
         echo "CI Environment: true"
-        if [ -n "${GITHUB_REPOSITORY:-}" ]; then
-            echo "Repository: $GITHUB_REPOSITORY"
-        fi
-        if [ -n "${GITHUB_REF:-}" ]; then
-            echo "Ref: $GITHUB_REF"
-        fi
-        if [ -n "${GITHUB_SHA:-}" ]; then
-            echo "Commit: $GITHUB_SHA"
-        fi
-        if [ -n "${GITHUB_ACTOR:-}" ]; then
-            echo "Actor: $GITHUB_ACTOR"
+
+        # GitHub Actions
+        if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
+            if [ -n "${GITHUB_REPOSITORY:-}" ]; then
+                echo "Repository: $GITHUB_REPOSITORY"
+            fi
+            if [ -n "${GITHUB_REF:-}" ]; then
+                echo "Ref: $GITHUB_REF"
+            fi
+            if [ -n "${GITHUB_SHA:-}" ]; then
+                echo "Commit: $GITHUB_SHA"
+            fi
+            if [ -n "${GITHUB_ACTOR:-}" ]; then
+                echo "Actor: $GITHUB_ACTOR"
+            fi
+
+        # GitLab CI
+        elif [ "${GITLAB_CI:-false}" = "true" ]; then
+            if [ -n "${CI_PROJECT_PATH:-}" ]; then
+                echo "Repository: $CI_PROJECT_PATH"
+            fi
+            if [ -n "${CI_COMMIT_REF_NAME:-}" ]; then
+                echo "Ref: $CI_COMMIT_REF_NAME"
+            fi
+            if [ -n "${CI_COMMIT_SHA:-}" ]; then
+                echo "Commit: $CI_COMMIT_SHA"
+            fi
+            if [ -n "${GITLAB_USER_LOGIN:-}" ]; then
+                echo "Actor: $GITLAB_USER_LOGIN"
+            fi
+
+        # Jenkins
+        elif [ -n "${JENKINS_URL:-}" ]; then
+            if [ -n "${JOB_NAME:-}" ]; then
+                echo "Job: $JOB_NAME"
+            fi
+            if [ -n "${BUILD_NUMBER:-}" ]; then
+                echo "Build: $BUILD_NUMBER"
+            fi
+            if [ -n "${GIT_COMMIT:-}" ]; then
+                echo "Commit: $GIT_COMMIT"
+            fi
+
+        # Buildkite
+        elif [ "${BUILDKITE:-false}" = "true" ]; then
+            if [ -n "${BUILDKITE_PROJECT_SLUG:-}" ]; then
+                echo "Repository: $BUILDKITE_PROJECT_SLUG"
+            fi
+            if [ -n "${BUILDKITE_BRANCH:-}" ]; then
+                echo "Ref: $BUILDKITE_BRANCH"
+            fi
+            if [ -n "${BUILDKITE_COMMIT:-}" ]; then
+                echo "Commit: $BUILDKITE_COMMIT"
+            fi
+            if [ -n "${BUILDKITE_BUILD_CREATOR:-}" ]; then
+                echo "Actor: $BUILDKITE_BUILD_CREATOR"
+            fi
+
+        # CircleCI
+        elif [ "${CIRCLECI:-false}" = "true" ]; then
+            if [ -n "${CIRCLE_PROJECT_REPONAME:-}" ] && [ -n "${CIRCLE_PROJECT_USERNAME:-}" ]; then
+                echo "Repository: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+            fi
+            if [ -n "${CIRCLE_BRANCH:-}" ]; then
+                echo "Ref: $CIRCLE_BRANCH"
+            fi
+            if [ -n "${CIRCLE_SHA1:-}" ]; then
+                echo "Commit: $CIRCLE_SHA1"
+            fi
+            if [ -n "${CIRCLE_USERNAME:-}" ]; then
+                echo "Actor: $CIRCLE_USERNAME"
+            fi
+
+        # Travis CI
+        elif [ "${TRAVIS:-false}" = "true" ]; then
+            if [ -n "${TRAVIS_REPO_SLUG:-}" ]; then
+                echo "Repository: $TRAVIS_REPO_SLUG"
+            fi
+            if [ -n "${TRAVIS_BRANCH:-}" ]; then
+                echo "Ref: $TRAVIS_BRANCH"
+            fi
+            if [ -n "${TRAVIS_COMMIT:-}" ]; then
+                echo "Commit: $TRAVIS_COMMIT"
+            fi
+            if [ -n "${TRAVIS_COMMIT_AUTHOR:-}" ]; then
+                echo "Actor: $TRAVIS_COMMIT_AUTHOR"
+            fi
         fi
     else
         echo "CI Environment: false"

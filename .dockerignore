@@ -90,7 +90,6 @@ package-lock.json
 yarn.lock
 
 # Node.js cache
-.npm
 .eslintcache
 
 # Build and distribution
@@ -99,14 +98,11 @@ build/
 out/
 
 # Local development
-.env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
 # Editor directories and files
-.vscode/
-.idea/
 *.suo
 *.ntvs*
 *.njsproj

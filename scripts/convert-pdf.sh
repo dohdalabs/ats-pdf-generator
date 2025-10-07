@@ -31,7 +31,9 @@ For more information: https://github.com/dohdalabs/ats-pdf-generator
 USAGE_EOF
 }
 
-if ! parse_common_flags "$@"; then
+# Capture stderr from parse_common_flags to show specific error messages
+if ! parse_common_flags "$@" 2>&1; then
+    # The error message was already printed to stderr by parse_common_flags
     show_usage
     exit 2
 fi
@@ -105,19 +107,77 @@ if [ -z "$OUTPUT_FILE" ]; then
     OUTPUT_FILE="${INPUT_FILE%.md}.pdf"
 fi
 
+# Validate and sanitize input paths
+validate_path() {
+    local path="$1"
+    local name="$2"
+
+    # Check for newlines and shell metacharacters
+    if [[ "$path" =~ [[:space:]] ]]; then
+        log_error "$name contains whitespace or newlines: $path"
+        exit 1
+    fi
+
+    # Check for dangerous shell metacharacters
+    if [[ "$path" =~ [\;\|\&\<\>\(\)\$\`\\] ]]; then
+        log_error "$name contains dangerous shell metacharacters: $path"
+        exit 1
+    fi
+
+    # Check for null bytes
+    if [[ "$path" =~ $'\0' ]]; then
+        log_error "$name contains null bytes: $path"
+        exit 1
+    fi
+}
+
+# Validate input and output paths
+validate_path "$INPUT_FILE" "Input file"
+validate_path "$OUTPUT_FILE" "Output file"
+
 INPUT_DIR="$(dirname "$INPUT_FILE")"
 INPUT_FILENAME="$(basename "$INPUT_FILE")"
 OUTPUT_BASENAME="$(basename "$OUTPUT_FILE")"
+
+# Validate filenames
+validate_path "$INPUT_FILENAME" "Input filename"
+validate_path "$OUTPUT_BASENAME" "Output basename"
+
+# Compute absolute host path for Docker volume mount using realpath
+if command -v realpath >/dev/null 2>&1; then
+    ABSOLUTE_INPUT_DIR="$(realpath "$INPUT_DIR")"
+else
+    # Fallback for systems without realpath
+    if [[ "$INPUT_DIR" = /* ]]; then
+        ABSOLUTE_INPUT_DIR="$INPUT_DIR"
+    else
+        ABSOLUTE_INPUT_DIR="$(pwd)/$INPUT_DIR"
+    fi
+fi
+
+# Validate the resolved absolute path
+validate_path "$ABSOLUTE_INPUT_DIR" "Absolute input directory"
 
 log_info "Converting: $INPUT_FILE -> $OUTPUT_FILE"
 if [ -n "$DOCUMENT_TYPE" ]; then
     log_info "Document type: $DOCUMENT_TYPE"
 fi
 
-DOCKER_CMD="docker run --rm -v \"$(pwd)/$INPUT_DIR:/app/input\" -w /app ats-pdf-generator:dev"
-PYTHON_CMD="source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py input/$INPUT_FILENAME -o input/$OUTPUT_BASENAME"
+# Build Python command arguments safely
+PYTHON_ARGS=("input/$INPUT_FILENAME" "-o" "input/$OUTPUT_BASENAME")
+if [ -n "$DOCUMENT_TYPE" ]; then
+    PYTHON_ARGS+=("--type" "$DOCUMENT_TYPE")
+fi
 
-if eval "$DOCKER_CMD bash -c \"$PYTHON_CMD\""; then
+# Execute Docker command directly without eval or shell interpretation
+# Use exec form to pass arguments directly without shell interpretation
+if docker run --rm \
+    -v "$ABSOLUTE_INPUT_DIR:/app/input" \
+    -w /app \
+    ats-pdf-generator:dev \
+    bash -c "source .venv/bin/activate && exec python src/ats_pdf_generator/ats_converter.py \"\$@\"" \
+    -- \
+    "${PYTHON_ARGS[@]}"; then
     log_success "Conversion completed successfully"
     log_info "Output file: $OUTPUT_FILE"
 else

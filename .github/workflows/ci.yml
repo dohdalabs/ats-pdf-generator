@@ -23,9 +23,59 @@ jobs:
       - name: Extract tool versions
         id: versions
         run: |
-          echo "python-version=$(./scripts/extract-versions.sh python)" >> $GITHUB_OUTPUT
-          echo "node-version=$(./scripts/extract-versions.sh node)" >> $GITHUB_OUTPUT
-          echo "pnpm-version=$(./scripts/extract-versions.sh pnpm)" >> $GITHUB_OUTPUT
+          # Validate script exists and is executable
+          if [ ! -f "./scripts/extract-versions.sh" ]; then
+            echo "❌ Error: extract-versions.sh script not found" >&2
+            exit 1
+          fi
+
+          if [ ! -x "./scripts/extract-versions.sh" ]; then
+            echo "❌ Error: extract-versions.sh script is not executable" >&2
+            exit 1
+          fi
+
+          # Extract versions and validate each one
+          echo "🔍 Extracting tool versions..."
+
+          python_version=$(./scripts/extract-versions.sh python)
+          if [ -z "$python_version" ]; then
+            echo "❌ Error: Failed to extract Python version" >&2
+            exit 1
+          fi
+          if ! echo "$python_version" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$|^latest$'; then
+            echo "❌ Error: Invalid Python version format: '$python_version'" >&2
+            exit 1
+          fi
+          echo "✅ Python version: $python_version"
+
+          node_version=$(./scripts/extract-versions.sh node)
+          if [ -z "$node_version" ]; then
+            echo "❌ Error: Failed to extract Node.js version" >&2
+            exit 1
+          fi
+          if ! echo "$node_version" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$|^latest$'; then
+            echo "❌ Error: Invalid Node.js version format: '$node_version'" >&2
+            exit 1
+          fi
+          echo "✅ Node.js version: $node_version"
+
+          pnpm_version=$(./scripts/extract-versions.sh pnpm)
+          if [ -z "$pnpm_version" ]; then
+            echo "❌ Error: Failed to extract pnpm version" >&2
+            exit 1
+          fi
+          if ! echo "$pnpm_version" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$|^latest$'; then
+            echo "❌ Error: Invalid pnpm version format: '$pnpm_version'" >&2
+            exit 1
+          fi
+          echo "✅ pnpm version: $pnpm_version"
+
+          # Set GitHub outputs
+          echo "python-version=$python_version" >> $GITHUB_OUTPUT
+          echo "node-version=$node_version" >> $GITHUB_OUTPUT
+          echo "pnpm-version=$pnpm_version" >> $GITHUB_OUTPUT
+
+          echo "🎉 All tool versions extracted and validated successfully"
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -68,9 +118,12 @@ jobs:
         with:
           version: ${{ steps.versions.outputs.pnpm-version }}
 
+      - name: Install pnpm dependencies
+        run: pnpm install
+
       - name: Install additional tools
         run: |
-         sudo apt-get update
+          sudo apt-get update
           # Install shellcheck
           sudo apt-get install -y shellcheck
           # Install hadolint (pin version)

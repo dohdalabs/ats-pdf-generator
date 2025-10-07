@@ -150,15 +150,15 @@ find_files_exclude() {
     shift
     local exclude_dirs=("$@")
 
-    local find_cmd="find . -name \"$pattern\" -type f"
+    local find_cmd=(find . -name "$pattern" -type f)
 
     for dir in "${exclude_dirs[@]}"; do
-        find_cmd+=" -not -path \"./$dir/*\""
+        find_cmd+=(-not -path "./$dir/*")
     done
 
-    find_cmd+=" -print0"
+    find_cmd+=(-print0)
 
-    eval "$find_cmd"
+    "${find_cmd[@]}"
 }
 
 # Retry a command with exponential backoff
@@ -185,63 +185,6 @@ retry() {
 
     echo "Command failed after $max_attempts attempts" >&2
     return 1
-}
-
-# Parse command line arguments
-parse_args() {
-    local -n args_ref="$1"
-    shift
-
-    # Initialize the associative array with default values
-    # This prevents shellcheck warnings about unassigned variables
-    args_ref["help"]=false
-    args_ref["verbose"]=false
-    args_ref["quiet"]=false
-    args_ref["positional"]=()
-
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -h|--help)
-                args_ref["help"]=true
-                shift
-                ;;
-            -v|--verbose)
-                args_ref["verbose"]=true
-                shift
-                ;;
-            -q|--quiet)
-                args_ref["quiet"]=true
-                shift
-                ;;
-            --*)
-                # Long option
-                local key="${1#--}"
-                if [[ $# -gt 1 && $2 != --* && $2 != -* ]]; then
-                    args_ref["$key"]="$2"
-                    shift 2
-                else
-                    args_ref["$key"]=true
-                    shift
-                fi
-                ;;
-            -*)
-                # Short option
-                local key="${1#-}"
-                if [[ $# -gt 1 && $2 != --* && $2 != -* ]]; then
-                    args_ref["$key"]="$2"
-                    shift 2
-                else
-                    args_ref["$key"]=true
-                    shift
-                fi
-                ;;
-            *)
-                # Positional argument
-                args_ref["positional"]+=("$1")
-                shift
-                ;;
-        esac
-    done
 }
 
 # Parse common flags shared across scripts

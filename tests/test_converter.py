@@ -10,6 +10,8 @@ from ats_pdf_generator.ats_converter import (
     ATSGeneratorError,
     ConversionError,
     FileOperationError,
+    _create_fallback_css,
+    _determine_css_file,
     main,
 )
 
@@ -102,3 +104,95 @@ class TestCSSFiles:
             content = Path(css_file).read_text()
             assert len(content) > 0, f"CSS file {css_file} is empty"
             assert "body" in content, f"CSS file {css_file} missing basic styling"
+
+
+class TestCSSDetermination:
+    """Test cases for CSS file determination functionality."""
+
+    def test_determine_css_file_with_existing_templates(self) -> None:
+        """Test CSS determination with existing templates."""
+        # Test with no files - should return default
+        css_file = _determine_css_file([])
+        assert css_file == "templates/ats-cover-letter.css"
+        assert Path(css_file).exists()
+
+    def test_determine_css_file_with_filename_keywords(self) -> None:
+        """Test CSS determination based on filename keywords."""
+        # Test profile filename
+        css_file = _determine_css_file(["test-profile.md"])
+        assert css_file == "templates/ats-profile.css"
+
+        # Test cover letter filename
+        css_file = _determine_css_file(["cover-letter.md"])
+        assert css_file == "templates/ats-cover-letter.css"
+
+        # Test document filename
+        css_file = _determine_css_file(["document.md"])
+        assert css_file == "templates/ats-document.css"
+
+    def test_determine_css_file_with_content_keywords(self, tmp_path: Path) -> None:
+        """Test CSS determination based on content keywords."""
+        # Create temporary files with specific content
+        profile_file = tmp_path / "test.md"
+        profile_file.write_text(
+            "This is my professional profile and experience summary."
+        )
+
+        cover_letter_file = tmp_path / "application.md"
+        cover_letter_file.write_text(
+            "Dear Hiring Manager, I am writing to apply for this position."
+        )
+
+        # Test profile content
+        css_file = _determine_css_file([str(profile_file)])
+        assert css_file == "templates/ats-profile.css"
+
+        # Test cover letter content
+        css_file = _determine_css_file([str(cover_letter_file)])
+        assert css_file == "templates/ats-cover-letter.css"
+
+    def test_determine_css_file_fallback_creation(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test fallback CSS creation when no templates exist."""
+        # Change to temporary directory
+        monkeypatch.chdir(tmp_path)
+
+        # Ensure templates directory doesn't exist
+        templates_dir = tmp_path / "templates"
+        assert not templates_dir.exists()
+
+        # Call function - should create templates directory and fallback CSS
+        css_file = _determine_css_file([])
+        assert css_file == "templates/ats-fallback.css"
+        assert Path(css_file).exists()
+
+        # Verify fallback CSS content
+        content = Path(css_file).read_text()
+        assert "Fallback CSS for ATS PDF Generator" in content
+        assert "body" in content
+        assert "font-family" in content
+
+    def test_create_fallback_css(self, tmp_path: Path) -> None:
+        """Test fallback CSS creation function."""
+        css_file = tmp_path / "test-fallback.css"
+        _create_fallback_css(str(css_file))
+
+        assert css_file.exists()
+        content = css_file.read_text()
+        assert "Fallback CSS for ATS PDF Generator" in content
+        assert "body" in content
+        assert "font-family" in content
+        assert "h1, h2, h3" in content
+
+    def test_create_fallback_css_error(self, tmp_path: Path) -> None:
+        """Test fallback CSS creation with invalid path."""
+        invalid_path = tmp_path / "nonexistent" / "test.css"
+
+        with pytest.raises(FileOperationError, match="Cannot create CSS file"):
+            _create_fallback_css(str(invalid_path))
+
+    def test_determine_css_file_guarantees_existence(self) -> None:
+        """Test that _determine_css_file always returns an existing file."""
+        css_file = _determine_css_file([])
+        assert Path(css_file).exists(), f"Returned CSS file {css_file} does not exist"
