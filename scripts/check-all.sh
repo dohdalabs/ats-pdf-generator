@@ -119,12 +119,13 @@ check_shell() {
             return 1
         fi
     elif command -v shellcheck >/dev/null 2>&1; then
-        shellcheck install.sh scripts/*.sh src/*.sh || {
-            log_warning "Shell script linting found issues (non-fatal)"
-            return 0
-        }
+        if ! shellcheck install.sh scripts/*.sh src/*.sh; then
+            log_warning "Shell script linting found issues"
+            return 1
+        fi
     else
         log_warning "shellcheck not found, skipping shell linting"
+        return 1
     fi
 
     log_success "Shell script linting completed"
@@ -140,6 +141,7 @@ check_docker() {
         }
     else
         log_warning "check-docker.sh not found, skipping Docker linting"
+        return 0
     fi
 
     log_success "Docker quality checks completed"
@@ -170,6 +172,7 @@ check_security() {
         fi
     else
         log_warning "check-security.sh not found, skipping security scan"
+        return 0
     fi
 
     log_success "Security scan completed"
