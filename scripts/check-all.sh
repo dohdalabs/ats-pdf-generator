@@ -160,6 +160,7 @@ check_markdown() {
     fi
 
     log_success "Markdown linting completed"
+    return 0
 }
 
 check_security() {
