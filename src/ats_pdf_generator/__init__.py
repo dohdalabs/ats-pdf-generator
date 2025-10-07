@@ -8,6 +8,7 @@ from .ats_converter import (
     ATSGeneratorError,
     ConversionError,
     FileOperationError,
+    ValidationError,
     main,
 )
 
@@ -16,5 +17,6 @@ __all__ = [
     "ATSGeneratorError",
     "ConversionError",
     "FileOperationError",
+    "ValidationError",
     "main",
 ]

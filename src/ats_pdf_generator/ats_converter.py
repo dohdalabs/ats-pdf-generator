@@ -6,6 +6,7 @@ Simple Python wrapper for pandoc with weasyprint.
 Optimized for cover letters and professional profiles.
 """
 
+# Standard library
 import os
 import re
 import subprocess
@@ -15,6 +16,10 @@ from pathlib import Path
 
 class ATSGeneratorError(Exception):
     """Base exception for ATS PDF Generator."""
+
+
+class ValidationError(ATSGeneratorError):
+    """Input validation failed."""
 
 
 class FileOperationError(ATSGeneratorError):
@@ -211,12 +216,35 @@ def _determine_css_file(files: list[str]) -> str:
     return default_css if os.path.exists(default_css) else available_templates[0]
 
 
+def _validate_input_file(file_path: str) -> None:
+    """Validate input file exists and is readable.
+
+    Args:
+        file_path: Path to the input file
+
+    Raises:
+        ValidationError: If file validation fails
+        FileOperationError: If file cannot be accessed
+    """
+    path = Path(file_path)
+
+    if not path.exists():
+        raise ValidationError(f"Input file does not exist: {file_path}")
+
+    if not path.is_file():
+        raise ValidationError(f"Path is not a file: {file_path}")
+
+    if not os.access(path, os.R_OK):
+        raise FileOperationError(f"Cannot read file: {file_path}")
+
+
 def main() -> None:
     """Simple wrapper to call pandoc with weasyprint engine.
 
     Raises:
         ConversionError: If pandoc conversion fails
         FileOperationError: If file operations fail
+        ValidationError: If input validation fails
     """
     if len(sys.argv) < 2 or "--help" in sys.argv or "-h" in sys.argv:
         print("ATS Document Converter")
@@ -238,6 +266,11 @@ def main() -> None:
     # Preprocess: convert lines beginning with a bullet '•' to markdown list '- '
     args: list[str] = sys.argv[1:]
     files: list[str] = [a for a in args if a.endswith(".md") and os.path.exists(a)]
+
+    # Validate input files
+    for file_path in files:
+        _validate_input_file(file_path)
+
     temp_files: list[Path] = []
     processed_args: list[str] = []
 

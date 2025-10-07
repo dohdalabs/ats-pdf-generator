@@ -10,8 +10,10 @@ from ats_pdf_generator.ats_converter import (
     ATSGeneratorError,
     ConversionError,
     FileOperationError,
+    ValidationError,
     _create_fallback_css,
     _determine_css_file,
+    _validate_input_file,
     main,
 )
 
@@ -27,13 +29,16 @@ class TestATSConverter:
 
     def test_exception_hierarchy(self) -> None:
         """Test that custom exceptions inherit properly."""
+        assert issubclass(ValidationError, ATSGeneratorError)
         assert issubclass(FileOperationError, ATSGeneratorError)
         assert issubclass(ConversionError, ATSGeneratorError)
 
         # Test exception instantiation
+        validation_error = ValidationError("Test validation error")
         file_error = FileOperationError("Test file error")
         conversion_error = ConversionError("Test conversion error")
 
+        assert str(validation_error) == "Test validation error"
         assert str(file_error) == "Test file error"
         assert str(conversion_error) == "Test conversion error"
 
@@ -67,6 +72,11 @@ class TestATSConverter:
         # For now, we'll test that the exception can be raised
         with pytest.raises(ConversionError):
             raise ConversionError("Test conversion error")
+
+    def test_validation_error_handling(self) -> None:
+        """Test that validation errors are properly handled."""
+        with pytest.raises(ValidationError):
+            raise ValidationError("Test validation error")
 
     @pytest.mark.skipif(
         not Path("examples/sample-cover-letter.md").exists(),
@@ -196,3 +206,47 @@ class TestCSSDetermination:
         """Test that _determine_css_file always returns an existing file."""
         css_file = _determine_css_file([])
         assert Path(css_file).exists(), f"Returned CSS file {css_file} does not exist"
+
+
+class TestValidation:
+    """Test cases for input validation functionality."""
+
+    def test_validate_input_file_success(self, tmp_path: Path) -> None:
+        """Test successful file validation."""
+        # Arrange
+        test_file = tmp_path / "test.md"
+        test_file.write_text("# Test content")
+
+        # Act & Assert - should not raise any exception
+        _validate_input_file(str(test_file))
+
+    def test_validate_input_file_nonexistent(self) -> None:
+        """Test validation with nonexistent file."""
+        # Act & Assert
+        with pytest.raises(ValidationError, match="Input file does not exist"):
+            _validate_input_file("nonexistent_file.md")
+
+    def test_validate_input_file_not_a_file(self, tmp_path: Path) -> None:
+        """Test validation with directory instead of file."""
+        # Arrange
+        test_dir = tmp_path / "test_dir"
+        test_dir.mkdir()
+
+        # Act & Assert
+        with pytest.raises(ValidationError, match="Path is not a file"):
+            _validate_input_file(str(test_dir))
+
+    def test_validate_input_file_permission_error(self, tmp_path: Path) -> None:
+        """Test validation with file that cannot be read."""
+        # Arrange
+        test_file = tmp_path / "test.md"
+        test_file.write_text("# Test content")
+        test_file.chmod(0o000)  # Remove all permissions
+
+        try:
+            # Act & Assert
+            with pytest.raises(FileOperationError, match="Cannot read file"):
+                _validate_input_file(str(test_file))
+        finally:
+            # Cleanup - restore permissions
+            test_file.chmod(0o644)
