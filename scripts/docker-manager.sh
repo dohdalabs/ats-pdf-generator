@@ -102,7 +102,8 @@ COMMANDS
         --alpine: Build only Alpine image
         --standard: Build only Standard image
         --dev: Build only Dev image
-        --no-cache: Build without cache --test: Run tests after building
+        --no-cache: Build without cache
+        --test: Run tests after building
 
     test [--all|--alpine|--standard|--dev]
         Test existing Docker images. Default tests all images.
@@ -111,12 +112,14 @@ COMMANDS
         Validate Dockerfiles using hadolint. If no files specified,
         validates all Dockerfiles in docker/ directory.
 
-    publish [VERSION] [--no-build] [--no-push] [--no-test]
+    publish [VERSION] [--no-build] [--no-push] [--no-test] [--no-latest] [--tag-latest]
         Build, tag, and publish Docker images to multiple registries.
         VERSION: Image version/tag (default: latest)
         --no-build: Skip building, use existing image
         --no-push: Skip pushing to registries
         --no-test: Skip testing published images
+        --no-latest: Skip tagging images with 'latest'
+        --tag-latest: Force tagging images with 'latest'
         Publishes to: Docker Hub and GitHub Container Registry
 
     clean [--all|--alpine|--standard|--dev]
@@ -631,6 +634,7 @@ cmd_info() {
 tag_for_registries() {
     local image_name="$1"
     local version="$2"
+    local tag_latest="${3:-${TAG_LATEST:-true}}"
 
     log_info "Tagging image for multiple registries..."
 
@@ -638,9 +642,16 @@ tag_for_registries() {
         log_info "Tagging for registry: ${registry}"
         docker tag "${image_name}:${version}" "${registry}:${version}"
 
-        # Also tag as latest if this is not a specific version
-        if [ "${version}" = "latest" ]; then
+        # Also tag as latest when enabled and version is not already latest
+        if [ "${tag_latest}" = true ] && [ "${version}" != "latest" ]; then
+            log_info "Tagging ${registry}:latest"
             docker tag "${image_name}:${version}" "${registry}:latest"
+        else
+            if [ "${tag_latest}" != true ]; then
+                log_info "Skipping latest tag for ${registry} (TAG_LATEST=${tag_latest})"
+            else
+                log_info "Version already latest; skipping duplicate tag for ${registry}"
+            fi
         fi
     done
 
@@ -707,6 +718,7 @@ cmd_publish() {
     local push_enabled="${PUSH:-true}"
     local build_image="${BUILD:-true}"
     local test_published="${TEST:-true}"
+    local tag_latest="${TAG_LATEST:-true}"
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -724,7 +736,9 @@ cmd_publish() {
                 echo "  --no-build    Skip building, use existing image"
                 echo "  --no-push     Skip pushing to registries"
                 echo "  --no-test     Skip testing published images"
-                echo "  --version=V    Set version to V"
+                echo "  --no-latest   Skip tagging images with 'latest'"
+                echo "  --tag-latest  Force tagging images with 'latest'"
+                echo "  --version=V   Set version to V"
                 echo ""
                 echo "Examples:"
                 echo "  $0 publish                    # Build and publish as 'latest'"
@@ -735,6 +749,7 @@ cmd_publish() {
                 echo "  PUSH=true     Enable pushing to registries (default: true)"
                 echo "  BUILD=true    Enable building image (default: true)"
                 echo "  TEST=true     Enable testing published images (default: true)"
+                echo "  TAG_LATEST=true  Tag images with 'latest' (default: true)"
                 echo ""
                 echo "Prerequisites:"
                 echo "  - Docker must be running"
@@ -752,6 +767,14 @@ cmd_publish() {
                 ;;
             --no-test)
                 test_published=false
+                shift
+                ;;
+            --no-latest)
+                tag_latest=false
+                shift
+                ;;
+            --tag-latest)
+                tag_latest=true
                 shift
                 ;;
             --version=*)
@@ -775,6 +798,7 @@ cmd_publish() {
     log_info "Build: ${build_image}"
     log_info "Push: ${push_enabled}"
     log_info "Test: ${test_published}"
+    log_info "Tag latest: ${tag_latest}"
 
     # Build the image if requested
     if [ "$build_image" = true ]; then
@@ -802,7 +826,7 @@ cmd_publish() {
     fi
 
     # Tag for all registries
-    tag_for_registries "${IMAGE_NAME}" "${version}"
+    tag_for_registries "${IMAGE_NAME}" "${version}" "${tag_latest}"
 
     # Push to each registry if enabled
     if [ "$push_enabled" = true ]; then
