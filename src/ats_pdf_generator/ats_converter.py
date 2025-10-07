@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 ATS Document Converter
-Simple Python wrapper for pandoc with weasyprint
-Optimized for cover letters and professional profiles
+
+Simple Python wrapper for pandoc with weasyprint.
+Optimized for cover letters and professional profiles.
 """
 
 import os
@@ -11,8 +12,57 @@ import sys
 from pathlib import Path
 
 
+class ATSGeneratorError(Exception):
+    """Base exception for ATS PDF Generator."""
+
+
+class FileOperationError(ATSGeneratorError):
+    """File operation failed."""
+
+
+class ConversionError(ATSGeneratorError):
+    """PDF conversion failed."""
+
+
+def _determine_css_file(files: list[str]) -> str:
+    """Determine the appropriate CSS file based on document content.
+
+    Args:
+        files: List of markdown files to analyze
+
+    Returns:
+        Path to the appropriate CSS file
+    """
+    # Default to cover letter CSS
+    css_file = "templates/ats-cover-letter.css"
+
+    # Check if we can determine document type from content or filename
+    if files:
+        first_file = files[0]
+        try:
+            with open(first_file, encoding="utf-8") as f:
+                content = f.read().lower()
+                # Look for profile indicators
+                if any(
+                    keyword in content
+                    for keyword in ["profile", "summary", "overview", "background"]
+                ):
+                    profile_css = "templates/ats-profile.css"
+                    if os.path.exists(profile_css):
+                        css_file = profile_css
+        except OSError:
+            pass  # Fall back to default CSS
+
+    return css_file
+
+
 def main() -> None:
-    """Simple wrapper to call pandoc with weasyprint engine"""
+    """Simple wrapper to call pandoc with weasyprint engine.
+
+    Raises:
+        ConversionError: If pandoc conversion fails
+        FileOperationError: If file operations fail
+    """
     if len(sys.argv) < 2 or "--help" in sys.argv or "-h" in sys.argv:
         print("ATS Document Converter")
         print("Convert Markdown documents to ATS-optimized PDFs for job applications")
@@ -31,12 +81,13 @@ def main() -> None:
         sys.exit(0)
 
     # Preprocess: convert lines beginning with a bullet '•' to markdown list '- '
-    args = sys.argv[1:]
-    files = [a for a in args if a.endswith(".md") and os.path.exists(a)]
-    temp_files = []
-    processed_args = []
+    args: list[str] = sys.argv[1:]
+    files: list[str] = [a for a in args if a.endswith(".md") and os.path.exists(a)]
+    temp_files: list[Path] = []
+    processed_args: list[str] = []
 
     # Ensure tmp directory exists - use /app/tmp if available, otherwise use current directory
+    tmp_dir: Path
     if Path("/app/tmp").exists():
         tmp_dir = Path("/app/tmp")
     else:
@@ -47,25 +98,28 @@ def main() -> None:
         if a in files:
             src = Path(a)
             tmp = tmp_dir / f"{src.stem}.preprocessed.md"
-            with (
-                src.open("r", encoding="utf-8") as f_in,
-                tmp.open("w", encoding="utf-8") as f_out,
-            ):
-                for line in f_in:
-                    # Normalize bullet chars to markdown list item
-                    stripped = line.lstrip()
-                    if stripped.startswith("• ") or stripped.startswith("* "):
-                        indent = line[: len(line) - len(stripped)]
-                        f_out.write(f"{indent}- {stripped[2:]}\n")
-                    else:
-                        f_out.write(line)
-            temp_files.append(tmp)
-            processed_args.append(str(tmp))
+            try:
+                with (
+                    src.open("r", encoding="utf-8") as f_in,
+                    tmp.open("w", encoding="utf-8") as f_out,
+                ):
+                    for line in f_in:
+                        # Normalize bullet chars to markdown list item
+                        stripped = line.lstrip()
+                        if stripped.startswith("• ") or stripped.startswith("* "):
+                            indent = line[: len(line) - len(stripped)]
+                            f_out.write(f"{indent}- {stripped[2:]}\n")
+                        else:
+                            f_out.write(line)
+                temp_files.append(tmp)
+                processed_args.append(str(tmp))
+            except OSError as e:
+                raise FileOperationError(f"Failed to process file {src}: {e}") from e
         else:
             processed_args.append(a)
 
     # Build pandoc command
-    cmd = ["pandoc"] + processed_args
+    cmd: list[str] = ["pandoc"] + processed_args
 
     # Ensure we use weasyprint engine if not specified
     if "--pdf-engine" not in " ".join(sys.argv):
@@ -73,26 +127,7 @@ def main() -> None:
 
     # Add default CSS if not specified
     if "--css" not in " ".join(sys.argv):
-        # Try to determine document type and use appropriate CSS
-        css_file = "templates/ats-cover-letter.css"  # Default to cover letter CSS
-
-        # Check if we can determine document type from content or filename
-        if files:
-            first_file = files[0]
-            try:
-                with open(first_file, encoding="utf-8") as f:
-                    content = f.read().lower()
-                    # Look for profile indicators
-                    if any(
-                        keyword in content
-                        for keyword in ["profile", "summary", "overview", "background"]
-                    ):
-                        profile_css = "templates/ats-profile.css"
-                        if os.path.exists(profile_css):
-                            css_file = profile_css
-            except Exception:
-                pass  # Fall back to default CSS
-
+        css_file: str = _determine_css_file(files)
         if os.path.exists(css_file):
             cmd.extend(["--css", css_file])
 
@@ -103,20 +138,21 @@ def main() -> None:
         if result.stdout:
             print(result.stdout)
     except subprocess.CalledProcessError as e:
-        print("Error during conversion:")
-        print(f"STDOUT: {e.stdout}")
-        print(f"STDERR: {e.stderr}")
-        sys.exit(e.returncode)
-    except FileNotFoundError:
-        print("Error: pandoc not found. Please ensure pandoc is installed.")
-        sys.exit(1)
+        error_msg = f"Pandoc conversion failed with return code {e.returncode}"
+        if e.stderr:
+            error_msg += f": {e.stderr}"
+        raise ConversionError(error_msg) from e
+    except FileNotFoundError as e:
+        raise ConversionError(
+            "Pandoc not found. Please ensure pandoc is installed."
+        ) from e
     finally:
         # Cleanup temporary files
         for tmp in temp_files:
             try:
                 os.remove(tmp)
-            except Exception:
-                pass
+            except OSError:
+                pass  # Ignore cleanup errors
 
 
 if __name__ == "__main__":
