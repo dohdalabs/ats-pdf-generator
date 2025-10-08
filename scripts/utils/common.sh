@@ -32,7 +32,7 @@ COMMON_FLAGS_REMAINING=()
 # Get the directory of the current script
 get_script_dir() {
     local script_path="${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
-    cd "$(dirname "$script_path")" && pwd
+    (cd "$(dirname "$script_path")" && pwd)
 }
 
 # Get the project root directory
