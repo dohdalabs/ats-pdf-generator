@@ -16,6 +16,29 @@ source "$SCRIPT_DIR/../utils/common.sh"
 # Initialize logger
 init_logger --script-name "$(basename "$0")"
 
+# Configure timeout defaults
+export TRIVY_TIMEOUT="${TRIVY_TIMEOUT:-5m}"
+TIMEOUT_CMD="${TIMEOUT_CMD:-timeout}"
+
+# Configure Trivy cache directory
+export TRIVY_CACHE_DIR="${TRIVY_CACHE_DIR:-${HOME}/.cache/trivy}"
+
+# Ensure required tooling is available
+ensure_timeout_available() {
+    if command -v "$TIMEOUT_CMD" >/dev/null 2>&1; then
+        return
+    fi
+
+    if [ "$TIMEOUT_CMD" = "timeout" ] && command -v gtimeout >/dev/null 2>&1; then
+        TIMEOUT_CMD="gtimeout"
+        return
+    fi
+
+    log_error "Required command '$TIMEOUT_CMD' not found. Install coreutils (e.g., 'brew install coreutils') or ensure it is available in PATH."
+    log_info "Trivy scans are limited to ${TRIVY_TIMEOUT}. Override with TRIVY_TIMEOUT if needed."
+    exit 1
+}
+
 # Display usage information
 show_usage() {
     cat <<'USAGE_EOF'
@@ -25,7 +48,8 @@ SYNOPSIS
 DESCRIPTION
     Run a Trivy filesystem scan against the current repository using the
     project's recommended settings. Uses Docker for local development and
-    direct binary for CI environments.
+    direct binary for CI environments. Enforces a timeout (TRIVY_TIMEOUT,
+    default 5m) to prevent long-running scans.
 
 OPTIONS
     -h, --help              Show this help message and exit
@@ -67,15 +91,21 @@ main() {
 
         log_step "Running trivy filesystem scan (CI mode)..."
 
-        # Set cache directory for better performance
-        export TRIVY_CACHE_DIR="${TRIVY_CACHE_DIR:-$HOME/.cache/trivy}"
+        ensure_timeout_available
+
+        # Ensure cache directory exists for better performance
         mkdir -p "$TRIVY_CACHE_DIR"
 
         # Run trivy filesystem scan with optimized settings (include dev dependencies)
-        if ! trivy fs . --cache-dir "$TRIVY_CACHE_DIR" --format table --severity HIGH,CRITICAL --include-dev-deps; then
-            log_error "Security scan found HIGH/CRITICAL vulnerabilities"
-            log_info "Review the trivy output above for security vulnerabilities"
-            exit 1
+        if ! "$TIMEOUT_CMD" "$TRIVY_TIMEOUT" trivy fs . --cache-dir "$TRIVY_CACHE_DIR" --format table --severity HIGH,CRITICAL --include-dev-deps; then
+            exit_code=$?
+            if [ "$exit_code" -eq 124 ]; then
+                log_error "Trivy filesystem scan timed out after $TRIVY_TIMEOUT"
+            else
+                log_error "Security scan found HIGH/CRITICAL vulnerabilities"
+                log_info "Review the trivy output above for security vulnerabilities"
+            fi
+            exit "$exit_code"
         fi
     else
         # Local development, use Docker
@@ -90,16 +120,26 @@ main() {
             exit 0
         fi
 
+        ensure_timeout_available
+
+        # Ensure cache directory exists before mounting into Docker
+        mkdir -p "$TRIVY_CACHE_DIR"
+
         # Run trivy via Docker with volume mounting for cache (include dev dependencies)
-        if ! docker run --rm \
+        if ! "$TIMEOUT_CMD" "$TRIVY_TIMEOUT" docker run --rm \
             -v "$(pwd):/workspace" \
-            -v "$HOME/.cache/trivy:/root/.cache/trivy" \
+            -v "$TRIVY_CACHE_DIR:/root/.cache/trivy" \
             -w /workspace \
             aquasec/trivy:0.67.0 \
             fs . --format table --severity HIGH,CRITICAL --include-dev-deps; then
-            log_error "Security scan found HIGH/CRITICAL vulnerabilities"
-            log_info "Review the trivy output above for security vulnerabilities"
-            exit 1
+            exit_code=$?
+            if [ "$exit_code" -eq 124 ]; then
+                log_error "Trivy filesystem scan timed out after $TRIVY_TIMEOUT"
+            else
+                log_error "Security scan found HIGH/CRITICAL vulnerabilities"
+                log_info "Review the trivy output above for security vulnerabilities"
+            fi
+            exit "$exit_code"
         fi
     fi
 

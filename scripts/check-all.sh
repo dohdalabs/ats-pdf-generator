@@ -103,7 +103,7 @@ check_python() {
     else
         mise run lint-python
         mise run format-python
-        mise run typecheck
+        mise run typecheck-python
         mise run test-python
     fi
 
@@ -119,7 +119,27 @@ check_shell() {
             return 1
         fi
     elif command -v shellcheck >/dev/null 2>&1; then
-        if ! shellcheck install.sh scripts/*.sh src/*.sh; then
+        local shellcheck_targets=()
+
+        if [ -f "install.sh" ]; then
+            shellcheck_targets+=("install.sh")
+        fi
+
+        shopt -s nullglob
+        local pattern
+        for pattern in scripts/*.sh src/*.sh; do
+            if [ -f "$pattern" ]; then
+                shellcheck_targets+=("$pattern")
+            fi
+        done
+        shopt -u nullglob
+
+        if [ ${#shellcheck_targets[@]} -eq 0 ]; then
+            log_warning "No shell scripts found for shellcheck"
+            return 0
+        fi
+
+        if ! shellcheck "${shellcheck_targets[@]}"; then
             log_warning "Shell script linting found issues"
             return 1
         fi

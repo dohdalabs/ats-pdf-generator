@@ -29,6 +29,30 @@ For more information: https://github.com/dohdalabs/ats-pdf-generator
 USAGE_EOF
 }
 
+ensure_timeout_available() {
+    if command -v timeout >/dev/null 2>&1 || command -v gtimeout >/dev/null 2>&1; then
+        return
+    fi
+
+    if [ "$(uname -s)" = "Darwin" ]; then
+        if command -v brew >/dev/null 2>&1; then
+            log_info "Installing coreutils (provides gtimeout)..."
+            brew install coreutils
+        else
+            log_error "GNU timeout (coreutils) not found and Homebrew is unavailable. Install Homebrew from https://brew.sh and rerun."
+            exit 1
+        fi
+    else
+        log_error "GNU timeout (coreutils) not found. Install via your package manager (e.g., 'sudo apt install coreutils')."
+        exit 1
+    fi
+
+    if ! command -v timeout >/dev/null 2>&1 && ! command -v gtimeout >/dev/null 2>&1; then
+        log_error "GNU timeout installation failed. Install manually and rerun."
+        exit 1
+    fi
+}
+
 if ! parse_common_flags "$@"; then
     show_usage
     exit 2
@@ -85,6 +109,8 @@ if [ "$(printf '%s\n' "$required_version" "$python_version" | sort -V | head -n1
     log_info "Consider using mise: curl https://mise.run | sh"
     exit 1
 fi
+
+ensure_timeout_available
 
 if ! command -v uv >/dev/null 2>&1; then
     log_info "Installing uv..."

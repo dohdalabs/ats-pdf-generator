@@ -59,11 +59,13 @@ extract_version() {
     BEGIN { in_section = 0 }
     /^\[tools\]/ { in_section = 1; next }
     /^\[/ { in_section = 0 }
-    in_section && $0 ~ "^" tool " = " {
-        gsub(/^[^"]*"/, "", $0)
-        gsub(/".*$/, "", $0)
-        print $0
-        exit
+    in_section {
+        prefix = tool " = \""
+        if (index($0, prefix) == 1) {
+            split($0, parts, "\"")
+            print parts[2]
+            exit
+        }
     }
     ' "$MISE_TOML"
 }

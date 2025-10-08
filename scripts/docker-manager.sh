@@ -73,12 +73,11 @@ PROJECT_ROOT=$(get_project_root)
 
 # Configuration
 IMAGE_NAME="ats-pdf-generator"
-PROJECT_NAME="ats-pdf-generator"
 
 # Registry configurations for publishing
 REGISTRIES=(
     "docker.io/dohdalabs/${IMAGE_NAME}"
-    "ghcr.io/dohdalabs/${PROJECT_NAME}"
+    "ghcr.io/dohdalabs/${IMAGE_NAME}"
 )
 
 
@@ -676,7 +675,7 @@ push_dockerhub() {
 
 # Push to GitHub Container Registry
 push_ghcr() {
-    local registry="ghcr.io/dohdalabs/${PROJECT_NAME}"
+    local registry="ghcr.io/dohdalabs/${IMAGE_NAME}"
     local version="$1"
 
     log_info "Pushing to GitHub Container Registry: ${registry}"
@@ -761,6 +760,7 @@ cmd_publish() {
     local dockerfile_name="${DOCKERFILE_VARIANT:-Dockerfile.standard}"
 
     # Parse arguments
+    local version_args=()
     while [[ $# -gt 0 ]]; do
         case $1 in
             --help|-h)
@@ -835,12 +835,21 @@ cmd_publish() {
                 ;;
             *)
                 if [[ ! "$1" =~ ^-- ]]; then
-                    version="$1"
+                    version_args+=("$1")
                 fi
                 shift
                 ;;
         esac
     done
+
+    # Handle version arguments
+    if [ ${#version_args[@]} -gt 0 ]; then
+        if [ ${#version_args[@]} -gt 1 ]; then
+            log_warning "Multiple version arguments provided: ${version_args[*]}"
+            log_warning "Using first version: ${version_args[0]}"
+        fi
+        version="${version_args[0]}"
+    fi
 
     check_docker
 
@@ -905,7 +914,7 @@ cmd_publish() {
             if [ "$test_published" = true ]; then
                 log_info "Testing published images..."
                 test_published_image "docker.io/dohdalabs/${IMAGE_NAME}" "${version}" || push_exit_code=1
-                test_published_image "ghcr.io/dohdalabs/${PROJECT_NAME}" "${version}" || push_exit_code=1
+                test_published_image "ghcr.io/dohdalabs/${IMAGE_NAME}" "${version}" || push_exit_code=1
             fi
 
             if [ $push_exit_code -eq 0 ]; then
@@ -913,7 +922,7 @@ cmd_publish() {
                 echo ""
                 log_info "Pull commands for users:"
                 echo "  Docker Hub:        docker pull dohdalabs/${IMAGE_NAME}:${version}"
-                echo "  GitHub Registry:   docker pull ghcr.io/dohdalabs/${PROJECT_NAME}:${version}"
+                echo "  GitHub Registry:   docker pull ghcr.io/dohdalabs/${IMAGE_NAME}:${version}"
             fi
         else
             log_error "Some registry pushes failed"

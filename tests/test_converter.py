@@ -140,6 +140,31 @@ class TestCSSDetermination:
         css_file = _determine_css_file(["document.md"])
         assert css_file == "templates/ats-document.css"
 
+    def test_determine_css_file_keywords_adjacent_to_extensions(self) -> None:
+        """Test CSS determination with keywords adjacent to file extensions."""
+        # Test profile keyword directly adjacent to .md extension
+        css_file = _determine_css_file(["profile.md"])
+        assert css_file == "templates/ats-profile.css"
+
+        # Test cover keyword directly adjacent to .md extension
+        css_file = _determine_css_file(["cover.md"])
+        assert css_file == "templates/ats-cover-letter.css"
+
+        # Test application keyword directly adjacent to .md extension
+        css_file = _determine_css_file(["application.md"])
+        assert css_file == "templates/ats-cover-letter.css"
+
+        # Test document keyword directly adjacent to .md extension
+        css_file = _determine_css_file(["document.md"])
+        assert css_file == "templates/ats-document.css"
+
+        # Test with different extensions
+        css_file = _determine_css_file(["profile.txt"])
+        assert css_file == "templates/ats-profile.css"
+
+        css_file = _determine_css_file(["cover.docx"])
+        assert css_file == "templates/ats-cover-letter.css"
+
     def test_determine_css_file_with_content_keywords(self, tmp_path: Path) -> None:
         """Test CSS determination based on content keywords."""
         # Create temporary files with specific content

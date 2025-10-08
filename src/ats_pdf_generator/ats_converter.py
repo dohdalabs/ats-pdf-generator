@@ -188,8 +188,9 @@ def _determine_css_file(files: list[str]) -> str:
         for css_path, config in css_templates.items():
             if os.path.exists(css_path):
                 for keyword in config["filename_keywords"]:
-                    # Use word boundary matching to avoid substring matches
-                    pattern = r"\b" + re.escape(keyword) + r"\b"
+                    # Use word boundary matching, but allow keywords adjacent to file extensions
+                    # Pattern: word boundary + keyword + (word boundary OR end of string OR file extension)
+                    pattern = r"\b" + re.escape(keyword) + r"(?:\b|$|\.)"
                     if re.search(pattern, filename_lower):
                         return css_path
 

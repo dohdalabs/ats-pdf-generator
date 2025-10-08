@@ -42,13 +42,48 @@ get_project_root() {
 
     # Look for project root indicators starting from script directory
     local current_dir="$script_dir"
-    while [[ "$current_dir" != "/" ]]; do
+    local visited_dirs=()
+    local max_depth=50  # Prevent infinite loops with reasonable depth limit
+
+    while [[ "$current_dir" != "/" && ${#visited_dirs[@]} -lt $max_depth ]]; do
+        # Check if we've already visited this directory (prevents cyclic symlink loops)
+        if [[ ${#visited_dirs[@]} -gt 0 ]]; then
+            for visited in "${visited_dirs[@]}"; do
+                if [[ "$visited" == "$current_dir" ]]; then
+                    echo "Error: Detected cyclic symlink in directory traversal at: $current_dir" >&2
+                    return 1
+                fi
+            done
+        fi
+
+        # Add current directory to visited list
+        visited_dirs+=("$current_dir")
+
+        # Check for project root indicators
         if [[ -f "$current_dir/pyproject.toml" ]] || [[ -f "$current_dir/package.json" ]] || [[ -f "$current_dir/Cargo.toml" ]] || [[ -f "$current_dir/mise.toml" ]]; then
             echo "$current_dir"
             return 0
         fi
-        current_dir=$(dirname "$current_dir")
+
+        # Move to parent directory
+        local parent_dir
+        parent_dir=$(dirname "$current_dir")
+
+        # Safety check: if parent is same as current, we're stuck
+        if [[ "$parent_dir" == "$current_dir" ]]; then
+            echo "Error: Cannot traverse beyond directory: $current_dir" >&2
+            return 1
+        fi
+
+        current_dir="$parent_dir"
     done
+
+    # If we hit max depth, it's likely a symlink loop
+    if [[ ${#visited_dirs[@]} -ge $max_depth ]]; then
+        echo "Error: Maximum directory traversal depth reached (${max_depth}). Possible symlink loop." >&2
+        echo "Traversed from: $script_dir" >&2
+        return 1
+    fi
 
     # If no project root found, this is an error condition
     echo "Error: Could not find project root from script location: $script_dir" >&2
