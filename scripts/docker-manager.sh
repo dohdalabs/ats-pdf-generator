@@ -195,7 +195,7 @@ build_image() {
         build_args+=(--no-cache)
     fi
 
-    build_args+=(.)
+    build_args+=("$PROJECT_ROOT")
 
     log_debug "Running: docker build ${build_args[*]}"
 
@@ -882,7 +882,7 @@ cmd_publish() {
             --build-arg GIT_SHA="$git_sha" \
             --build-arg VENDOR="DohDa Labs" \
             -f "$dockerfile_path" \
-            -t "${IMAGE_NAME}:${version}" .; then
+            -t "${IMAGE_NAME}:${version}" "$PROJECT_ROOT"; then
             log_success "Image built successfully: ${IMAGE_NAME}:${version}"
         else
             log_error "Failed to build image"
