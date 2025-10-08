@@ -16,20 +16,14 @@ alwaysApply: false
 - Ensure proper heading hierarchy
 - Use consistent formatting
 
-### Common Rules
+### Formatting Standards
 
-- **MD022**: Blank lines around headings
-- **MD032**: Blank lines around lists
-- **MD031**: Blank lines around fenced code blocks
+- **MD022**: Blank lines around headings - Use blank lines around all headings
+- **MD032**: Blank lines around lists - Use blank lines around all lists
+- **MD031**: Blank lines around fenced code blocks - Use blank lines around all fenced code blocks
 - **MD013**: Line length limits (disabled in project)
 - **MD033**: HTML tags (disabled in project)
 - **MD041**: First line heading (disabled in project)
-
-### Formatting Standards
-
-- Use blank lines around all headings
-- Use blank lines around all lists
-- Use blank lines around all fenced code blocks
 - Use consistent heading hierarchy (H1 → H2 → H3 → H4)
 - Use kebab-case for file names
 - Include table of contents for long documents
@@ -42,10 +36,18 @@ alwaysApply: false
 - Include proper heading structure
 - Add blank lines for readability
 
-### Validation Command
+### Validation Commands
+
+**Check-only (validation):**
 
 ```bash
 ./scripts/quality/check-markdown.sh <filename>
+```
+
+**Auto-fix (repair violations):**
+
+```bash
+./scripts/quality/check-markdown.sh --fix <filename>
 ```
 
 **Note**: This file itself must pass markdownlint validation.
