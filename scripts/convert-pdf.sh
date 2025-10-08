@@ -112,9 +112,9 @@ validate_path() {
     local path="$1"
     local name="$2"
 
-    # Check for newlines and shell metacharacters
-    if [[ "$path" =~ [[:space:]] ]]; then
-        log_error "$name contains whitespace or newlines: $path"
+    # Check for newlines (but allow spaces in filenames)
+    if [[ "$path" =~ $'\n' ]] || [[ "$path" =~ $'\r' ]]; then
+        log_error "$name contains newlines: $path"
         exit 1
     fi
 
