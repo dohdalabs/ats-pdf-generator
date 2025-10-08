@@ -119,7 +119,7 @@ validate_path() {
     fi
 
     # Check for dangerous shell metacharacters
-    if [[ "$path" =~ [\;\|\&\<\>\(\)\$\`\\] ]]; then
+    if [[ "$path" =~ [\;\|\&\<\>\(\)\$\`\\\"\'] ]]; then
         log_error "$name contains dangerous shell metacharacters: $path"
         exit 1
     fi
