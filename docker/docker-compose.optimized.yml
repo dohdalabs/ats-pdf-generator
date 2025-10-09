@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ATS Document Converter - Optimized Version
   ats-converter-optimized:
