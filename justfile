@@ -21,7 +21,6 @@ export UV_CACHE_DIR := "~/.cache/uv"
 install:
     @echo "🚀 Installing dependencies..."
     uv sync --dev
-    pnpm install
     pre-commit install
     pre-commit install --hook-type commit-msg
     @echo "✅ Development environment ready!"
@@ -208,13 +207,29 @@ docker-clean:
 
 # Lint Markdown files
 lint-markdown:
-    @echo "📝 Linting Markdown files..."
-    pnpm markdownlint '**/*.{md,mdc}' --config=.markdownlint.jsonc
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📝 Linting Markdown files..."
+
+    # Use mise-managed pnpm dlx if available, fallback to system npx
+    if command -v mise >/dev/null 2>&1; then
+        mise exec -- pnpm dlx markdownlint-cli '**/*.{md,mdc}' --config=.markdownlint.jsonc
+    else
+        npx markdownlint-cli '**/*.{md,mdc}' --config=.markdownlint.jsonc
+    fi
 
 # Format Markdown files
 format-markdown:
-    @echo "📝 Formatting Markdown files..."
-    pnpm markdownlint '**/*.{md,mdc}' --config=.markdownlint.jsonc --fix
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📝 Formatting Markdown files..."
+
+    # Use mise-managed pnpm dlx if available, fallback to system npx
+    if command -v mise >/dev/null 2>&1; then
+        mise exec -- pnpm dlx markdownlint-cli '**/*.{md,mdc}' --config=.markdownlint.jsonc --fix
+    else
+        npx markdownlint-cli '**/*.{md,mdc}' --config=.markdownlint.jsonc --fix
+    fi
 
 # ============================================================================
 # Security Scanning
