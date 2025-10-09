@@ -309,10 +309,16 @@ format: format-python format-markdown
 # Run all tests
 test: test-python docker-test
 
-# Run complete quality checks (what CI runs)
-ci: lint check-format-python typecheck-python test security
+# Run quick quality checks (fast local development)
+quick-check: lint check-format-python typecheck-python test-python security
     @echo ""
-    @echo "✅ All CI checks passed!"
+    @echo "✅ Quick checks passed!"
+
+# Run complete CI pipeline (same as GitHub Actions)
+ci: lint check-format-python typecheck-python test-python security docker-build-ci docker-test-ci docker-validate
+    @echo ""
+    @echo "✅ Complete CI pipeline passed!"
+    @echo "This matches what GitHub Actions runs."
 
 # ============================================================================
 # Publishing & Deployment
