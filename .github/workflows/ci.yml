@@ -75,12 +75,11 @@ jobs:
           sudo mv hadolint /usr/local/bin/
 
       - name: Install mise
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@v3
         with:
           version: latest
-
-      - name: Install mise-managed tools
-        run: mise install
+          install: true
+          cache: true
 
       - name: Install project dependencies
         run: just install
@@ -99,12 +98,11 @@ jobs:
         uses: extractions/setup-just@v2
 
       - name: Install mise
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@v3
         with:
           version: latest
-
-      - name: Install mise-managed tools
-        run: mise install
+          install: true
+          cache: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -139,12 +137,11 @@ jobs:
         uses: extractions/setup-just@v2
 
       - name: Install mise
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@v3
         with:
           version: latest
-
-      - name: Install mise-managed tools
-        run: mise install
+          install: true
+          cache: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
