@@ -390,3 +390,27 @@ uv-update:
 # Open shell in dev Docker container
 docker-shell:
     docker run --rm -it -v "$(pwd):/app" -w /app ats-pdf-generator:dev bash
+
+# ============================================================================
+# Development Environment (Docker Compose)
+# ============================================================================
+
+# Start development environment
+dev-up:
+    docker-compose -f docker/docker-compose.yml --profile dev up -d
+
+# Stop development environment
+dev-down:
+    docker-compose -f docker/docker-compose.yml down
+
+# Restart development environment
+dev-restart:
+    docker-compose -f docker/docker-compose.yml restart
+
+# View live logs from development environment
+dev-logs:
+    docker-compose -f docker/docker-compose.yml logs -f
+
+# Open shell in running development container
+dev-shell:
+    docker-compose -f docker/docker-compose.yml exec ats-converter-dev bash

@@ -207,7 +207,7 @@ This project publishes to Docker Hub and GitHub Container Registry for maximum a
 
 ```bash
 # Build and push to both registries
-./scripts/docker-push-multi-registry.sh 1.0.0
+just publish 1.0.0
 ```
 
 ## 🔄 Updates

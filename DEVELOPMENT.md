@@ -4,11 +4,11 @@ This document is for technical reviewers and developers who want to understand t
 
 ## Key Technical Highlights
 
-- **Script-First Architecture**: All operations implemented as reusable shell scripts for consistency across local and CI environments
+- **Just-Based Task Runner**: All operations implemented as just recipes for consistency across local and CI environments
 - **Multi-Stage Docker Builds**: Optimized production images with separate builder and runtime stages
 - **Modern Python Tooling**: Uses `uv` for fast dependency management and `ruff` for linting/formatting
 - **Comprehensive CI/CD**: Automated quality checks, security scanning, and multi-registry publishing
-- **Developer Experience Focus**: One-command setup with `mise` and comprehensive automation scripts
+- **Developer Experience Focus**: One-command setup with `mise` and just-based automation
 
 ## 🏗️ Key Components
 
@@ -17,7 +17,8 @@ The project follows a clean separation of concerns:
 - **`src/`** - Core Python application code
 - **`docker/`** - Multi-stage Docker images (Alpine, Standard, Dev)
 - **`templates/`** - CSS styling for different document types
-- **`scripts/`** - Development automation (see [Docker Management](docs/DOCKER_MANAGEMENT.md))
+- **`scripts/`** - Essential utilities (convert-pdf.sh, extract-versions.sh, etc.)
+- **`justfile`** - Task runner with all development commands
 - **`tests/`** - Unit tests and validation
 - **`.github/workflows/`** - CI/CD automation
 
@@ -61,27 +62,27 @@ This script will:
 
 ```bash
 # Install development dependencies and setup pre-commit hooks
-mise run install
+just install
 
 # Most common daily workflow
-mise run check-all      # Comprehensive quality checks: Python linting/formatting/typecheck/tests, shell linting, Docker linting, Markdown linting, security scans
-mise run format-all     # Auto-fix formatting issues
-mise run test-docker   # Run Docker tests
-
+just ci               # Complete CI pipeline (same as GitHub Actions)
+just quick-check      # Quick quality checks for local development
+just format           # Auto-fix formatting issues
+just docker-test      # Run Docker tests
 
 # Build and test everything (Docker images, functionality tests)
-mise run build-docker && mise run test-docker
+just docker-build-all && just docker-test
 
 # Convert PDFs for testing
-mise run convert-pdf examples/sample-profile.md
+just convert examples/sample-profile.md
 
 # Individual commands for specific needs
-mise run lint-python   # Python linting only
-mise run lint-shell    # Shell script linting
-mise run lint-docker   # Docker linting
-mise run lint-markdown # Markdown linting
-mise run format-python # Python formatting
-mise run format-markdown # Markdown formatting
+just lint-python      # Python linting only
+just lint-shell       # Shell script linting
+just docker-validate  # Docker linting
+just lint-markdown    # Markdown linting
+just format-python    # Python formatting
+just format-markdown  # Markdown formatting
 ```
 
 ## 🐳 Efficient Docker Development Workflow
@@ -94,16 +95,16 @@ The development environment uses **volume mounting** so you can develop Python c
 
 ```bash
 # Build the development environment (one-time setup)
-mise run build-image
+just docker-build dev
 
 # Start the development environment with volume mounting
-mise run dev-up
+just dev-up
 
 # Open a shell in the running container (changes are live)
-mise run dev-shell
+just dev-shell
 
 # Or run individual commands without entering the container
-mise run dev-run examples/sample-profile.md -o test.pdf
+just convert examples/sample-profile.md -o test.pdf
 ```
 
 ### Daily Development Workflow
@@ -112,13 +113,13 @@ mise run dev-run examples/sample-profile.md -o test.pdf
 
 ```bash
 # 1. Start development environment (first time only)
-mise run dev-up
+just dev-up
 
 # 2. In one terminal, watch for changes
-mise run dev-logs
+just dev-logs
 
 # 3. In another terminal, test your changes
-mise run dev-shell
+just dev-shell
 
 # Inside the container:
 python -m src.ats_pdf_generator.ats_converter --help
@@ -132,20 +133,18 @@ python -m src.ats_pdf_generator.ats_converter examples/sample-profile.md -o test
 
 ```bash
 # Environment Management
-mise run dev-up        # Start development environment
-mise run dev-down      # Stop development environment
-mise run dev-restart   # Restart development environment
-mise run dev-logs      # View live logs
-mise run dev-shell     # Open shell in running container
+just dev-up        # Start development environment
+just dev-down      # Stop development environment
+just dev-restart   # Restart development environment
+just dev-logs      # View live logs
+just dev-shell     # Open shell in running container
 
 # Testing Commands
-mise run dev-run       # Run the converter module
-mise run dev-convert   # Convert a test file
-mise run test          # Run unit tests
+just convert examples/sample-profile.md -o test.pdf                # Convert a test file
+just test                                                           # Run unit tests
 
 # Cleanup
-mise run docker-clean     # Clean dev images
-mise run docker-clean-all # Clean all Docker resources
+just docker-clean                                                   # Clean Docker images
 ```
 
 ### Volume Mounting Benefits
@@ -168,11 +167,11 @@ You only need to rebuild the development container when:
 
 ## 🎯 Key Challenges Addressed
 
-### Script-First Architecture
+### Just-Based Task Runner
 
 **Challenge**: Maintaining consistency between local development and CI/CD environments while reducing duplication.
 
-**Solution**: Implemented a script-first approach where all operations are reusable shell scripts called by both local tools (mise) and CI/CD systems (GitHub Actions). This eliminates duplication and ensures consistent behavior across environments.
+**Solution**: Implemented a just-based approach where all operations are defined as just recipes called by both local development and CI/CD systems (GitHub Actions). This eliminates duplication and ensures consistent behavior across environments.
 
 **Impact**: Reduced CI/CD complexity, improved local testing capabilities, and easier maintenance of automation workflows.
 
@@ -188,7 +187,7 @@ You only need to rebuild the development container when:
 
 **Challenge**: Reducing friction for new developers while maintaining comprehensive quality standards.
 
-**Solution**: Integrated `mise` for consistent tooling, created one-command setup scripts, and implemented comprehensive pre-commit hooks with automated quality checks.
+**Solution**: Integrated `mise` for consistent tooling, created one-command setup with `just install`, and implemented comprehensive pre-commit hooks with automated quality checks.
 
 **Impact**: New developer onboarding time reduced from hours to minutes, with consistent quality standards enforced automatically.
 
@@ -201,29 +200,37 @@ The project provides comprehensive automation for common development tasks:
 - **CI/CD Pipeline**: Automated quality checks, security scanning, and multi-registry publishing
 - **Environment Setup**: One-command local development environment configuration
 
-For specific script usage, see the [Docker Management Guide](docs/DOCKER_MANAGEMENT.md) and run `./scripts/check-all.sh --help` for available options.
+**Available Just Commands**:
 
-**Available Scripts**:
+- `just ci` - Complete CI pipeline (same as GitHub Actions)
+- `just quick-check` - Quick quality checks for local development
+- `just lint` - Run all linting checks
+- `just format` - Auto-fix formatting issues
+- `just test` - Run all tests
+- `just docker-build-all` - Build all Docker image variants
+- `just docker-test` - Test all Docker images
+- `just security` - Run security scans with Trivy
+- `just convert` - Convert Markdown to PDF
+- `just publish` - Publish to Docker registries
 
-- `./scripts/check-all.sh` - Comprehensive quality checks (Python, shell, Docker, Markdown, security)
-- [`./scripts/docker-manager.sh`](./scripts/docker-manager.sh) - Unified Docker operations (build, test, validate, publish)
-- `./scripts/setup-local-env.sh` - One-command local development setup
+**Essential Scripts** (kept for specific utilities):
+
 - `./scripts/convert-pdf.sh` - PDF conversion utility
+- `./scripts/extract-versions.sh` - Extract tool versions from mise.toml
 - `./scripts/benchmark-security-tools.sh` - Security tool performance testing
-
-**Script Standards**: All scripts follow consistent standards defined in `.cursor/rules/script-standards.mdc` and are validated in CI to ensure they have proper `--help` options and meet quality requirements.
+- `./scripts/setup-local-env.sh` - One-command local development setup
 
 ### Architectural Benefits
 
-- **Consistency**: Same scripts work locally and in CI environments
+- **Consistency**: Same just recipes work locally and in CI environments
 - **Maintainability**: Changes in one place affect all environments
-- **Testability**: Scripts can be tested independently of CI/CD systems
-- **Clarity**: Self-documenting with `--help` options for all scripts (enforced by CI)
-- **Reduced Complexity**: GitHub Actions workflows are simple script calls
+- **Testability**: Just recipes can be tested independently of CI/CD systems
+- **Clarity**: Self-documenting with `just --list` and clear recipe names
+- **Reduced Complexity**: GitHub Actions workflows are simple just calls
 
 ### Implementation Notes
 
-The script-first approach was chosen to address the common problem of CI/CD logic becoming complex and environment-specific. By implementing all operations as standalone scripts, the project achieves better testability and reduces the cognitive load of maintaining separate local and CI workflows.
+The just-based approach was chosen to address the common problem of CI/CD logic becoming complex and environment-specific. By implementing all operations as just recipes, the project achieves better testability and reduces the cognitive load of maintaining separate local and CI workflows.
 
 ## 🧪 Testing
 
@@ -231,10 +238,13 @@ The script-first approach was chosen to address the common problem of CI/CD logi
 
 ```bash
 # Run comprehensive quality checks (includes tests)
-mise run check-all
+just ci
+
+# Run quick quality checks (includes tests)
+just quick-check
 
 # Run just the tests
-mise run test
+just test
 
 # Run tests with coverage
 pytest --cov=src tests/
@@ -246,14 +256,14 @@ pytest tests/test_converter.py
 pytest -v tests/
 
 # Build and test everything (Docker images, functionality tests)
-mise run build-docker && mise run test-docker
+just docker-build-all && just docker-test
 ```
 
 ### Test Structure
 
 - `tests/test_converter.py` - Unit tests for the main converter
-- `scripts/docker-manager.sh` - Docker operations including builds, tests, and validation
-- `scripts/check-all.sh` - Comprehensive quality checks including tests
+- `justfile` - All development and testing commands
+- `just ci` - Comprehensive quality checks including tests
 
 ## 🔧 Development Tools
 
@@ -261,15 +271,18 @@ mise run build-docker && mise run test-docker
 
 ```bash
 # Run comprehensive quality checks (Python, Shell, Docker, Security)
-mise run check-all
+just ci
+
+# Run quick quality checks for local development
+just quick-check
 
 # Individual quality checks
-mise run lint          # Lint Python code
-mise run format        # Format code
-mise run typecheck-python     # Python type checking
-mise run test-docker   # Run Docker tests
-mise run shell-lint    # Lint shell scripts
-mise run docker-lint   # Lint Dockerfiles
+just lint-python       # Lint Python code
+just format            # Format code
+just typecheck-python  # Python type checking
+just docker-test       # Run Docker tests
+just lint-shell        # Lint shell scripts
+just docker-validate   # Lint Dockerfiles
 ```
 
 ### Pre-commit Hooks
@@ -278,10 +291,10 @@ The project uses pre-commit hooks to ensure code quality:
 
 ```bash
 # Install pre-commit hooks
-pre-commit install
+just install
 
 # Run on all files
-pre-commit run --all-files
+just pre-commit
 
 # Run specific hook
 pre-commit run ruff --all-files
@@ -304,7 +317,7 @@ The project includes Docker tooling that addresses common issues with Docker dup
 
 ```bash
 # Build and test all Docker images
-./scripts/docker-manager.sh build --all --test
+just docker-build-all && just docker-test
 ```
 
 ### Image Architecture
@@ -336,15 +349,15 @@ The project uses multi-stage Docker builds to create optimized production images
 
 ```bash
 # Build development image
-mise run build-image
+just docker-build dev
 
 # Build and test everything (all images + functionality tests)
-mise run build-docker && mise run test-docker
+just docker-build-all && just docker-test
 
 # Manual builds (if needed)
-docker build -f docker/Dockerfile.standard -t ats-pdf-generator:standard .
-docker build -f docker/Dockerfile.alpine -t ats-pdf-generator:alpine .
-docker build -f docker/Dockerfile.dev -t ats-pdf-generator:dev .
+just docker-build standard
+just docker-build alpine
+just docker-build dev
 ```
 
 ### Development with Docker
@@ -353,13 +366,10 @@ docker build -f docker/Dockerfile.dev -t ats-pdf-generator:dev .
 
 ```bash
 # Build development container locally
-docker build -f docker/Dockerfile.dev -t ats-pdf-generator:dev .
-
-# Or using mise (recommended)
-mise run build-image
+just docker-build dev
 
 # Run development shell
-docker run -it --rm -v $(PWD):/app -w /app ats-pdf-generator:dev bash
+just docker-shell
 ```
 
 The development image includes:
@@ -396,11 +406,11 @@ docker-compose -f docker/docker-compose.yml down
 - `ats-converter-optimized`: Standard production service
 - `ats-converter-alpine`: Minimal Alpine-based service
 
-**Note**: For most development tasks, use the convenience scripts instead:
+**Note**: For most development tasks, use the just commands instead:
 
 ```bash
-mise run convert-pdf examples/sample-profile.md  # PDF conversion
-mise run build-docker && mise run test-docker                         # Build and test everything
+just convert examples/sample-profile.md  # PDF conversion
+just docker-build-all && just docker-test  # Build and test everything
 ```
 
 ### Docker Usage Guide
@@ -588,11 +598,11 @@ The project uses [Semantic Versioning](https://semver.org/):
 
 - [ ] Update version in `pyproject.toml`
 - [ ] Update `CHANGELOG.md` with new features/fixes
-- [ ] Test all functionality thoroughly (run `mise run check-all` and `mise run build-docker && mise run test-docker`)
+- [ ] Test all functionality thoroughly (run `just ci` and `just docker-build-all && just docker-test`)
 - [ ] Update documentation if needed
 - [ ] Create git tag: `git tag v1.2.3`
 - [ ] Push tag: `git push origin v1.2.3`
-- [ ] GitHub Actions automatically builds and publishes Docker images using `scripts/docker-manager.sh publish`
+- [ ] GitHub Actions automatically builds and publishes Docker images using `just publish`
 
 ### Automated Release Process
 
@@ -641,19 +651,19 @@ The project uses GitHub Actions with a script-first approach for automated quali
 ### CI Workflow (`ci.yml`)
 
 - **Security Scanning**: Runs Trivy security scan via GitHub Action
-- **Quality Checks**: Runs `scripts/check-all.sh` (Python, Shell, Docker, Markdown)
-- **Docker Testing**: Runs `scripts/docker-manager.sh build --all --test` (Docker builds and tests)
+- **Quality Checks**: Runs `just ci` (Python, Shell, Docker, Markdown)
+- **Docker Testing**: Runs `just docker-build-ci && just docker-test-ci` (Docker builds and tests)
 - **Docker Validation**: Validates Dockerfiles with hadolint
 
 ### Release Workflow (`release.yml`)
 
-- **Multi-Registry Publishing**: Uses `scripts/docker-manager.sh publish` for Docker Hub and GitHub Container Registry
+- **Multi-Registry Publishing**: Uses `just publish` for Docker Hub and GitHub Container Registry
 - **Multi-Variant Support**: Publishes standard and alpine image variants (dev variant validated for syntax only)
 - **Release Creation**: Automatically creates GitHub releases with changelog
 
 ### CI/CD Architecture Decisions
 
-**Script-First Approach**: All CI/CD logic is implemented in shell scripts rather than YAML, making it easier to test locally and maintain consistency across environments.
+**Just-Based Approach**: All CI/CD logic is implemented in just recipes rather than YAML, making it easier to test locally and maintain consistency across environments.
 
 **Multi-Registry Publishing**: Images are published to both Docker Hub and GitHub Container Registry to provide redundancy and different access patterns.
 
@@ -674,7 +684,7 @@ The project uses GitHub Actions with a script-first approach for automated quali
 
 **Multi-stage Docker builds**: Optimized for production image size and security, but increased build complexity. The trade-off was worth it for the ~40% size reduction and improved security posture.
 
-**Script-first CI/CD**: Improved maintainability and testability, but required more upfront script development. This approach eliminated the common problem of CI/CD logic becoming complex and environment-specific.
+**Just-based CI/CD**: Improved maintainability and testability, but required more upfront just recipe development. This approach eliminated the common problem of CI/CD logic becoming complex and environment-specific.
 
 **uv vs pip**: Faster dependency resolution and better Docker compatibility, but newer tool with smaller ecosystem. Chosen for its superior performance in containerized environments and faster builds.
 
@@ -689,9 +699,9 @@ The project uses GitHub Actions with a script-first approach for automated quali
 ### Lessons Learned
 
 - **Dependency Management**: Version pinning in Dockerfiles caused more problems than it solved
-- **Script Organization**: Clear naming and help documentation significantly improved developer experience
+- **Just Recipe Organization**: Clear naming and self-documenting recipes significantly improved developer experience
 - **Multi-stage Builds**: Proper virtual environment handling required careful PATH management
-- **CI/CD Simplification**: Script-first approach reduced GitHub Actions complexity significantly
+- **CI/CD Simplification**: Just-based approach reduced GitHub Actions complexity significantly
 
 ## 📚 Additional Resources
 
