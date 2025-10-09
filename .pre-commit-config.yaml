@@ -7,10 +7,10 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict
-      - id: check-case-conflict
-      - id: check-docstring-first
-      - id: check-json
-      - id: check-toml
+      - id: check-case-conflict    # Check for files that would conflict in case-insensitive filesystems
+      - id: check-docstring-first   # Check that docstrings are at the beginning of functions
+      - id: check-json             # Check JSON syntax
+      - id: check-toml             # Check TOML syntax
 
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v3.20.0
@@ -20,37 +20,39 @@ repos:
 
   - repo: local
     hooks:
-      - id: python-quality
-        name: Python Quality Checks
-        entry: ./scripts/quality/check-python.sh
+      - id: docker-validate
+        name: docker validate
+        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just docker-validate; else just docker-validate; fi'
         language: system
-        files: \.(py)$
-        pass_filenames: true
+        types: [dockerfile]
+        pass_filenames: false
 
   - repo: local
     hooks:
-      - id: shell-quality
-        name: Shell Quality Checks
-        entry: ./scripts/quality/check-shell.sh
+      - id: ruff-check
+        name: ruff check
+        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just lint-python; else just lint-python; fi'
         language: system
-        files: \.(sh|bash)$
-        pass_filenames: true
+        types: [python]
+        pass_filenames: false
 
-  - repo: local
-    hooks:
-      - id: markdown-quality
-        name: Markdown Quality Checks
-        entry: ./scripts/quality/check-markdown.sh
+      - id: ruff-format
+        name: ruff format
+        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just format-python; else just format-python; fi'
         language: system
-        files: \.md$
-        pass_filenames: true
+        types: [python]
+        pass_filenames: false
 
-  - repo: local
-    hooks:
-      - id: docker-quality
-        name: Docker Quality Checks
-        entry: ./scripts/quality/check-docker.sh
+      - id: shellcheck
+        name: shellcheck
+        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just lint-shell; else just lint-shell; fi'
         language: system
-        files: docker/Dockerfile
-        pass_filenames: true
-        stages: [manual]
+        types: [shell]
+        pass_filenames: false
+
+      - id: markdownlint
+        name: markdownlint
+        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just lint-markdown; else just lint-markdown; fi'
+        language: system
+        types: [markdown]
+        pass_filenames: false
