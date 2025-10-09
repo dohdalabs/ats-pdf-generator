@@ -46,6 +46,9 @@ coverage.xml
 *.py,cover
 .hypothesis/
 
+# Security scanning
+trivy-results.sarif
+
 # Cache directories
 .mypy_cache/
 .ruff_cache/
