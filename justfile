@@ -19,17 +19,27 @@ export UV_CACHE_DIR := "~/.cache/uv"
 
 # Install all dependencies and setup dev environment
 install:
-    @echo "🚀 Installing dependencies..."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🚀 Installing dependencies..."
     uv sync --dev
-    pre-commit install
-    pre-commit install --hook-type commit-msg
-    @echo "✅ Development environment ready!"
-    @echo ""
-    @echo "Available commands:"
-    @echo "  just --list              # Show all available tasks"
-    @echo "  just ci                  # Run all quality checks (same as CI)"
-    @echo "  just test                # Run tests"
-    @echo "  just format              # Auto-fix formatting"
+
+    # Skip pre-commit installation in CI environments
+    if [ "${CI:-}" = "true" ] || [ "${GITHUB_ACTIONS:-}" = "true" ] || [ "${GITLAB_CI:-}" = "true" ]; then
+        echo "⏭️  Skipping pre-commit installation in CI environment"
+    else
+        echo "🔧 Installing pre-commit hooks..."
+        uv run pre-commit install
+        uv run pre-commit install --hook-type commit-msg
+    fi
+
+    echo "✅ Development environment ready!"
+    echo ""
+    echo "Available commands:"
+    echo "  just --list              # Show all available tasks"
+    echo "  just ci                  # Run all quality checks (same as CI)"
+    echo "  just test                # Run tests"
+    echo "  just format              # Auto-fix formatting"
 
 # Install production dependencies only
 install-prod:
@@ -137,26 +147,10 @@ docker-test:
     set -euo pipefail
     echo "🧪 Testing all Docker images..."
 
-    # Test Alpine image
-    echo "Testing alpine image..."
-    SHELL_CMD="ash -c"
-    docker run --rm ats-pdf-generator:alpine --help >/dev/null
-    docker run --rm --entrypoint="" ats-pdf-generator:alpine $SHELL_CMD 'test -d /app/tmp && test -w /app/tmp && echo "✅ /app/tmp exists and is writable"'
-    echo "✅ alpine image passed all tests"
-
-    # Test Standard image
-    echo "Testing standard image..."
-    SHELL_CMD="bash -c"
-    docker run --rm ats-pdf-generator:standard --help >/dev/null
-    docker run --rm --entrypoint="" ats-pdf-generator:standard $SHELL_CMD 'test -d /app/tmp && test -w /app/tmp && echo "✅ /app/tmp exists and is writable"'
-    echo "✅ standard image passed all tests"
-
-    # Test Dev image
-    echo "Testing dev image..."
-    SHELL_CMD="bash -c"
-    docker run --rm ats-pdf-generator:dev bash -c "echo 'Dev image working'" >/dev/null
-    docker run --rm --entrypoint="" ats-pdf-generator:dev $SHELL_CMD 'test -d /app/tmp && test -w /app/tmp && echo "✅ /app/tmp exists and is writable"'
-    echo "✅ dev image passed all tests"
+    # Test each image variant using the centralized docker-test-image recipe
+    just docker-test-image alpine
+    just docker-test-image standard
+    just docker-test-image dev
 
     echo "✅ All Docker tests passed!"
 
