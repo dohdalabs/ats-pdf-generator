@@ -22,10 +22,14 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v2
 
+      - name: Extract Python version
+        id: python-version
+        run: echo "version=$(./scripts/extract-versions.sh python)" >> $GITHUB_OUTPUT
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: ${{ steps.python-version.outputs.version }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v1
@@ -40,19 +44,33 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-uv-
 
+      - name: Extract Node.js version
+        id: node-version
+        run: echo "version=$(./scripts/extract-versions.sh node)" >> $GITHUB_OUTPUT
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ steps.node-version.outputs.version }}
+
+      - name: Extract pnpm version
+        id: pnpm-version
+        run: echo "version=$(./scripts/extract-versions.sh pnpm)" >> $GITHUB_OUTPUT
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: ${{ steps.pnpm-version.outputs.version }}
+
+      - name: Extract hadolint version
+        id: hadolint-version
+        run: echo "version=$(./scripts/extract-versions.sh hadolint)" >> $GITHUB_OUTPUT
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck
-          curl -L https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-Linux-x86_64 -o hadolint
+          curl -L https://github.com/hadolint/hadolint/releases/download/v${{ steps.hadolint-version.outputs.version }}/hadolint-Linux-x86_64 -o hadolint
           chmod +x hadolint
           sudo mv hadolint /usr/local/bin/
 
@@ -80,9 +98,13 @@ jobs:
           just docker-build-all
           just docker-test
 
+      - name: Extract hadolint version
+        id: hadolint-version-publish
+        run: echo "version=$(./scripts/extract-versions.sh hadolint)" >> $GITHUB_OUTPUT
+
       - name: Validate Dockerfiles
         run: |
-          curl -L https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-Linux-x86_64 -o hadolint
+          curl -L https://github.com/hadolint/hadolint/releases/download/v${{ steps.hadolint-version-publish.outputs.version }}/hadolint-Linux-x86_64 -o hadolint
           chmod +x hadolint
           sudo mv hadolint /usr/local/bin/
           just docker-validate
