@@ -13,78 +13,13 @@ trivy = "latest"
 node = "22.17.0"
 pnpm = "10.17.1"
 [tasks]
-# 🚀 Environment Setup
-install = "uv sync && uv run pre-commit install && uv run pre-commit install --hook-type commit-msg && pnpm install"
-install-prod = "uv sync --frozen --no-dev"
-setup-local = "scripts/setup-local-env.sh"
-
-# 🔧 Most Common Quick Actions
-format-all = "mise run format-python && mise run format-markdown" # Auto-fix formatting issues
-test-python = "uv run pytest"                                     # Python unit tests
-
-# 📝 Individual Linting
-lint-python = "uv run ruff check ."
-lint-shell = "./scripts/quality/check-shell.sh"
-lint-docker = "./scripts/quality/check-docker.sh"
-lint-markdown = "./scripts/quality/check-markdown.sh"
-
-# 🎨 Individual Formatting
-format-python = "uv run ruff format ."
-format-markdown = "./scripts/quality/check-markdown.sh --fix"
-
-# 🔍 Additional Checks
-check-python = "mise run lint-python && mise run format-python && mise run typecheck-python && mise run test-python"
-check-docker = "mise run lint-docker && mise run test-docker"
-check-markdown = "mise run lint-markdown && mise run format-markdown"
-typecheck-python = "uv run mypy src/ats_pdf_generator/"
-
-# 🔒 Security Scanning
-security-docker = "scripts/quality/check-security.sh"
-
-# ✅ Comprehensive Quality Checks
-check-all = "scripts/check-all.sh" # Everything: linting, testing, security
-
-# 📄 PDF Operations
-convert-pdf = "scripts/convert-pdf.sh"
-
-# 🐳 Docker Operations
-build-docker = "scripts/docker-manager.sh build --all"                                     # Build all images
-test-docker = "scripts/docker-manager.sh test --all"                                       # Test all images
-validate-docker = "scripts/docker-manager.sh validate"                                     # Validate Dockerfiles
-info-docker = "scripts/docker-manager.sh info"                                             # Show Docker image info
-clean-docker = "scripts/docker-manager.sh clean --all"                                     # Clean all project images
-shell-docker = "docker run --rm -it -v \"$(pwd):/app\" -w /app ats-pdf-generator:dev bash"
-
-# 🚀 Development Environment (Efficient Workflow)
-dev-up = "docker-compose -f docker/docker-compose.yml --profile dev up -d ats-converter-dev"
-dev-down = "docker-compose -f docker/docker-compose.yml --profile dev down"
-dev-logs = "docker-compose -f docker/docker-compose.yml --profile dev logs -f ats-converter-dev"
-dev-shell = "docker-compose -f docker/docker-compose.yml --profile dev exec ats-converter-dev bash"
-dev-restart = "mise run dev-down && mise run dev-up"
-
-# 🧪 Testing with Docker
-dev-run = "docker-compose -f docker/docker-compose.yml run --rm ats-converter-dev python -m src.ats_pdf_generator.ats_converter"
-dev-convert = "docker-compose -f docker/docker-compose.yml run --rm ats-converter-dev python -m src.ats_pdf_generator.ats_converter examples/sample-profile.md -o /tmp/test.pdf"
-
-# 🧹 Cleanup
-docker-clean = "docker rmi ats-pdf-generator:dev 2>/dev/null || true"
-docker-clean-all = "docker system prune -f && docker image prune -f"
-
-# 🚀 Publishing & Deployment
-publish-docker = "scripts/docker-manager.sh publish" # Publish to all registries
-
-# 🔧 Development Tools
-pre-commit = "uv run pre-commit run --all-files"
-
-# 📦 UV Package Management
-uv-sync = "uv sync"
-uv-sync-frozen = "uv sync --frozen"
-uv-info = "uv --version && echo 'Python:' && uv run python --version && echo 'Virtual env:' && uv run which python"
-uv-tree = "uv tree"
-uv-lock = "uv lock"
-uv-add = "uv add"
-uv-remove = "uv remove"
-uv-update = "uv lock --upgrade"
-
-# 🔧 Tool Version Management
-tool-versions = "scripts/extract-versions.sh list"
+# All tasks now delegate to just for consistency
+# This allows 'mise run <task>' to work for those who prefer it
+install = "just install"
+ci = "just ci"
+test = "just test"
+lint = "just lint"
+format = "just format"
+docker-build = "just docker-build-all"
+docker-test = "just docker-test"
+publish = "just publish"
