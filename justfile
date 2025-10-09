@@ -88,8 +88,9 @@ check-python: lint-python check-format-python typecheck-python test-python
 # Lint shell scripts
 lint-shell:
     @echo "🐚 Linting shell scripts..."
-    -shellcheck scripts/*.sh 2>/dev/null || true
+    -shellcheck -x scripts/*.sh 2>/dev/null || true
     @echo "✅ Shell linting completed (warnings non-fatal)"
+    @echo "ℹ️  Note: SC1091 warnings about utils/ files are expected and non-fatal"
 
 # ============================================================================
 # Docker Operations
@@ -359,11 +360,37 @@ publish version="latest":
 convert input output="":
     #!/usr/bin/env bash
     set -euo pipefail
+
+    # Set default output if not provided
     if [ -z "{{output}}" ]; then
-        ./scripts/convert-pdf.sh "{{input}}"
+        # Remove .md extension and add .pdf
+        INPUT_BASE="{{input}}"
+        OUTPUT_FILE="${INPUT_BASE%.md}.pdf"
     else
-        ./scripts/convert-pdf.sh "{{input}}" -o "{{output}}"
+        OUTPUT_FILE="{{output}}"
     fi
+
+    # Validate input file exists
+    if [ ! -f "{{input}}" ]; then
+        echo "Error: Input file not found: {{input}}" >&2
+        exit 1
+    fi
+
+    # Extract paths for Docker mount
+    INPUT_DIR=$(dirname "{{input}}")
+    INPUT_FILENAME=$(basename "{{input}}")
+    OUTPUT_BASENAME=$(basename "$OUTPUT_FILE")
+
+    echo "Converting: {{input}} -> $OUTPUT_FILE"
+
+    # Run conversion in Docker container
+    docker run --rm \
+        -v "$(realpath "$INPUT_DIR"):/app/input" \
+        -w /app \
+        ats-pdf-generator:dev \
+        bash -c "source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py input/$INPUT_FILENAME -o input/$OUTPUT_BASENAME"
+
+    echo "✅ PDF generated: $OUTPUT_FILE"
 
 # ============================================================================
 # Utility Commands

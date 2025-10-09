@@ -5,10 +5,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 MISE_TOML="$PROJECT_ROOT/mise.toml"
 
-source "$SCRIPT_DIR/utils/logging.sh"
-source "$SCRIPT_DIR/utils/common.sh"
+# Simple logging functions
+log_info() {
+    echo "INFO: $*"
+}
 
-init_logger --script-name "$(basename "$0")"
+log_error() {
+    echo "ERROR: $*" >&2
+}
 
 show_usage() {
     cat <<'USAGE_EOF'
@@ -32,21 +36,30 @@ For more information: https://github.com/dohdalabs/ats-pdf-generator
 USAGE_EOF
 }
 
-if ! parse_common_flags "$@"; then
-    show_usage
-    exit 2
-fi
+# Parse command line arguments
+SHOW_HELP=false
+ARGS=()
 
-if [ ${#COMMON_FLAGS_REMAINING[@]} -gt 0 ]; then
-    set -- "${COMMON_FLAGS_REMAINING[@]}"
-else
-    set --
-fi
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            SHOW_HELP=true
+            shift
+            ;;
+        *)
+            ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
 
-if [ "$COMMON_FLAG_SHOW_HELP" = true ]; then
+if [ "$SHOW_HELP" = true ]; then
     show_usage
     exit 0
 fi
+
+# Set remaining arguments
+set -- "${ARGS[@]}"
 
 if [ ! -f "$MISE_TOML" ]; then
     log_error "mise.toml not found at $MISE_TOML"
