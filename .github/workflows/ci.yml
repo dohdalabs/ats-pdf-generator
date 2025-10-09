@@ -109,8 +109,8 @@ jobs:
 
       - name: Build and test Docker images
         run: |
-          just docker-build-all
-          just docker-test
+          just docker-build-ci
+          just docker-test-ci
 
       - name: Extract hadolint version
         id: hadolint-version-publish

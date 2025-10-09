@@ -116,6 +116,20 @@ docker-build-all:
     just docker-build dev
     @echo "✅ All images built successfully!"
 
+# Build Docker images based on branch (CI optimization)
+docker-build-ci:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Check if we're on main branch
+    if [ "${GITHUB_REF:-}" = "refs/heads/main" ] || [ "${GITHUB_BASE_REF:-}" = "main" ] || [ "$(git branch --show-current 2>/dev/null || echo 'unknown')" = "main" ]; then
+        echo "🔨 Building all Docker images (main branch detected)..."
+        just docker-build-all
+    else
+        echo "🔨 Building standard Docker image only (non-main branch)..."
+        just docker-build standard
+    fi
+
 # Test a specific Docker image
 docker-test-image variant:
     #!/usr/bin/env bash
@@ -153,6 +167,20 @@ docker-test:
     just docker-test-image dev
 
     echo "✅ All Docker tests passed!"
+
+# Test Docker images based on branch (CI optimization)
+docker-test-ci:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Check if we're on main branch
+    if [ "${GITHUB_REF:-}" = "refs/heads/main" ] || [ "${GITHUB_BASE_REF:-}" = "main" ] || [ "$(git branch --show-current 2>/dev/null || echo 'unknown')" = "main" ]; then
+        echo "🧪 Testing all Docker images (main branch detected)..."
+        just docker-test
+    else
+        echo "🧪 Testing standard Docker image only (non-main branch)..."
+        just docker-test-image standard
+    fi
 
 # Validate Dockerfiles with hadolint
 docker-validate:
