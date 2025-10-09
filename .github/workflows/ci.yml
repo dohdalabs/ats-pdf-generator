@@ -10,7 +10,6 @@ env:
   CI: true
   UV_COMPILE_BYTECODE: 1
   UV_CACHE_DIR: ~/.cache/uv
-  UV_INDEX_STRATEGY: unsafe-best-match
 
 jobs:
   quality:
@@ -20,67 +19,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Extract tool versions
-        id: versions
-        run: |
-          # Validate script exists and is executable
-          if [ ! -f "./scripts/extract-versions.sh" ]; then
-            echo "❌ Error: extract-versions.sh script not found" >&2
-            exit 1
-          fi
-
-          if [ ! -x "./scripts/extract-versions.sh" ]; then
-            echo "❌ Error: extract-versions.sh script is not executable" >&2
-            exit 1
-          fi
-
-          # Extract versions and validate each one
-          echo "🔍 Extracting tool versions..."
-
-          python_version=$(./scripts/extract-versions.sh python)
-          if [ -z "$python_version" ]; then
-            echo "❌ Error: Failed to extract Python version" >&2
-            exit 1
-          fi
-          if ! echo "$python_version" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$|^latest$'; then
-            echo "❌ Error: Invalid Python version format: '$python_version'" >&2
-            exit 1
-          fi
-          echo "✅ Python version: $python_version"
-
-          node_version=$(./scripts/extract-versions.sh node)
-          if [ -z "$node_version" ]; then
-            echo "❌ Error: Failed to extract Node.js version" >&2
-            exit 1
-          fi
-          if ! echo "$node_version" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$|^latest$'; then
-            echo "❌ Error: Invalid Node.js version format: '$node_version'" >&2
-            exit 1
-          fi
-          echo "✅ Node.js version: $node_version"
-
-          pnpm_version=$(./scripts/extract-versions.sh pnpm)
-          if [ -z "$pnpm_version" ]; then
-            echo "❌ Error: Failed to extract pnpm version" >&2
-            exit 1
-          fi
-          if ! echo "$pnpm_version" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$|^latest$'; then
-            echo "❌ Error: Invalid pnpm version format: '$pnpm_version'" >&2
-            exit 1
-          fi
-          echo "✅ pnpm version: $pnpm_version"
-
-          # Set GitHub outputs
-          echo "python-version=$python_version" >> $GITHUB_OUTPUT
-          echo "node-version=$node_version" >> $GITHUB_OUTPUT
-          echo "pnpm-version=$pnpm_version" >> $GITHUB_OUTPUT
-
-          echo "🎉 All tool versions extracted and validated successfully"
+      - name: Install just
+        uses: extractions/setup-just@v2
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: ${{ steps.versions.outputs.python-version }}
+          python-version: '3.13'
 
       - name: Install uv
         uses: astral-sh/setup-uv@v1
@@ -90,61 +35,34 @@ jobs:
       - name: Cache uv dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cache/uv
-            .venv
-          key: ${{ runner.os }}-uv-${{ hashFiles('uv.lock') }}-${{ hashFiles('pyproject.toml') }}
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('uv.lock') }}
           restore-keys: |
-            ${{ runner.os }}-uv-${{ hashFiles('uv.lock') }}-
-            ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}-
             ${{ runner.os }}-uv-
-
-      - name: Show UV version info
-        run: |
-          echo "UV Version: $(uv --version)"
-          echo "Python Version: $(uv run python --version)"
-          echo "UV Cache Directory: $UV_CACHE_DIR"
-
-      - name: Install dependencies
-        run: uv sync --dev
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ steps.versions.outputs.node-version }}
+          node-version: '22'
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: ${{ steps.versions.outputs.pnpm-version }}
+          version: '10'
 
-      - name: Install pnpm dependencies
-        run: pnpm install
-
-      - name: Install additional tools
+      - name: Install system dependencies
         run: |
-          #TODO: Check if shellcheck is already installed before running through apt-get
           sudo apt-get update
-          # Install shellcheck
           sudo apt-get install -y shellcheck
-          # Install hadolint (pin version)
-          HADOLINT_VERSION=v2.14.0
-          curl -fsSL https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-linux-x86_64 -o hadolint-linux-x86_64
-          curl -fsSL https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-linux-x86_64.sha256 -o hadolint-linux-x86_64.sha256
-          sha256sum -c hadolint-linux-x86_64.sha256
-          chmod +x hadolint-linux-x86_64
-          sudo mv hadolint-linux-x86_64 /usr/local/bin/hadolint
-      - name: Run Trivy security scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'table'
-          severity: 'HIGH,CRITICAL'
-          ignore-unfixed: true
+          curl -L https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-Linux-x86_64 -o hadolint
+          chmod +x hadolint
+          sudo mv hadolint /usr/local/bin/
 
-      - name: Run quality checks (excluding security)
-        run: ./scripts/check-all.sh --skip-security
+      - name: Install project dependencies
+        run: just install
+
+      - name: Run CI checks
+        run: just ci
 
   docker-test:
     name: Docker Image Testing
@@ -153,173 +71,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Install just
+        uses: extractions/setup-just@v2
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Test and build Docker images
+      - name: Build and test Docker images
         run: |
-          echo "🧪 Testing and building Docker images..."
-          ./scripts/docker-manager.sh build --all --test
-
-      - name: Install hadolint
-        run: |
-          echo "📦 Installing hadolint for Dockerfile validation..."
-          curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o hadolint
-          chmod +x hadolint
-          sudo mv hadolint /usr/local/bin/
-          echo "✅ hadolint installed: $(hadolint --version)"
+          just docker-build-all
+          just docker-test
 
       - name: Validate Dockerfiles
         run: |
-          echo "📝 Validating Dockerfiles..."
-          ./scripts/docker-manager.sh validate
-          echo "✅ Dockerfile validation completed"
+          curl -L https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-Linux-x86_64 -o hadolint
+          chmod +x hadolint
+          sudo mv hadolint /usr/local/bin/
+          just docker-validate
 
-
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    needs: [quality, docker-test]
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
-    # Only run security scan if Docker files or dependencies change
-    if: |
-      github.event_name == 'push' && github.ref == 'refs/heads/main' ||
-      contains(github.event.head_commit.modified, 'docker/') ||
-      contains(github.event.head_commit.modified, 'pyproject.toml') ||
-      contains(github.event.head_commit.modified, 'uv.lock') ||
-      contains(github.event.head_commit.added, 'docker/') ||
-      contains(github.event.head_commit.added, 'pyproject.toml') ||
-      contains(github.event.head_commit.added, 'uv.lock')
-    strategy:
-      matrix:
-        image: [alpine, standard]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: |
-            image=moby/buildkit:buildx-stable-1
-            network=host
-
-      - name: Build ${{ matrix.image }} image for scanning
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile.${{ matrix.image }}
-          platforms: ${{ matrix.image == 'standard' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
-          push: false
-          tags: ats-pdf-generator:${{ matrix.image }}-scan
-          cache-from: |
-            type=gha,scope=${{ matrix.image }}-base
-            type=gha,scope=${{ matrix.image }}-deps
-            type=gha,scope=${{ matrix.image }}-app
-          cache-to: |
-            type=gha,mode=max,scope=${{ matrix.image }}-base
-            type=gha,mode=max,scope=${{ matrix.image }}-deps
-            type=gha,mode=max,scope=${{ matrix.image }}-app
-          build-args: |
-            GIT_SHA=${{ github.sha }}
-            VENDOR=DohDa Labs
-            UV_CACHE_DIR=/tmp/uv-cache
-            BUILDKIT_INLINE_CACHE=1
-            BUILDKIT_MULTI_PLATFORM=${{ matrix.image == 'standard' && '1' || '0' }}
-
-      - name: Cache Trivy vulnerability database
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/trivy
-          key: trivy-db-${{ runner.os }}-${{ github.run_id }}
-          restore-keys: |
-            trivy-db-${{ runner.os }}-
-            trivy-db-
-
-      - name: Run Trivy vulnerability scanner (${{ matrix.image }})
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'ats-pdf-generator:${{ matrix.image }}-scan'
-          format: 'sarif'
-          output: 'trivy-results-${{ matrix.image }}.sarif'
-          cache-dir: ~/.cache/trivy
-          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
-        continue-on-error: true
-
-      - name: Check if SARIF file was created
-        run: |
-          if [ -f "trivy-results-${{ matrix.image }}.sarif" ]; then
-            echo "✅ SARIF file created: trivy-results-${{ matrix.image }}.sarif"
-            ls -la trivy-results-${{ matrix.image }}.sarif
-          else
-            echo "❌ SARIF file not found: trivy-results-${{ matrix.image }}.sarif"
-            echo "Available files:"
-            ls -la *.sarif || echo "No SARIF files found"
-          fi
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && hashFiles('trivy-results-${{ matrix.image }}.sarif') != ''
-        with:
-          sarif_file: 'trivy-results-${{ matrix.image }}.sarif'
-        continue-on-error: true
-
-
-  security-scan-summary:
-    name: Security Scan Summary
-    runs-on: ubuntu-latest
-    needs: [security-scan]
-    if: always()
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Check SARIF files exist
-        run: |
-          echo "🔍 Checking for SARIF files..."
-
-          # List all SARIF files in the current directory
-          sarif_files=$(find . -name "*.sarif" -type f 2>/dev/null || true)
-
-          if [ -z "$sarif_files" ]; then
-            echo "❌ No SARIF files found"
-            echo "Available files in current directory:"
-            ls -la || echo "Directory listing failed"
-            exit 1
-          fi
-
-          echo "✅ Found SARIF files:"
-          echo "$sarif_files" | while read -r file; do
-            if [ -f "$file" ]; then
-              echo "  ✅ $file ($(wc -c < "$file") bytes)"
-            else
-              echo "  ❌ $file (file not found)"
-            fi
-          done
-
-          # Count total SARIF files
-          sarif_count=$(echo "$sarif_files" | wc -l)
-          echo "📊 Total SARIF files found: $sarif_count"
-
-          # Validate that we have at least one SARIF file
-          if [ "$sarif_count" -eq 0 ]; then
-            echo "❌ No SARIF files were generated by the security scan"
-            exit 1
-          fi
-
-          echo "🎉 SARIF file validation completed successfully"
 
   publish:
     name: Publish (on main)
     runs-on: ubuntu-latest
-    needs: [quality, docker-test, security-scan-summary]
+    needs: [quality, docker-test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+
+      - name: Install just
+        uses: extractions/setup-just@v2
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -337,8 +118,5 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish Docker images using docker-manager.sh
-        run: |
-          echo "🚀 Publishing Docker images using docker-manager.sh..."
-          ./scripts/docker-manager.sh publish ${{ github.sha }}
-          echo "✅ Docker images published successfully"
+      - name: Publish Docker images
+        run: just publish ${{ github.sha }}

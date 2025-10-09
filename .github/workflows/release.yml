@@ -18,6 +18,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install just
+        uses: extractions/setup-just@v2
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -38,43 +41,12 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Publish all image variants using docker-manager.sh
-        run: |
-          set -euo pipefail
-          echo "🚀 Publishing all image variants for release ${{ steps.version.outputs.VERSION }}"
-
-          # Verify docker-manager.sh exists and is executable
-          if [ ! -f "./scripts/docker-manager.sh" ]; then
-            echo "❌ Error: docker-manager.sh script not found at ./scripts/docker-manager.sh"
-            exit 1
-          fi
-
-          if [ ! -x "./scripts/docker-manager.sh" ]; then
-            echo "❌ Error: docker-manager.sh script is not executable"
-            exit 1
-          fi
-
-          # Unified publish approach: Build and publish each variant using --dockerfile flag
-          # This approach ensures consistent tagging and reduces duplication
-
-          # Build and publish standard image
-          echo "📦 Building and publishing standard image..."
-          ./scripts/docker-manager.sh publish ${{ steps.version.outputs.VERSION }} --dockerfile=Dockerfile.standard
-
-          # Build and publish alpine image
-          echo "📦 Building and publishing alpine image..."
-          ./scripts/docker-manager.sh publish ${{ steps.version.outputs.VERSION }}-alpine --dockerfile=Dockerfile.alpine
-
-          # Build and publish dev image
-          echo "📦 Building and publishing dev image..."
-          ./scripts/docker-manager.sh publish ${{ steps.version.outputs.VERSION }}-dev --dockerfile=Dockerfile.dev
-
-          echo "✅ All image variants published successfully!"
+      - name: Publish release
+        run: just publish ${{ steps.version.outputs.VERSION }}
 
       - name: Generate changelog
         id: changelog
         run: |
-          # Generate changelog from git log
           CHANGELOG=$(git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s" --no-merges)
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
@@ -88,43 +60,14 @@ jobs:
           tag_name: ${{ github.ref_name }}
           release_name: Release ${{ github.ref_name }}
           body: |
-            ## Changes in this release
-
-            ${{ steps.changelog.outputs.changelog }}
-
             ## Docker Images
 
-            ### Standard (Recommended)
             ```bash
             docker pull dohdalabs/ats-pdf-generator:${{ github.ref_name }}
+            docker pull ghcr.io/dohdalabs/ats-pdf-generator:${{ github.ref_name }}
             ```
 
-            ### Alpine (Minimal)
-            ```bash
-            docker pull dohdalabs/ats-pdf-generator:${{ github.ref_name }}-alpine
-            ```
-
-            ### Development
-            ```bash
-            docker pull dohdalabs/ats-pdf-generator:${{ github.ref_name }}-dev
-            ```
-
-            ## Usage
-            ```bash
-            docker run --rm -v $(pwd):/app dohdalabs/ats-pdf-generator:${{ github.ref_name }} input.md -o output.pdf
-            ```
-
-            ## What's New
-            - Check the [CHANGELOG.md](CHANGELOG.md) for detailed changes
-            - View the [documentation](README.md) for usage instructions
+            ## Changes
+            ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false
-
-      - name: Update Docker Hub Description
-        uses: peter-evans/dockerhub-description@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: dohdalabs/ats-pdf-generator
-          short-description: "Convert Markdown documents to ATS-optimized PDFs for job applications"
-          readme-filepath: ./README.md
