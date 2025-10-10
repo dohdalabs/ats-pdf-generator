@@ -3,6 +3,7 @@
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -16,6 +17,7 @@ from ats_pdf_generator.ats_converter import (
     _create_fallback_css,
     _determine_css_file,
     _validate_input_file,
+    cli,
     main,
 )
 
@@ -378,3 +380,75 @@ class TestValidation:
                     _validate_input_file(str(test_file))
             finally:
                 test_file.chmod(0o644)
+
+    def test_cli_success(self) -> None:
+        """Test CLI function with successful execution."""
+        with patch("ats_pdf_generator.ats_converter.main") as mock_main:
+            mock_main.return_value = None
+
+            # Should complete without raising SystemExit
+            cli()
+
+            # Verify main was called
+            mock_main.assert_called_once()
+
+    def test_cli_validation_error(self, capsys: Any) -> None:
+        """Test CLI function handles ValidationError with exit code 1."""
+        with patch("ats_pdf_generator.ats_converter.main") as mock_main:
+            mock_main.side_effect = ValidationError("Invalid input file")
+
+            with pytest.raises(SystemExit) as exc_info:
+                cli()
+
+            assert exc_info.value.code == 1
+            captured = capsys.readouterr()
+            assert "Error: Invalid input file" in captured.err
+
+    def test_cli_file_operation_error(self, capsys: Any) -> None:
+        """Test CLI function handles FileOperationError with exit code 1."""
+        with patch("ats_pdf_generator.ats_converter.main") as mock_main:
+            mock_main.side_effect = FileOperationError("Cannot read file")
+
+            with pytest.raises(SystemExit) as exc_info:
+                cli()
+
+            assert exc_info.value.code == 1
+            captured = capsys.readouterr()
+            assert "Error: Cannot read file" in captured.err
+
+    def test_cli_conversion_error(self, capsys: Any) -> None:
+        """Test CLI function handles ConversionError with exit code 1."""
+        with patch("ats_pdf_generator.ats_converter.main") as mock_main:
+            mock_main.side_effect = ConversionError("Pandoc conversion failed")
+
+            with pytest.raises(SystemExit) as exc_info:
+                cli()
+
+            assert exc_info.value.code == 1
+            captured = capsys.readouterr()
+            assert "Error: Pandoc conversion failed" in captured.err
+
+    def test_cli_keyboard_interrupt(self, capsys: Any) -> None:
+        """Test CLI function handles KeyboardInterrupt gracefully."""
+        with patch("ats_pdf_generator.ats_converter.main") as mock_main:
+            mock_main.side_effect = KeyboardInterrupt()
+
+            with pytest.raises(SystemExit) as exc_info:
+                cli()
+
+            assert exc_info.value.code == 1
+            captured = capsys.readouterr()
+            assert "Operation cancelled by user" in captured.err
+
+    def test_cli_unexpected_error(self, capsys: Any) -> None:
+        """Test CLI function handles unexpected exceptions with exit code 2."""
+        with patch("ats_pdf_generator.ats_converter.main") as mock_main:
+            mock_main.side_effect = RuntimeError("Unexpected error occurred")
+
+            with pytest.raises(SystemExit) as exc_info:
+                cli()
+
+            assert exc_info.value.code == 2
+            captured = capsys.readouterr()
+            assert "Unexpected error: Unexpected error occurred" in captured.err
+            assert "Please report this issue" in captured.err

@@ -9,6 +9,7 @@ from .ats_converter import (
     ConversionError,
     FileOperationError,
     ValidationError,
+    cli,
     main,
 )
 
@@ -18,5 +19,6 @@ __all__ = [
     "ConversionError",
     "FileOperationError",
     "ValidationError",
+    "cli",
     "main",
 ]

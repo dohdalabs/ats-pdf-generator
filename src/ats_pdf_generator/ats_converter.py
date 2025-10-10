@@ -345,5 +345,36 @@ def main() -> None:
                 pass  # Ignore cleanup errors
 
 
+def cli() -> None:
+    """CLI entrypoint with user-friendly error handling.
+
+    Catches exceptions from main() and displays clean error messages
+    instead of Python tracebacks.
+
+    Exit codes:
+        0: Success
+        1: Conversion, file operation, or validation error
+        2: Unexpected error
+    """
+    try:
+        main()
+    except ValidationError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except FileOperationError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except ConversionError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\nOperation cancelled by user.", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error: {e}", file=sys.stderr)
+        print("Please report this issue with the command you ran.", file=sys.stderr)
+        sys.exit(2)
+
+
 if __name__ == "__main__":
-    main()
+    cli()
