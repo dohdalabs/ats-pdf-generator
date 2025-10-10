@@ -220,8 +220,8 @@ run_benchmark() {
         fi
         end_time=$(date +%s.%N)
 
-        duration=$(echo "$end_time - $start_time" | bc)
-        total_time=$(echo "$total_time + $duration" | bc)
+        duration=$(echo "$end_time - $start_time" | bc -l)
+        total_time=$(echo "$total_time + $duration" | bc -l)
 
         if (( $(echo "$duration < $min_time" | bc -l) )); then
             min_time=$duration
