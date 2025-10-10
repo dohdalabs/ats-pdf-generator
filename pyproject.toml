@@ -42,6 +42,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/ats_pdf_generator"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"src/ats_pdf_generator/py.typed" = "ats_pdf_generator/py.typed"
+
 [tool.ruff]
 target-version = "py313"
 line-length = 88

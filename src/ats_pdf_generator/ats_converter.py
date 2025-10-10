@@ -297,7 +297,9 @@ def main() -> None:
                         stripped = line.lstrip()
                         if stripped.startswith("• ") or stripped.startswith("* "):
                             indent = line[: len(line) - len(stripped)]
-                            f_out.write(f"{indent}- {stripped[2:]}")
+                            # Remove bullet and space (first 2 chars), keep rest including newline
+                            content = stripped[2:]
+                            f_out.write(f"{indent}- {content}")
                         else:
                             f_out.write(line)
                 temp_files.append(tmp)

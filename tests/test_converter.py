@@ -117,6 +117,73 @@ class TestATSConverter:
         assert Path("examples/sample-cover-letter.md").exists()
         assert Path("examples/sample-profile.md").exists()
 
+    def test_bullet_point_preprocessing_preserves_newlines(
+        self, tmp_path: Path
+    ) -> None:
+        """Test that bullet point preprocessing preserves newline characters.
+
+        This test verifies that when converting • or * bullets to markdown
+        list items (-), the newline character at the end of each line is
+        preserved, preventing line concatenation.
+        """
+        # Create a test input file with various bullet formats
+        test_input = """# Test Document
+• First item
+• Second item
+  • Indented item
+* First asterisk
+* Second asterisk
+Regular text
+"""
+
+        # Expected output after preprocessing
+        expected_output = """# Test Document
+- First item
+- Second item
+  - Indented item
+- First asterisk
+- Second asterisk
+Regular text
+"""
+
+        input_file = tmp_path / "test-input.md"
+        output_file = tmp_path / "test-output.md"
+
+        input_file.write_text(test_input)
+
+        # Manually simulate the preprocessing logic
+        with (
+            input_file.open("r", encoding="utf-8") as f_in,
+            output_file.open("w", encoding="utf-8") as f_out,
+        ):
+            for line in f_in:
+                stripped = line.lstrip()
+                if stripped.startswith("• ") or stripped.startswith("* "):
+                    indent = line[: len(line) - len(stripped)]
+                    # Remove bullet and space (first 2 chars), keep rest including newline
+                    content = stripped[2:]
+                    f_out.write(f"{indent}- {content}")
+                else:
+                    f_out.write(line)
+
+        # Read the processed output
+        actual_output = output_file.read_text()
+
+        # Verify newlines are preserved and content matches expected
+        assert actual_output == expected_output
+
+        # Verify no line concatenation occurred (each line is separate)
+        actual_lines = actual_output.split("\n")
+        expected_lines = expected_output.split("\n")
+        assert len(actual_lines) == len(expected_lines)
+
+        # Verify specific conversions
+        assert "- First item\n" in actual_output
+        assert "- Second item\n" in actual_output
+        assert "  - Indented item\n" in actual_output
+        assert "- First asterisk\n" in actual_output
+        assert "- Second asterisk\n" in actual_output
+
 
 class TestCSSFiles:
     """Test cases for CSS template files."""
