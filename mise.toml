@@ -15,11 +15,26 @@ pnpm = "10.17.1"
 [tasks]
 # All tasks now delegate to just for consistency
 # This allows 'mise run <task>' to work for those who prefer it
-install = "just install"
-ci = "just ci"
-test = "just test"
-lint = "just lint"
-format = "just format"
-docker-build = "just docker-build-all"
-docker-test = "just docker-test"
-publish = "just publish"
+# Following {action}-{language/tool} naming pattern
+
+# Installation
+install-all = "just install"
+
+# CI/CD
+ci-all = "just ci"
+
+# Testing
+test-all = "just test"
+
+# Linting
+lint-all = "just lint"
+
+# Formatting
+format-all = "just format"
+
+# Docker Operations
+build-docker = "just docker-build-all"
+test-docker = "just docker-test"
+
+# Publishing
+publish-docker = "just publish"

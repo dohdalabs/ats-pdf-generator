@@ -297,7 +297,7 @@ def main() -> None:
                         stripped = line.lstrip()
                         if stripped.startswith("• ") or stripped.startswith("* "):
                             indent = line[: len(line) - len(stripped)]
-                            f_out.write(f"{indent}- {stripped[2:]}\n")
+                            f_out.write(f"{indent}- {stripped[2:]}")
                         else:
                             f_out.write(line)
                 temp_files.append(tmp)

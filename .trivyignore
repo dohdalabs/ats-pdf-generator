@@ -1,7 +1,11 @@
 # Trivy ignore file
 # Add patterns to ignore specific vulnerabilities or files
-
-# Note: Removed broad node_modules/ ignore to allow scanning of all dependencies
+#
+# SCAN STRATEGY:
+# This file is used by the 'just security' command in CI and local development.
+# We use a single scan approach that includes test dependencies for comprehensive
+# security coverage while excluding only test artifacts and build outputs.
+#
 # Use .trivyignore.yaml for targeted vulnerability ignores if needed
 
 # Ignore local development artifacts (minimal, explicit paths)
@@ -22,7 +26,21 @@ dist/
 build/
 *.egg-info/
 
-# Ignore test files
-tests/
-test_*/
-*_test.py
+# Ignore test artifacts and outputs (but allow test dependencies to be scanned)
+# Test coverage reports and temporary test files
+.coverage
+htmlcov/
+.pytest_cache/
+test-results/
+.tox/
+.nox/
+
+# Test fixture data and mock files (if any)
+**/fixtures/
+**/mocks/
+**/test_data/
+**/sample_data/
+
+# Note: Test source files (tests/, test_*.py, *_test.py) are now INCLUDED
+# to allow scanning of test dependencies (pytest, pytest-cov, etc.)
+# This ensures comprehensive security coverage of all project dependencies

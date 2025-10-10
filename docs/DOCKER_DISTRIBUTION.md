@@ -82,7 +82,7 @@ mise install
 uv sync
 
 # Run tests
-mise run test
+mise run test-all
 # or
 uv run pytest
 

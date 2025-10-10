@@ -17,7 +17,7 @@ log_error() {
 show_usage() {
     cat <<'USAGE_EOF'
 SYNOPSIS
-    extract-versions.sh [OPTIONS] {env|python|uv|shellcheck|hadolint|node|pnpm|list}
+    extract-versions.sh [OPTIONS] {env|python|uv|shellcheck|hadolint|node|pnpm|just|trivy|list}
 
 DESCRIPTION
     Extract tool versions from mise.toml for reuse in CI and automation.
@@ -30,6 +30,8 @@ OPTIONS
 EXAMPLES
     ./scripts/extract-versions.sh env
     ./scripts/extract-versions.sh python
+    ./scripts/extract-versions.sh just
+    ./scripts/extract-versions.sh trivy
     ./scripts/extract-versions.sh list
 
 For more information: https://github.com/dohdalabs/ats-pdf-generator
@@ -94,6 +96,8 @@ main() {
             echo "HADOLINT_VERSION=$(extract_version hadolint)"
             echo "NODE_VERSION=$(extract_version node)"
             echo "PNPM_VERSION=$(extract_version pnpm)"
+            echo "JUST_VERSION=$(extract_version just)"
+            echo "TRIVY_VERSION=$(extract_version trivy)"
             ;;
         python)
             extract_version python
@@ -113,6 +117,12 @@ main() {
         pnpm)
             extract_version pnpm
             ;;
+        just)
+            extract_version just
+            ;;
+        trivy)
+            extract_version trivy
+            ;;
         list)
             log_info "Tool versions from mise.toml:"
             log_info "=============================="
@@ -122,6 +132,8 @@ main() {
             log_info "hadolint: $(extract_version hadolint)"
             log_info "node: $(extract_version node)"
             log_info "pnpm: $(extract_version pnpm)"
+            log_info "just: $(extract_version just)"
+            log_info "trivy: $(extract_version trivy)"
             ;;
         *)
             log_error "Unknown command: $action"

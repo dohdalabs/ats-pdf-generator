@@ -14,6 +14,10 @@ log_success() {
     echo "SUCCESS: $*"
 }
 
+log_warning() {
+    echo "WARNING: $*" >&2
+}
+
 show_usage() {
     cat <<'USAGE_EOF'
 SYNOPSIS

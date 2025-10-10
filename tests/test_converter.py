@@ -263,15 +263,23 @@ class TestValidation:
 
     def test_validate_input_file_permission_error(self, tmp_path: Path) -> None:
         """Test validation with file that cannot be read."""
-        # Arrange
         test_file = tmp_path / "test.md"
         test_file.write_text("# Test content")
-        test_file.chmod(0o000)  # Remove all permissions
 
-        try:
-            # Act & Assert
-            with pytest.raises(FileOperationError, match="Cannot read file"):
-                _validate_input_file(str(test_file))
-        finally:
-            # Cleanup - restore permissions
-            test_file.chmod(0o644)
+        if sys.platform.startswith("win"):
+            # Windows-specific permission restriction
+            import os
+
+            os.chmod(test_file, 0o444)  # Read-only
+            # Mock open() to raise PermissionError since Windows handles permissions differently
+            with patch("builtins.open", side_effect=PermissionError):
+                with pytest.raises(FileOperationError, match="Cannot read file"):
+                    _validate_input_file(str(test_file))
+        else:
+            # Unix/Linux permission restriction
+            test_file.chmod(0o000)
+            try:
+                with pytest.raises(FileOperationError, match="Cannot read file"):
+                    _validate_input_file(str(test_file))
+            finally:
+                test_file.chmod(0o644)

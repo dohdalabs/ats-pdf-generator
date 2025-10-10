@@ -31,7 +31,7 @@ RUN apk add --no-cache \
 FROM base AS deps
 
 # Install uv using the official installer (faster and more reliable)
-SHELL ["/bin/ash", "-o", "pipefail", "-c"]
+SHELL ["/bin/ash", "-e", "-o", "pipefail", "-c"]
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 

@@ -7,7 +7,7 @@ set shell := ["bash", "-uc"]
 # Variables
 export CI := env_var_or_default("CI", "false")
 export UV_COMPILE_BYTECODE := "1"
-export UV_CACHE_DIR := "~/.cache/uv"
+export UV_CACHE_DIR := "$HOME/.cache/uv"
 
 # Show available recipes
 @default:
@@ -361,6 +361,12 @@ convert input output="":
     #!/usr/bin/env bash
     set -euo pipefail
 
+    # Validate input parameter is not empty
+    if [ -z "{{input}}" ]; then
+        echo "Error: Input parameter is required and cannot be empty" >&2
+        exit 1
+    fi
+
     # Set default output if not provided
     if [ -z "{{output}}" ]; then
         # Remove .md extension and add .pdf
@@ -381,11 +387,32 @@ convert input output="":
     INPUT_FILENAME=$(basename "{{input}}")
     OUTPUT_BASENAME=$(basename "$OUTPUT_FILE")
 
+    # Resolve absolute path for Docker mount (portable across systems)
+    RESOLVED_INPUT_DIR=""
+    if command -v realpath >/dev/null 2>&1; then
+        # Use realpath if available (GNU coreutils)
+        RESOLVED_INPUT_DIR=$(realpath "$INPUT_DIR")
+    elif command -v readlink >/dev/null 2>&1 && readlink -f / >/dev/null 2>&1; then
+        # Fallback to readlink -f if available (some BSD systems)
+        RESOLVED_INPUT_DIR=$(readlink -f "$INPUT_DIR")
+    else
+        # POSIX-compliant fallback using cd and pwd
+        RESOLVED_INPUT_DIR=$(cd "$INPUT_DIR" && pwd)
+    fi
+
+    # Validate that we successfully resolved the path
+    if [ -z "$RESOLVED_INPUT_DIR" ] || [ ! -d "$RESOLVED_INPUT_DIR" ]; then
+        echo "Error: Unable to resolve absolute path for input directory: $INPUT_DIR" >&2
+        echo "This system lacks realpath, readlink -f, or basic POSIX utilities." >&2
+        echo "Please ensure your system has standard Unix utilities available." >&2
+        exit 1
+    fi
+
     echo "Converting: {{input}} -> $OUTPUT_FILE"
 
     # Run conversion in Docker container
     docker run --rm \
-        -v "$(realpath "$INPUT_DIR"):/app/input" \
+        -v "$RESOLVED_INPUT_DIR:/app/input" \
         -w /app \
         ats-pdf-generator:dev \
         bash -c "source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py input/$INPUT_FILENAME -o input/$OUTPUT_BASENAME"

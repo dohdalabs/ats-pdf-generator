@@ -102,6 +102,71 @@ while [ $# -gt 0 ]; do
 
 done
 
+# Input validation
+log_info "Validating input parameters..."
+
+# Validate ITERATIONS
+if [ -z "${ITERATIONS:-}" ]; then
+    log_error "ITERATIONS is not set"
+    exit 1
+fi
+
+if ! [[ "$ITERATIONS" =~ ^[1-9][0-9]*$ ]]; then
+    log_error "ITERATIONS must be a positive integer (non-zero, digits only), got: '$ITERATIONS'"
+    exit 1
+fi
+
+# Validate IMAGE
+if [ -z "${IMAGE:-}" ]; then
+    log_error "IMAGE is not set"
+    exit 1
+fi
+
+# Validate OUTPUT_DIR
+if [ -z "${OUTPUT_DIR:-}" ]; then
+    log_error "OUTPUT_DIR is not set"
+    exit 1
+fi
+
+# Normalize OUTPUT_DIR path (handle both relative and absolute paths)
+if [[ "$OUTPUT_DIR" = /* ]]; then
+    # Absolute path - use as is
+    OUTPUT_DIR="$OUTPUT_DIR"
+else
+    # Relative path - make it absolute from current directory
+    OUTPUT_DIR="$(pwd)/$OUTPUT_DIR"
+fi
+
+# Check if OUTPUT_DIR exists or can be created
+if [ -d "$OUTPUT_DIR" ]; then
+    # Directory exists, check if it's writable
+    if [ ! -w "$OUTPUT_DIR" ]; then
+        log_error "OUTPUT_DIR exists but is not writable: '$OUTPUT_DIR'"
+        exit 1
+    fi
+else
+    # Directory doesn't exist, check if parent is writable
+    parent_dir=$(dirname "$OUTPUT_DIR")
+
+    if [ ! -d "$parent_dir" ]; then
+        log_error "Parent directory does not exist: '$parent_dir'"
+        exit 1
+    fi
+
+    if [ ! -w "$parent_dir" ]; then
+        log_error "Parent directory is not writable: '$parent_dir'"
+        exit 1
+    fi
+
+    # Try to create the directory
+    if ! mkdir -p "$OUTPUT_DIR" 2>/dev/null; then
+        log_error "Failed to create OUTPUT_DIR: '$OUTPUT_DIR'"
+        exit 1
+    fi
+fi
+
+log_success "Input validation passed"
+
 if [ $# -gt 0 ]; then
     log_error "Unexpected positional arguments: $*"
     exit 2
@@ -112,8 +177,6 @@ if ! command -v bc >/dev/null 2>&1; then
     exit 1
 fi
 
-mkdir -p "$OUTPUT_DIR"
-
 log_info "🔍 Security Tools Performance Benchmark"
 log_info "Image: $IMAGE"
 log_info "Iterations: $ITERATIONS"
@@ -121,7 +184,7 @@ log_info "Output Directory: $OUTPUT_DIR"
 
 run_benchmark() {
     local tool_name="$1"
-    local command="$2"
+    shift  # Remove tool_name from arguments
     local output_file="$OUTPUT_DIR/${tool_name}-benchmark.txt"
 
     log_info "Testing $tool_name..."
@@ -130,6 +193,9 @@ run_benchmark() {
         log_warning "$tool_name not found. Skipping"
         return 1
     fi
+
+    # Build command array with tool name and all remaining arguments
+    local command=("$tool_name" "$@")
 
     {
         echo "Tool: $tool_name"
@@ -148,7 +214,7 @@ run_benchmark() {
 
         local start_time end_time duration
         start_time=$(date +%s.%N)
-        if ! eval "$command" >> "$output_file" 2>&1; then
+        if ! "${command[@]}" >> "$output_file" 2>&1; then
             log_error "$tool_name command failed"
             return 1
         fi
@@ -186,13 +252,13 @@ run_benchmark() {
     log_info "  Max: ${max_time}s"
 }
 
-run_benchmark "trivy" "trivy image --format table --quiet $IMAGE"
-run_benchmark "grype" "grype $IMAGE --quiet"
+run_benchmark "trivy" trivy image --format table --quiet "$IMAGE"
+run_benchmark "grype" grype "$IMAGE" --quiet
 if command -v docker >/dev/null 2>&1; then
-    run_benchmark "docker-scout" "docker scout cves $IMAGE --quiet"
+    run_benchmark "docker-scout" docker scout cves "$IMAGE" --quiet
 fi
 if command -v snyk >/dev/null 2>&1; then
-    run_benchmark "snyk" "snyk container test $IMAGE --quiet"
+    run_benchmark "snyk" snyk container test "$IMAGE" --quiet
 fi
 
 log_info "📊 Generating summary report..."
