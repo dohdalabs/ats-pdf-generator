@@ -6,18 +6,11 @@ alwaysApply: false
 
 ## Core Requirements
 
-### Help Documentation
-
-- **All scripts MUST have `--help` and `-h` options** (unless explicitly sourced-only utility)
-- **Required sections**: SYNOPSIS, DESCRIPTION, OPTIONS, EXAMPLES
-- **Minimum 100 characters** of help text
-- **See [Shell Script Help Validation Guide](../docs/SHELL_SCRIPT_HELP_VALIDATION.md) for detailed requirements**
-
 ### Code Quality
 
 - **Shebang**: `#!/bin/bash` or appropriate interpreter
 - **Error handling**: `set -euo pipefail`
-- **Logging**: Use project logging functions (`log_info`, `log_success`, `log_error`, `log_warning`)
+- **Logging**: Use simple logging functions (`log_info`, `log_success`, `log_error`, `log_warning`)
 - **Exit codes**: 0 for success, 1 for failure, 2 for usage errors
 
 ### Standard Structure
@@ -26,18 +19,26 @@ alwaysApply: false
 #!/bin/bash
 set -euo pipefail
 
-# Source utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/utils/logging.sh"
-source "$SCRIPT_DIR/utils/common.sh"
-source "$SCRIPT_DIR/utils/ci.sh"
+# Simple logging functions
+log_info() {
+    echo "INFO: $*"
+}
 
-# Initialize logger
-init_logger --format "%d [%l] %m"
+log_error() {
+    echo "ERROR: $*" >&2
+}
 
-# Help function
+log_success() {
+    echo "SUCCESS: $*"
+}
+
+log_warning() {
+    echo "WARNING: $*" >&2
+}
+
+# Help function (for scripts that need it)
 show_usage() {
-    cat << 'USAGE_EOF'
+    cat <<'USAGE_EOF'
 SYNOPSIS
     script-name.sh [OPTIONS]
 
@@ -51,12 +52,10 @@ OPTIONS
 EXAMPLES
     ./script-name.sh --help
     ./script-name.sh [args]
-
-For more information: https://github.com/dohdalabs/ats-pdf-generator
 USAGE_EOF
 }
 
-# Help handling
+# Help handling (if needed)
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
     show_usage
     exit 0
@@ -67,15 +66,6 @@ fi
 
 ## Validation
 
-- **All scripts MUST pass** `./scripts/quality/check-shell.sh`
-- **Help options MUST work** and return exit code 0
-- **Help text MUST contain** all required sections
+- **All scripts MUST pass** `just lint-shell` (uses shellcheck)
 - **Scripts MUST be executable** and have proper shebang
-
-## Exemptions
-
-Scripts can skip help validation by:
-
-1. Adding `# pre-commit: skip-help-validation` comment
-2. Adding script name to `.pre-commit-shell-skip-help.txt`
-3. Being utility scripts (`common.sh`, `logging.sh`, `ci.sh`)
+- **Use simple, clear logging** instead of complex utility systems

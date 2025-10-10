@@ -35,6 +35,12 @@ alwaysApply: false
 - `security-*` - Security scanning
 - `build-*` - Building artifacts
 - `publish-*` - Publishing
+- `validate-*` - Validation operations
+- `info-*` - Information display
+- `clean-*` - Cleanup operations
+- `typecheck-*` - Type checking
+- `convert-*` - Format conversion
+- `shell-*` - Interactive shell access
 
 ## Language/Tool Suffixes
 
@@ -44,6 +50,7 @@ alwaysApply: false
 - `markdown` - Documentation
 - `security` - Security scanning
 - `all` - Cross-language operations
+- `pdf` - PDF operations
 
 ## Rules
 
@@ -56,54 +63,55 @@ alwaysApply: false
 
 ## Common Patterns
 
+**Note**: This project uses `just` as the primary task runner. Mise tasks delegate to `just` commands for consistency.
+
 ```toml
+# All tasks delegate to just for consistency
+# This allows 'mise run <task>' to work for those who prefer it
+# Following {action}-{language/tool} naming pattern
+
+# Installation
+install-all = "just install"
+
+# CI/CD
+ci-all = "just ci"
+
 # Testing
-test-python = "uv run pytest"
-test-docker = "scripts/docker-manager.sh test --all"
-
-# Building
-build-docker = "scripts/docker-manager.sh build --all"
-
-# Docker Operations
-validate-docker = "scripts/docker-manager.sh validate"
-info-docker = "scripts/docker-manager.sh info"
-clean-docker = "scripts/docker-manager.sh clean --all"
+test-all = "just test"
 
 # Linting
-lint-python = "uv run ruff check ."
-lint-shell = "./scripts/quality/check-shell.sh"
-
-# Type Checking
-typecheck-python = "uv run mypy src/ats_pdf_generator/"
+lint-all = "just lint"
 
 # Formatting
-format-python = "uv run ruff format ."
-format-markdown = "./scripts/quality/check-markdown.sh --fix"
-format-all = "mise run format-python && mise run format-markdown"
+format-all = "just format"
 
-# Comprehensive Quality Checks
-check-python = "mise run lint-python && mise run format-python && mise run typecheck-python && mise run test-python"
-check-docker = "mise run lint-docker && mise run test-docker"
-check-markdown = "mise run lint-markdown && mise run format-markdown"
-
-# Security Scanning
-security-docker = "scripts/quality/check-security.sh"
-
-# PDF Operations
-convert-pdf = "scripts/convert-pdf.sh"
+# Docker Operations
+build-docker = "just docker-build-all"
+test-docker = "just docker-test"
+validate-docker = "just docker-validate"
+info-docker = "just docker-info"
+clean-docker = "just docker-clean"
+shell-docker = "just docker-shell"
 
 # Publishing
-publish-docker = "scripts/docker-manager.sh publish"
+publish-docker = "just publish"
 
-# Shell Access
-shell-docker = "docker run --rm -it -v \"$(pwd):/app\" -w /app ats-pdf-generator:dev bash"
+# PDF Operations
+convert-pdf = "just convert"
 ```
 
-## Migration
+## Task Execution
 
-When renaming tasks:
+This project uses `just` as the primary task runner with mise delegation:
 
-1. Update all script references
-2. Update CI/CD workflows
-3. Test task execution
-4. Remove deprecated tasks
+- **Primary**: Use `just <command>` directly
+- **Alternative**: Use `mise run <task>` which delegates to `just`
+- **Benefits**: Consistent task runner, better error handling, parameterized commands
+
+## When Renaming Tasks
+
+1. Update `justfile` recipes first
+2. Update `mise.toml` delegation tasks
+3. Update CI/CD workflows
+4. Test task execution
+5. Remove deprecated tasks

@@ -10,7 +10,7 @@ alwaysApply: false
 
 ### Required Checks
 
-- Run `./scripts/quality/check-markdown.sh --fix <file>` as the first step before committing to automatically resolve violations
+- Run `just format-markdown` to automatically fix violations before committing
 - If issues remain, manually fix all markdownlint violations
 - Ensure proper heading hierarchy
 - Use consistent formatting
@@ -29,7 +29,7 @@ alwaysApply: false
 
 ### AI Assistant Guidelines
 
-- Always run markdownlint after editing markdown files
+- Always run `just format-markdown` after editing markdown files
 - Fix all violations before completing changes
 - Use consistent formatting patterns
 - Include proper heading structure
@@ -40,13 +40,13 @@ alwaysApply: false
 **Check-only (validation):**
 
 ```bash
-./scripts/quality/check-markdown.sh <filename>
+just lint-markdown
 ```
 
 **Auto-fix (repair violations):**
 
 ```bash
-./scripts/quality/check-markdown.sh --fix <filename>
+just format-markdown
 ```
 
 **Note**: This file itself must pass markdownlint validation.
