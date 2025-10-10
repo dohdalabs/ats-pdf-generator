@@ -266,7 +266,7 @@ def main() -> None:
 
     # Preprocess: convert lines beginning with a bullet '•' to markdown list '- '
     args: list[str] = sys.argv[1:]
-    files: list[str] = [a for a in args if a.endswith(".md")]
+    files: list[str] = [a for a in args if a.lower().endswith(".md")]
 
     # Validate input files
     for file_path in files:

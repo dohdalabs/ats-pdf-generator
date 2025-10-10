@@ -186,6 +186,52 @@ Regular text
         assert "- First asterisk\n" in actual_output
         assert "- Second asterisk\n" in actual_output
 
+    def test_markdown_file_detection_case_insensitive(self, tmp_path: Path) -> None:
+        """Test that Markdown file detection is case-insensitive."""
+        # Create test files with different case extensions
+        test_files = {
+            "lowercase.md": "# Lowercase MD",
+            "uppercase.MD": "# Uppercase MD",
+            "mixedcase.Md": "# Mixed case Md",
+            "other.txt": "Not markdown",
+        }
+
+        for filename, content in test_files.items():
+            (tmp_path / filename).write_text(content)
+
+        # Mock sys.argv with files of different cases
+        test_args = [
+            "script_name",
+            str(tmp_path / "lowercase.md"),
+            str(tmp_path / "uppercase.MD"),
+            str(tmp_path / "mixedcase.Md"),
+            str(tmp_path / "other.txt"),
+            "-o",
+            str(tmp_path / "output.pdf"),
+        ]
+
+        with patch("sys.argv", test_args):
+            # Mock subprocess.run to avoid actual conversion
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = subprocess.CompletedProcess(
+                    args=[], returncode=0, stdout="", stderr=""
+                )
+
+                # Run main - should process all .md variants
+                main()
+
+                # Verify subprocess was called
+                assert mock_run.called
+                cmd = mock_run.call_args[0][0]
+
+                # All markdown files (regardless of case) should be in the command
+                # They will be preprocessed to .preprocessed.md files
+                cmd_str = " ".join(cmd)
+                assert ".preprocessed.md" in cmd_str
+
+                # Non-markdown files should be passed through unchanged
+                assert str(tmp_path / "other.txt") in cmd
+
 
 class TestCSSFiles:
     """Test cases for CSS template files."""
