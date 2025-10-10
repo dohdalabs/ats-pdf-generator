@@ -76,10 +76,14 @@ extract_version() {
     /^\[/ { in_section = 0 }
     in_section {
         # Match lines with optional leading whitespace and spaces around =
-        pattern = "^[[:space:]]*" tool "[[:space:]]*=[[:space:]]*\""
+        # Accepts both single and double quotes
+        pattern = "^[[:space:]]*" tool "[[:space:]]*=[[:space:]]*['\''\"'\'']"
         if ($0 ~ pattern) {
-            split($0, parts, "\"")
-            print parts[2]
+            # Remove everything up to and including the opening quote
+            sub(/^[^=]*=[[:space:]]*['\''\"'\'']/, "")
+            # Remove the closing quote and everything after it
+            sub(/['\''\"'\''].*$/, "")
+            print
             exit
         }
     }
