@@ -283,10 +283,10 @@ def main() -> None:
         tmp_dir = Path("tmp")
         tmp_dir.mkdir(exist_ok=True)
 
-    for a in args:
+    for index, a in enumerate(args):
         if a in files:
             src = Path(a)
-            tmp = tmp_dir / f"{src.stem}.preprocessed.md"
+            tmp = tmp_dir / f"{src.stem}-{index}.preprocessed.md"
             try:
                 with (
                     src.open("r", encoding="utf-8") as f_in,
