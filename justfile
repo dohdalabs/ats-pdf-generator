@@ -130,7 +130,7 @@ docker-build-ci:
     set -euo pipefail
 
     # Check if we're on main branch
-    if [ "${GITHUB_REF:-}" = "refs/heads/main" ] || [ "${GITHUB_BASE_REF:-}" = "main" ] || [ "$(git branch --show-current 2>/dev/null || echo 'unknown')" = "main" ]; then
+    if [ "${GITHUB_REF:-}" = "refs/heads/main" ] || [ "$(git branch --show-current 2>/dev/null || echo 'unknown')" = "main" ]; then
         echo "🔨 Building all Docker images (main branch detected)..."
         just docker-build-all
     else
@@ -182,7 +182,7 @@ docker-test-ci:
     set -euo pipefail
 
     # Check if we're on main branch
-    if [ "${GITHUB_REF:-}" = "refs/heads/main" ] || [ "${GITHUB_BASE_REF:-}" = "main" ] || [ "$(git branch --show-current 2>/dev/null || echo 'unknown')" = "main" ]; then
+    if [ "${GITHUB_REF:-}" = "refs/heads/main" ] || [ "$(git branch --show-current 2>/dev/null || echo 'unknown')" = "main" ]; then
         echo "🧪 Testing all Docker images (main branch detected)..."
         just docker-test
     else
