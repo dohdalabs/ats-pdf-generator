@@ -40,6 +40,13 @@ install:
     echo "  just ci                  # Run all quality checks (same as CI)"
     echo "  just test                # Run tests"
     echo "  just format              # Auto-fix formatting"
+    echo "  just security            # Run security scan (warning mode)"
+    echo "  just security-strict     # Run security scan (strict mode)"
+    echo ""
+    echo "Security scan modes:"
+    echo "  • Warning mode (default): Security issues are reported but don't fail CI"
+    echo "  • Strict mode: Security issues will fail CI and prevent merges"
+    echo "  • Set CI_STRICT_SECURITY=true to enable strict mode globally"
 
 # Install production dependencies only
 install-prod:
@@ -275,27 +282,53 @@ security:
         exit 0
     fi
 
+    # Check if strict security mode is enabled
+    if [ "${CI_STRICT_SECURITY:-false}" = "true" ]; then
+        echo "🔒 Running in STRICT security mode - failures will stop CI"
+        SECURITY_MODE="strict"
+    else
+        echo "🔒 Running in WARNING security mode - failures are non-fatal"
+        SECURITY_MODE="warning"
+    fi
+
     # Run scan with SARIF output for GitHub Actions (includes secrets scanning)
-    $TRIVY_CMD fs . --format sarif --output trivy-results.sarif --scanners vuln,secret --severity HIGH,CRITICAL --ignore-unfixed || {
-        echo "⚠️  Security scan found issues (non-fatal)"
-        exit 0
-    }
+    if [ "$SECURITY_MODE" = "strict" ]; then
+        $TRIVY_CMD fs . --format sarif --output trivy-results.sarif --scanners vuln,secret --severity HIGH,CRITICAL --ignore-unfixed
+    else
+        $TRIVY_CMD fs . --format sarif --output trivy-results.sarif --scanners vuln,secret --severity HIGH,CRITICAL --ignore-unfixed || {
+            echo "⚠️  Security scan found issues (non-fatal)"
+            exit 0
+        }
+    fi
 
     # Run vulnerability scan on dependencies
     echo "🔍 Scanning dependencies for vulnerabilities..."
-    $TRIVY_CMD fs . --format table --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed || {
-        echo "⚠️  Vulnerability scan found issues (non-fatal)"
-        exit 0
-    }
+    if [ "$SECURITY_MODE" = "strict" ]; then
+        $TRIVY_CMD fs . --format table --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed
+    else
+        $TRIVY_CMD fs . --format table --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed || {
+            echo "⚠️  Vulnerability scan found issues (non-fatal)"
+            exit 0
+        }
+    fi
 
     # Run secret scan on source code (exclude dependencies)
     echo "🔍 Scanning source code for secrets..."
-    $TRIVY_CMD fs . --format table --scanners secret --severity HIGH,CRITICAL --skip-files "uv.lock,node_modules/,*.pyc,__pycache__/" || {
-        echo "⚠️  Secret scan found issues (non-fatal)"
-        exit 0
-    }
+    if [ "$SECURITY_MODE" = "strict" ]; then
+        $TRIVY_CMD fs . --format table --scanners secret --severity HIGH,CRITICAL --skip-files "uv.lock,node_modules/,*.pyc,__pycache__/"
+    else
+        $TRIVY_CMD fs . --format table --scanners secret --severity HIGH,CRITICAL --skip-files "uv.lock,node_modules/,*.pyc,__pycache__/" || {
+            echo "⚠️  Secret scan found issues (non-fatal)"
+            exit 0
+        }
+    fi
 
     echo "✅ Security scan completed"
+
+# Run security scan in strict mode (failures will stop CI)
+security-strict:
+    #!/usr/bin/env bash
+    CI_STRICT_SECURITY=true just security
 
 # ============================================================================
 # Combined Quality Checks

@@ -17,6 +17,7 @@ env:
   CI: true
   UV_COMPILE_BYTECODE: 1
   UV_CACHE_DIR: ~/.cache/uv
+  CI_STRICT_SECURITY: true
 
 jobs:
   quality:

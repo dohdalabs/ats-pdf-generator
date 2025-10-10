@@ -99,7 +99,19 @@ log_info "🚀 Setting up development environment..."
 python_version=$(python3 --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
 required_version="3.13"
 
-if [ "$(printf '%s\n' "$required_version" "$python_version" | sort -V | head -n1)" != "$required_version" ]; then
+# Detect Python binary (prefer python3, fall back to python)
+python_bin="python3"
+if ! command -v python3 >/dev/null 2>&1; then
+    python_bin="python"
+fi
+
+# Use Python for POSIX-safe version comparison
+if ! $python_bin -c "
+import sys
+required = tuple(map(int, '$required_version'.split('.')))
+current = tuple(map(int, '$python_version'.split('.')))
+sys.exit(0 if current >= required else 1)
+" 2>/dev/null; then
     log_error "Python 3.13+ is required. Found: $python_version"
     log_info "Consider using mise: curl https://mise.run | sh"
     exit 1

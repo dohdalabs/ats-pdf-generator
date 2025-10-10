@@ -28,9 +28,6 @@ build/
 
 # Ignore test artifacts and outputs (but allow test dependencies to be scanned)
 # Test coverage reports and temporary test files
-.coverage
-htmlcov/
-.pytest_cache/
 test-results/
 .tox/
 .nox/

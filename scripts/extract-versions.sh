@@ -75,8 +75,9 @@ extract_version() {
     /^\[tools\]/ { in_section = 1; next }
     /^\[/ { in_section = 0 }
     in_section {
-        prefix = tool " = \""
-        if (index($0, prefix) == 1) {
+        # Match lines with optional leading whitespace and spaces around =
+        pattern = "^[[:space:]]*" tool "[[:space:]]*=[[:space:]]*\""
+        if ($0 ~ pattern) {
             split($0, parts, "\"")
             print parts[2]
             exit
