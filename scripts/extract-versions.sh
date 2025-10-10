@@ -75,15 +75,16 @@ extract_version() {
     /^\[tools\]/ { in_section = 1; next }
     /^\[/ { in_section = 0 }
     in_section {
-        # Match lines with optional leading whitespace and spaces around =
-        # Accepts both single and double quotes
-        pattern = "^[[:space:]]*" tool "[[:space:]]*=[[:space:]]*['\''\"'\'']"
-        if ($0 ~ pattern) {
-            # Remove everything up to and including the opening quote
-            sub(/^[^=]*=[[:space:]]*['\''\"'\'']/, "")
-            # Remove the closing quote and everything after it
-            sub(/['\''\"'\''].*$/, "")
-            print
+        line = $0
+        # Remove leading whitespace
+        sub(/^[[:space:]]+/, "", line)
+        # Check if line starts with tool name followed by =
+        if (index(line, tool " =") == 1 || index(line, tool "=") == 1) {
+            # Extract value after =
+            sub(/^[^=]*=[[:space:]]*/, "", line)
+            # Remove surrounding quotes
+            gsub(/^['\''\"'\'']|['\''\"'\'']$/, "", line)
+            print line
             exit
         }
     }
