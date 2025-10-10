@@ -78,8 +78,9 @@ extract_version() {
         line = $0
         # Remove leading whitespace
         sub(/^[[:space:]]+/, "", line)
-        # Check if line starts with tool name followed by =
-        if (index(line, tool " =") == 1 || index(line, tool "=") == 1) {
+        # Check if line starts with tool name followed by optional spaces and =
+        pattern = "^" tool "[[:space:]]*="
+        if (match(line, pattern)) {
             # Extract value after =
             sub(/^[^=]*=[[:space:]]*/, "", line)
             # Remove surrounding quotes
