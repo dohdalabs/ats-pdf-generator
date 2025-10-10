@@ -310,7 +310,7 @@ def main() -> None:
             processed_args.append(a)
 
     # Build pandoc command
-    cmd: list[str] = ["pandoc"] + processed_args
+    cmd: list[str] = ["pandoc", *processed_args]
 
     # Ensure we use weasyprint engine if not specified
     if "--pdf-engine" not in " ".join(sys.argv):
