@@ -2,21 +2,35 @@
 globs: *.py
 alwaysApply: false
 ---
-# Python Coding Standards for AI Assistants
 
-**Python Version Policy**: This project requires Python 3.13+.
+# Python Standards (Python 3.13+)
 
-## Core Principles
+## Quality Commands
 
-- **PEP 8 compliance** - Follow official Python style guide
-- **Type hints required** - All functions must have type annotations
-- **Comprehensive docstrings** - Document all public functions/classes
-- **Error handling** - Handle exceptions appropriately
-- **Clean imports** - Organize imports properly
+**ALWAYS run after editing Python code:**
 
-## Essential Patterns
+```bash
+just format-python    # Auto-fix formatting
+just quick-check      # Run all checks (lint, type, test, security)
+```
 
-### Function Definition
+## Required Patterns
+
+### Imports (stdlib → third-party → local)
+
+```python
+# Standard library
+from pathlib import Path
+from typing import Any
+
+# Third-party
+import pytest
+
+# Local
+from ats_pdf_generator.utils import validate_data
+```
+
+### Functions (Type hints + docstrings required)
 
 ```python
 def process_data(
@@ -38,81 +52,7 @@ def process_data(
     Raises:
         ValidationError: If validation fails
     """
-    if validate:
-        validate_data(data)
-    return generate_output(data, output_path)
 ```
-
-### Import Organization
-
-```python
-# Standard library
-import os
-from pathlib import Path
-from typing import Any
-
-# Third-party
-import click
-from pydantic import BaseModel
-
-# Local
-from ats_pdf_generator.utils import validate_data
-```
-
-### Error Handling
-
-```python
-def safe_file_operation(file_path: Path) -> str:
-    """Read file with proper error handling."""
-    try:
-        return file_path.read_text()
-    except FileNotFoundError as e:
-        raise FileOperationError(f"File not found: {file_path}") from e
-    except PermissionError as e:
-        raise FileOperationError(f"Permission denied: {file_path}") from e
-```
-
-## Testing Requirements
-
-- **90% minimum coverage** for all code
-- **100% coverage** for critical functions
-- **Test all exceptions** and error paths
-- **Use descriptive test names** starting with `test_`
-
-### Test Structure
-
-```python
-def test_function_behavior():
-    """Test specific function behavior."""
-    # Arrange
-    input_data = {"key": "value"}
-    expected = "expected_result"
-
-    # Act
-    result = function_under_test(input_data)
-
-    # Assert
-    assert result == expected
-
-def test_error_handling():
-    """Test error conditions."""
-    with pytest.raises(ValidationError):
-        function_under_test(invalid_data)
-```
-
-## Code Quality Checklist
-
-When generating Python code, ensure:
-
-- [ ] **Type hints** on all function parameters and return values
-- [ ] **Docstrings** for all public functions/classes
-- [ ] **Error handling** with appropriate exception types
-- [ ] **Import organization** (stdlib, third-party, local)
-- [ ] **PEP 8 compliance** (line length, naming, spacing)
-- [ ] **Input validation** for all external inputs
-- [ ] **Resource cleanup** (use context managers)
-
-## Exception Handling
 
 ### Custom Exceptions
 
@@ -122,66 +62,67 @@ class ATSGeneratorError(Exception):
 
 class ValidationError(ATSGeneratorError):
     """Input validation failed."""
-
-class FileOperationError(ATSGeneratorError):
-    """File operation failed."""
 ```
 
-### Error Handling Pattern
+### CLI Error Handling (CRITICAL for entry points)
 
 ```python
-def process_file(file_path: Path) -> str:
-    """Process file with proper error handling."""
+def cli() -> None:
+    """CLI entrypoint with user-friendly error handling."""
     try:
-        return file_path.read_text()
-    except FileNotFoundError as e:
-        raise FileOperationError(f"File not found: {file_path}") from e
-    except PermissionError as e:
-        raise FileOperationError(f"Permission denied: {file_path}") from e
+        main()
+    except ValidationError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\nOperation cancelled by user.", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error: {e}", file=sys.stderr)
+        sys.exit(2)
+
+if __name__ == "__main__":
+    cli()  # Use cli() not main()
 ```
 
-## Security & Performance
-
-### Security Requirements
-
-- **Input validation** for all external inputs
-- **Safe file operations** (no path traversal)
-- **No sensitive data** in error messages
-- **Use context managers** for resource cleanup
-
-### Performance Guidelines
-
-- **Functions <50 lines** for readability
-- **Use appropriate data structures** for efficiency
-- **Minimize I/O operations** where possible
-- **Cache expensive operations** when appropriate
-
-## Documentation Standards
-
-### Docstring Format
+### Tests (>90% coverage required)
 
 ```python
-def function_name(param: Type) -> ReturnType:
-    """Brief description of function.
+def test_function_behavior() -> None:
+    """Test specific function behavior."""
+    # Arrange
+    input_data = {"key": "value"}
 
-    Longer description if needed.
+    # Act
+    result = function_under_test(input_data)
 
-    Args:
-        param: Description of parameter
+    # Assert
+    assert result == expected
 
-    Returns:
-        Description of return value
-
-    Raises:
-        ExceptionType: When this exception is raised
-    """
+def test_error_handling() -> None:
+    """Test error conditions."""
+    with pytest.raises(ValidationError):
+        function_under_test(invalid_data)
 ```
 
-## Best Practices Summary
+## Checklist for AI Assistants
 
-- **Single responsibility** - Each function does one thing
-- **Meaningful names** - Variables and functions are self-documenting
-- **Fail fast** - Validate inputs early
-- **Use type hints** - Improves code clarity and catches errors
-- **Handle exceptions** - Don't let errors crash the application
-- **Write tests** - Ensure code works as expected
+When editing Python code:
+
+1. ✅ Add type hints to ALL functions (params + return)
+2. ✅ Add docstrings to ALL public functions/classes
+3. ✅ Use custom exceptions + CLI wrapper for errors
+4. ✅ Organize imports (stdlib → third-party → local)
+5. ✅ Write tests for new code (arrange-act-assert)
+6. ✅ Run `just format-python` to auto-fix
+7. ✅ Run `just quick-check` before completing
+8. ✅ Fix ALL linter violations before finishing
+
+## Key Rules
+
+- **Type hints**: Use `dict[str, Any]` not `Dict[str, Any]` (Python 3.13+)
+- **Error handling**: Chain exceptions with `from e`, use custom exception classes
+- **CLI entry points**: MUST wrap main() with cli() for user-friendly errors
+- **Tests**: >90% coverage, test both success and error paths
+- **Validation**: Code MUST pass `just quick-check` before completion
+- **Functions**: <50 lines, single responsibility, fail fast
