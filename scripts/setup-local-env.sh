@@ -50,18 +50,9 @@ ensure_timeout_available() {
             log_info "Installing coreutils (provides gtimeout)..."
             brew install coreutils
 
-            # Source shell rc files to update PATH after coreutils installation
-            log_info "Updating PATH after coreutils installation..."
-            if [ -f "$HOME/.zshrc" ]; then
-                # shellcheck source=/dev/null
-                . "$HOME/.zshrc"
-            elif [ -f "$HOME/.bashrc" ]; then
-                # shellcheck source=/dev/null
-                . "$HOME/.bashrc"
-            elif [ -f "$HOME/.bash_profile" ]; then
-                # shellcheck source=/dev/null
-                . "$HOME/.bash_profile"
-            fi
+            # Update PATH to include Homebrew's coreutils
+            # shellcheck disable=SC2155
+            export PATH="$(brew --prefix)/opt/coreutils/libexec/gnubin:$PATH"
         else
             log_error "GNU timeout (coreutils) not found and Homebrew is unavailable. Install Homebrew from https://brew.sh and rerun."
             exit 1
@@ -143,8 +134,9 @@ ensure_timeout_available
 if ! command -v uv >/dev/null 2>&1; then
     log_info "Installing uv..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
-    # shellcheck source=/dev/null
-    source ~/.bashrc 2>/dev/null || source ~/.zshrc 2>/dev/null || true
+
+    # Add uv to PATH for current session
+    export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 fi
 
 log_info "Installing dependencies..."
