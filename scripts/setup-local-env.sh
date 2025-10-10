@@ -49,6 +49,19 @@ ensure_timeout_available() {
         if command -v brew >/dev/null 2>&1; then
             log_info "Installing coreutils (provides gtimeout)..."
             brew install coreutils
+
+            # Source shell rc files to update PATH after coreutils installation
+            log_info "Updating PATH after coreutils installation..."
+            if [ -f "$HOME/.zshrc" ]; then
+                # shellcheck source=/dev/null
+                . "$HOME/.zshrc"
+            elif [ -f "$HOME/.bashrc" ]; then
+                # shellcheck source=/dev/null
+                . "$HOME/.bashrc"
+            elif [ -f "$HOME/.bash_profile" ]; then
+                # shellcheck source=/dev/null
+                . "$HOME/.bash_profile"
+            fi
         else
             log_error "GNU timeout (coreutils) not found and Homebrew is unavailable. Install Homebrew from https://brew.sh and rerun."
             exit 1
@@ -96,14 +109,22 @@ set -- "${ARGS[@]}"
 
 log_info "🚀 Setting up development environment..."
 
-python_version=$(python3 --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
 required_version="3.13"
 
 # Detect Python binary (prefer python3, fall back to python)
-python_bin="python3"
-if ! command -v python3 >/dev/null 2>&1; then
+python_bin=""
+if command -v python3 >/dev/null 2>&1; then
+    python_bin="python3"
+elif command -v python >/dev/null 2>&1; then
     python_bin="python"
+else
+    log_error "Python is not installed. Please install Python 3.13+ to continue."
+    log_info "Consider using mise: curl https://mise.run | sh"
+    exit 1
 fi
+
+# Get Python version using the detected binary
+python_version=$($python_bin --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
 
 # Use Python for POSIX-safe version comparison
 if ! $python_bin -c "
