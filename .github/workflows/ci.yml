@@ -79,8 +79,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y shellcheck
           # Download hadolint binary and checksum file securely
-          curl -fL https://github.com/hadolint/hadolint/releases/download/v${{ steps.hadolint-version.outputs.version }}/hadolint-Linux-x86_64 -o hadolint-linux-x86_64
-          curl -fL https://github.com/hadolint/hadolint/releases/download/v${{ steps.hadolint-version.outputs.version }}/hadolint-Linux-x86_64.sha256 -o hadolint-linux-x86_64.sha256
+          curl -fL https://github.com/hadolint/hadolint/releases/download/v${{ steps.hadolint-version.outputs.version }}/hadolint-linux-x86_64 -o hadolint-linux-x86_64
+          curl -fL https://github.com/hadolint/hadolint/releases/download/v${{ steps.hadolint-version.outputs.version }}/hadolint-linux-x86_64.sha256 -o hadolint-linux-x86_64.sha256
           # Verify checksum before installation
           sha256sum -c hadolint-linux-x86_64.sha256
           chmod +x hadolint-linux-x86_64
