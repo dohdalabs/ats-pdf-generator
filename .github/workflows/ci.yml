@@ -132,12 +132,12 @@ jobs:
         run: |
           set -e
           # Download hadolint binary and checksum file securely
-          curl -fL https://github.com/hadolint/hadolint/releases/download/v${{ steps.hadolint-version-publish.outputs.version }}/hadolint-Linux-x86_64 -o hadolint-Linux-x86_64
-          curl -fL https://github.com/hadolint/hadolint/releases/download/v${{ steps.hadolint-version-publish.outputs.version }}/hadolint-Linux-x86_64.sha256 -o hadolint-Linux-x86_64.sha256
+          curl -fL https://github.com/hadolint/hadolint/releases/download/v${{ steps.hadolint-version-publish.outputs.version }}/hadolint-linux-x86_64 -o hadolint-linux-x86_64
+          curl -fL https://github.com/hadolint/hadolint/releases/download/v${{ steps.hadolint-version-publish.outputs.version }}/hadolint-linux-x86_64.sha256 -o hadolint-linux-x86_64.sha256
           # Verify checksum before installation
-          sha256sum -c hadolint-Linux-x86_64.sha256
-          chmod +x hadolint-Linux-x86_64
-          sudo mv hadolint-Linux-x86_64 /usr/local/bin/hadolint
+          sha256sum -c hadolint-linux-x86_64.sha256
+          chmod +x hadolint-linux-x86_64
+          sudo mv hadolint-linux-x86_64 /usr/local/bin/hadolint
           just docker-validate
 
 
