@@ -88,7 +88,6 @@ main() {
 
     case "$action" in
         env)
-            log_info "# Tool versions extracted from mise.toml"
             echo "PYTHON_VERSION=$(extract_version python)"
             echo "UV_VERSION=$(extract_version uv)"
             echo "SHELLCHECK_VERSION=$(extract_version shellcheck)"
