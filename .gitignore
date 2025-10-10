@@ -79,8 +79,6 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 .yarn-integrity
-package-lock.json
-yarn.lock
 
 # Node.js cache
 .eslintcache
