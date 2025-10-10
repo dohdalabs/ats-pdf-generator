@@ -1,11 +1,13 @@
 """Tests for the ATS PDF Converter."""
 
+import subprocess
 import sys
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
+from ats_pdf_generator import ats_converter
 from ats_pdf_generator.ats_converter import (
     ATSGeneratorError,
     ConversionError,
@@ -23,8 +25,6 @@ class TestATSConverter:
 
     def test_converter_import(self) -> None:
         """Test that the converter module can be imported."""
-        from ats_pdf_generator import ats_converter
-
         assert ats_converter is not None
 
     def test_exception_hierarchy(self) -> None:
@@ -56,27 +56,57 @@ class TestATSConverter:
     def test_invalid_input_file(self) -> None:
         """Test that invalid input files are handled properly."""
         with patch.object(sys, "argv", ["ats_converter.py", "nonexistent_file.md"]):
-            with pytest.raises(ConversionError):
+            with pytest.raises(ValidationError):
                 main()
 
-    def test_file_operation_error_handling(self) -> None:
+    def test_file_operation_error_handling(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test that file operation errors are properly handled."""
-        # This test would require mocking file operations to trigger FileOperationError
-        # For now, we'll test that the exception can be raised
-        with pytest.raises(FileOperationError):
-            raise FileOperationError("Test file operation error")
 
-    def test_conversion_error_handling(self) -> None:
+        # Mock file operations to trigger FileOperationError in _create_fallback_css
+        def mock_open(*args: object, **kwargs: object) -> None:
+            raise OSError("Permission denied")
+
+        monkeypatch.setattr("builtins.open", mock_open)
+
+        with pytest.raises(FileOperationError, match="Cannot create CSS file"):
+            _create_fallback_css("test.css")
+
+    def test_conversion_error_handling(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that conversion errors are properly handled."""
-        # This test would require mocking subprocess to trigger ConversionError
-        # For now, we'll test that the exception can be raised
-        with pytest.raises(ConversionError):
-            raise ConversionError("Test conversion error")
+
+        # Mock subprocess.run to trigger ConversionError
+        def mock_subprocess_run(*args: object, **kwargs: object) -> None:
+            raise subprocess.CalledProcessError(1, "pandoc", stderr="Test error")
+
+        monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
+
+        # Create a temporary test file
+        test_file = Path("test_input.md")
+        test_file.write_text("# Test\nContent")
+
+        try:
+            with patch.object(sys, "argv", ["ats_converter.py", str(test_file)]):
+                with pytest.raises(ConversionError, match="Pandoc conversion failed"):
+                    main()
+        finally:
+            test_file.unlink(missing_ok=True)
 
     def test_validation_error_handling(self) -> None:
         """Test that validation errors are properly handled."""
-        with pytest.raises(ValidationError):
-            raise ValidationError("Test validation error")
+        # Test with non-existent file
+        with pytest.raises(ValidationError, match="Input file does not exist"):
+            _validate_input_file("nonexistent_file.md")
+
+        # Test with directory instead of file
+        test_dir = Path("test_directory")
+        test_dir.mkdir(exist_ok=True)
+        try:
+            with pytest.raises(ValidationError, match="Path is not a file"):
+                _validate_input_file(str(test_dir))
+        finally:
+            test_dir.rmdir()
 
     @pytest.mark.skipif(
         not Path("examples/sample-cover-letter.md").exists(),
@@ -267,11 +297,9 @@ class TestValidation:
         test_file.write_text("# Test content")
 
         if sys.platform.startswith("win"):
-            # Windows-specific permission restriction
-            import os
-
-            os.chmod(test_file, 0o444)  # Read-only
-            # Mock open() to raise PermissionError since Windows handles permissions differently
+            # Windows does not enforce Unix-style read permissions like chmod(0o000)
+            # Therefore, we simulate a permission failure by mocking open() to raise PermissionError
+            # This ensures the test validates the same error handling path on Windows as on Unix
             with patch("builtins.open", side_effect=PermissionError):
                 with pytest.raises(FileOperationError, match="Cannot read file"):
                     _validate_input_file(str(test_file))
