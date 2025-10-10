@@ -35,6 +35,10 @@ format-all = "just format"
 # Docker Operations
 build-docker = "just docker-build-all"
 test-docker = "just docker-test"
+validate-docker = "just docker-validate"
+info-docker = "just docker-info"
+clean-docker = "just docker-clean"
+shell-docker = "just docker-shell"
 
 # Publishing
 publish-docker = "just publish"
