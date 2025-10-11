@@ -129,13 +129,11 @@ if [ -z "${OUTPUT_DIR:-}" ]; then
 fi
 
 # Normalize OUTPUT_DIR path (handle both relative and absolute paths)
-if [[ "$OUTPUT_DIR" = /* ]]; then
-    # Absolute path - use as is
-    OUTPUT_DIR="$OUTPUT_DIR"
-else
+if [[ "$OUTPUT_DIR" != /* ]]; then
     # Relative path - make it absolute from current directory
     OUTPUT_DIR="$(pwd)/$OUTPUT_DIR"
 fi
+# If absolute path, use as is (no action needed)
 
 # Check if OUTPUT_DIR exists or can be created
 if [ -d "$OUTPUT_DIR" ]; then
@@ -183,19 +181,26 @@ log_info "Iterations: $ITERATIONS"
 log_info "Output Directory: $OUTPUT_DIR"
 
 run_benchmark() {
+    # Arguments:
+    #   $1: tool_name (display name for output files, e.g., "docker-scout")
+    #   $2+: actual command to run (e.g., docker scout cves ...)
     local tool_name="$1"
     shift  # Remove tool_name from arguments
     local output_file="$OUTPUT_DIR/${tool_name}-benchmark.txt"
 
     log_info "Testing $tool_name..."
 
-    if ! command -v "$tool_name" >/dev/null 2>&1; then
-        log_warning "$tool_name not found. Skipping"
-        return 1
+    # Extract the executable (first token) from the command
+    # This handles both simple commands (trivy) and subcommands (docker scout)
+    local executable="$1"
+
+    if ! command -v "$executable" >/dev/null 2>&1; then
+        log_warning "$tool_name not found (executable: $executable). Skipping"
+        return 0  # Return success to avoid script termination under set -e
     fi
 
-    # Build command array with tool name and all remaining arguments
-    local command=("$tool_name" "$@")
+    # Build command array with all arguments
+    local command=("$@")
 
     {
         echo "Tool: $tool_name"
