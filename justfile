@@ -80,13 +80,23 @@ typecheck-python:
     @echo "🔍 Type checking Python code..."
     uv run mypy src/ats_pdf_generator/
 
+# Check docstring coverage
+check-docstrings:
+    @echo "📝 Checking docstring coverage..."
+    uv run interrogate src/ats_pdf_generator/ --fail-under=80
+
 # Run Python tests with coverage
 test-python:
     @echo "🧪 Running Python tests..."
     uv run pytest --cov=src --cov-report=xml --cov-report=term-missing
 
+# Run Python security scan with bandit
+security-python:
+    @echo "🔒 Running Python security scan with bandit..."
+    uv run bandit -c pyproject.toml -r src/ats_pdf_generator/
+
 # Complete Python quality checks
-check-python: lint-python check-format-python typecheck-python test-python
+check-python: lint-python check-format-python typecheck-python check-docstrings test-python security-python
 
 # ============================================================================
 # Shell Script Quality Checks

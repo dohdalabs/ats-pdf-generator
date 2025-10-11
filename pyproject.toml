@@ -32,7 +32,8 @@ dev = [
     "black>=24.0.0",
     "isort>=5.13.0",
     "pre-commit>=4.3.0",
-    "bandit>=1.7.0",
+    "bandit[toml]>=1.7.0",
+    "interrogate>=1.7.0",
 ]
 
 [build-system]
@@ -125,6 +126,45 @@ addopts = [
     "--cov-report=term-missing",
     "--cov-report=html",
 ]
+
+[tool.interrogate]
+ignore-init-method = true
+ignore-init-module = false
+ignore-magic = false
+ignore-semiprivate = false
+ignore-private = false
+ignore-property-decorators = false
+ignore-module = false
+ignore-nested-functions = false
+ignore-nested-classes = true
+ignore-setters = false
+fail-under = 80
+exclude = ["setup.py", "docs", "build", "tests"]
+verbose = 1
+quiet = false
+color = true
+
+[tool.bandit]
+targets = ["src/ats_pdf_generator"]
+exclude_dirs = [
+    "tests",
+    ".venv",
+    "venv",
+    ".git",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    "build",
+    "dist",
+]
+# Only report medium and high severity issues
+# Low severity issues like B404 (subprocess import) are often false positives
+severity = "medium"
+confidence = "medium"
+# Skip specific test IDs if needed:
+# B404 = subprocess module (safe when used properly)
+# B603 = subprocess without shell=True (actually safer!)
+skips = ["B404", "B603"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
