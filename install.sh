@@ -12,7 +12,7 @@
 #   - Supports updating to the latest version and displaying help.
 #   - Designed for a smooth, no-sudo, one-liner installation experience.
 
-set -e
+set -euo pipefail
 
 # Function to show usage
 show_usage() {
