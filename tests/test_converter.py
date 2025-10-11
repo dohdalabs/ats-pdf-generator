@@ -439,9 +439,9 @@ class TestValidation:
 
         if sys.platform.startswith("win"):
             # Windows does not enforce Unix-style read permissions like chmod(0o000)
-            # Therefore, we simulate a permission failure by mocking open() to raise PermissionError
+            # Simulate permission failure by mocking os.access to return False
             # This ensures the test validates the same error handling path on Windows as on Unix
-            with patch("builtins.open", side_effect=PermissionError):
+            with patch("os.access", return_value=False):
                 with pytest.raises(FileOperationError, match="Cannot read file"):
                     _validate_input_file(str(test_file))
         else:
@@ -452,6 +452,19 @@ class TestValidation:
                     _validate_input_file(str(test_file))
             finally:
                 test_file.chmod(0o644)
+
+    def test_validate_input_file_permission_error_with_mock(
+        self, tmp_path: Path
+    ) -> None:
+        """Test permission error path using mock (simulates Windows behavior on all platforms)."""
+        # This test explicitly tests the mocked path to ensure it works correctly
+        test_file = tmp_path / "test.md"
+        test_file.write_text("# Test content")
+
+        # Mock os.access to return False, simulating an unreadable file
+        with patch("os.access", return_value=False):
+            with pytest.raises(FileOperationError, match="Cannot read file"):
+                _validate_input_file(str(test_file))
 
     def test_cli_success(self) -> None:
         """Test CLI function with successful execution."""
