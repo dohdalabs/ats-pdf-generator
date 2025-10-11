@@ -420,13 +420,37 @@ convert input output="": (docker-build "dev")
     echo "Converting: {{input}} -> $OUTPUT_FILE"
 
     # Run conversion in Docker container
+    # PDF is generated in the input directory first
     docker run --rm \
         -v "$RESOLVED_INPUT_DIR:/app/input" \
         -w /app \
         ats-pdf-generator:dev \
         bash -c "source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py input/$INPUT_FILENAME -o input/$OUTPUT_BASENAME"
 
-    echo "✅ PDF generated: $OUTPUT_FILE"
+    # Move the generated PDF to the requested output location if different
+    GENERATED_FILE="$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME"
+
+    # Resolve OUTPUT_FILE to absolute path for comparison
+    OUTPUT_DIR=$(dirname "$OUTPUT_FILE")
+    OUTPUT_BASENAME_FINAL=$(basename "$OUTPUT_FILE")
+
+    # Resolve absolute output path
+    if [ -d "$OUTPUT_DIR" ]; then
+        RESOLVED_OUTPUT_DIR=$(cd "$OUTPUT_DIR" && pwd)
+    else
+        # Output directory doesn't exist yet, resolve parent and append
+        mkdir -p "$OUTPUT_DIR"
+        RESOLVED_OUTPUT_DIR=$(cd "$OUTPUT_DIR" && pwd)
+    fi
+    RESOLVED_OUTPUT_FILE="$RESOLVED_OUTPUT_DIR/$OUTPUT_BASENAME_FINAL"
+
+    # Move file if output location is different from where it was generated
+    if [ "$GENERATED_FILE" != "$RESOLVED_OUTPUT_FILE" ]; then
+        mv "$GENERATED_FILE" "$RESOLVED_OUTPUT_FILE"
+        echo "✅ PDF generated and moved to: $OUTPUT_FILE"
+    else
+        echo "✅ PDF generated: $OUTPUT_FILE"
+    fi
 
 # ============================================================================
 # Utility Commands
