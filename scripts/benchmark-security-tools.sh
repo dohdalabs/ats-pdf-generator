@@ -73,14 +73,29 @@ set -- "${ARGS[@]}"
 while [ $# -gt 0 ]; do
     case "$1" in
         --image)
+            if [ $# -lt 2 ] || [ -z "${2:-}" ]; then
+                log_error "Option --image requires a value"
+                show_usage
+                exit 2
+            fi
             IMAGE="$2"
             shift 2
             ;;
         --iterations)
+            if [ $# -lt 2 ] || [ -z "${2:-}" ]; then
+                log_error "Option --iterations requires a value"
+                show_usage
+                exit 2
+            fi
             ITERATIONS="$2"
             shift 2
             ;;
         --output)
+            if [ $# -lt 2 ] || [ -z "${2:-}" ]; then
+                log_error "Option --output requires a value"
+                show_usage
+                exit 2
+            fi
             OUTPUT_DIR="$2"
             shift 2
             ;;
@@ -143,15 +158,10 @@ if [ -d "$OUTPUT_DIR" ]; then
         exit 1
     fi
 else
-    # Directory doesn't exist, check if parent is writable
+    # Directory doesn't exist, check if parent is writable (only if it exists)
     parent_dir=$(dirname "$OUTPUT_DIR")
 
-    if [ ! -d "$parent_dir" ]; then
-        log_error "Parent directory does not exist: '$parent_dir'"
-        exit 1
-    fi
-
-    if [ ! -w "$parent_dir" ]; then
+    if [ -d "$parent_dir" ] && [ ! -w "$parent_dir" ]; then
         log_error "Parent directory is not writable: '$parent_dir'"
         exit 1
     fi
@@ -257,8 +267,12 @@ run_benchmark() {
     log_info "  Max: ${max_time}s"
 }
 
-run_benchmark "trivy" trivy image --format table --quiet "$IMAGE"
-run_benchmark "grype" grype "$IMAGE" --quiet
+if command -v trivy >/dev/null 2>&1; then
+    run_benchmark "trivy" trivy image --format table --quiet "$IMAGE"
+fi
+if command -v grype >/dev/null 2>&1; then
+    run_benchmark "grype" grype "$IMAGE" --quiet
+fi
 if command -v docker >/dev/null 2>&1; then
     run_benchmark "docker-scout" docker scout cves "$IMAGE" --quiet
 fi
