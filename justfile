@@ -366,7 +366,7 @@ publish version="latest":
 # ============================================================================
 
 # Convert Markdown to PDF
-convert input output="":
+convert input output="": (docker-build "dev")
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -451,7 +451,7 @@ uv-update:
     uv lock --upgrade
 
 # Open shell in dev Docker container
-docker-shell:
+docker-shell: (docker-build "dev")
     docker run --rm -it -v "$(pwd):/app" -w /app ats-pdf-generator:dev bash
 
 # ============================================================================
