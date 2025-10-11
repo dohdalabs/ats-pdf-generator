@@ -131,14 +131,13 @@ install_utility() {
 # ATS PDF Generator Wrapper
 # Simple wrapper for the ATS PDF Generator Docker container
 
-set -e
+set -euo pipefail
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-
 # Check if update is requested
-if [[ "$1" == "update" || "$1" == "--update" || "$1" == "-u" ]]; then
+if [[ "${1:-}" == "update" || "${1:-}" == "--update" || "${1:-}" == "-u" ]]; then
     echo "Updating ATS PDF Generator to latest version..."
 
     # Re-run the installer with update flag
@@ -146,11 +145,25 @@ if [[ "$1" == "update" || "$1" == "--update" || "$1" == "-u" ]]; then
     exit 0
 fi
 
-# Check if input file is provided
-if [ $# -eq 0 ]; then
-    echo "Error: No input file specified"
-    show_usage
-    exit 1
+# Check if help is requested or no arguments provided
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]] || [ $# -eq 0 ]; then
+    cat << 'USAGE_EOF'
+Usage: ats-pdf [OPTIONS] <input-file>
+
+Convert Markdown files to ATS-friendly PDF documents.
+
+Options:
+    -h, --help              Show this help message and exit
+    update, -u, --update    Update to the latest version
+
+Examples:
+    ats-pdf resume.md              # Convert resume.md to PDF
+    ats-pdf cover-letter.md        # Convert cover-letter.md to PDF
+    ats-pdf --update               # Update to latest version
+
+For more information: https://github.com/dohdalabs/ats-pdf-generator
+USAGE_EOF
+    exit 0
 fi
 
 # Run the Docker container
