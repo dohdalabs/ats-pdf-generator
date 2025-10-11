@@ -310,6 +310,32 @@ class TestCSSDetermination:
         css_file = _determine_css_file(["cover.docx"])
         assert css_file == "templates/ats-cover-letter.css"
 
+    def test_determine_css_file_with_underscore_separators(self) -> None:
+        """Test CSS determination with underscore-separated filenames."""
+        # Test profile keyword with underscore separator
+        css_file = _determine_css_file(["my_profile.md"])
+        assert css_file == "templates/ats-profile.css"
+
+        # Test cover keyword with underscore separator
+        css_file = _determine_css_file(["john_cover_letter.md"])
+        assert css_file == "templates/ats-cover-letter.css"
+
+        # Test application keyword with underscore separator
+        css_file = _determine_css_file(["job_application_2024.md"])
+        assert css_file == "templates/ats-cover-letter.css"
+
+        # Test document keyword with underscore separator
+        css_file = _determine_css_file(["company_document.md"])
+        assert css_file == "templates/ats-document.css"
+
+        # Test mixed separators (underscores and hyphens)
+        css_file = _determine_css_file(["my_professional-profile.md"])
+        assert css_file == "templates/ats-profile.css"
+
+        # Test multiple underscores
+        css_file = _determine_css_file(["jane__resume__profile.md"])
+        assert css_file == "templates/ats-profile.css"
+
     def test_determine_css_file_with_content_keywords(self, tmp_path: Path) -> None:
         """Test CSS determination based on content keywords."""
         # Create temporary files with specific content

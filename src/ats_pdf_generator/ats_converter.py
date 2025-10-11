@@ -183,15 +183,18 @@ def _determine_css_file(files: list[str]) -> str:
     # First pass: Check filenames for definitive signals
     for file_path in files:
         filename_lower = os.path.basename(file_path).lower()
+        # Normalize separators: replace non-alphanumeric chars with spaces for keyword matching
+        # This treats underscores, hyphens, etc. as word boundaries
+        normalized_filename = re.sub(r"[^a-z0-9]+", " ", filename_lower)
 
         # Check each CSS template's filename keywords
         for css_path, config in css_templates.items():
             if os.path.exists(css_path):
                 for keyword in config["filename_keywords"]:
-                    # Use word boundary matching, but allow keywords adjacent to file extensions
-                    # Pattern: word boundary + keyword + (word boundary OR end of string OR file extension)
-                    pattern = r"\b" + re.escape(keyword) + r"(?:\b|$|\.)"
-                    if re.search(pattern, filename_lower):
+                    # Use word boundary matching on normalized filename
+                    # This ensures keywords like "profile" match in "my_profile.md", "my-profile.md", etc.
+                    pattern = r"\b" + re.escape(keyword) + r"\b"
+                    if re.search(pattern, normalized_filename):
                         return css_path
 
     # Second pass: Analyze content if filename didn't provide definitive match
