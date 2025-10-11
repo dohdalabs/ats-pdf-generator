@@ -9,10 +9,3 @@ examples/
 
 # Ignore documentation that may have different formatting standards
 CHANGELOG.md
-DOCKER_IMPROVEMENT_PLAN.md
-DOCKER_IMPROVEMENTS_SUMMARY.md
-ENHANCEMENT_SUMMARY.md
-FINAL_SUMMARY.md
-
-# Ignore GitHub templates (they have specific formatting requirements)
-.github/

@@ -42,7 +42,7 @@ python -m ats_pdf_generator profile.md -o output.pdf
 
 ## Logs/Error Messages
 
-```
+```text
 Paste relevant error messages or logs here
 ```
 
