@@ -146,9 +146,13 @@ source .venv/bin/activate
 uv sync
 
 if ! $SKIP_PRE_COMMIT; then
-    log_info "Setting up pre-commit hooks..."
-    pre-commit install
-    pre-commit install --hook-type commit-msg
+    if command -v pre-commit >/dev/null 2>&1; then
+        log_info "Setting up pre-commit hooks..."
+        pre-commit install
+        pre-commit install --hook-type commit-msg
+    else
+        log_warning "pre-commit not found; skip installing hooks or run 'uv tool install pre-commit'"
+    fi
 else
     log_warning "Skipping pre-commit installation"
 fi

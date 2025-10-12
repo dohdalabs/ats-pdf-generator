@@ -103,10 +103,15 @@ check-python: lint-python check-format-python typecheck-python check-docstrings 
 
 # Lint shell scripts
 lint-shell:
-    @echo "🐚 Linting shell scripts..."
-    -shellcheck -x scripts/*.sh 2>/dev/null || true
-    @echo "✅ Shell linting completed (warnings non-fatal)"
-    @echo "ℹ️  Note: SC1091 warnings about utils/ files are expected and non-fatal"
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🐚 Linting shell scripts..."
+    scripts=(scripts/*.sh)
+    for script in "${scripts[@]}"; do
+        echo "  • $script"
+    done
+    shellcheck -x "${scripts[@]}"
+    echo "✅ All shell scripts passed"
 
 # ============================================================================
 # Docker Operations
