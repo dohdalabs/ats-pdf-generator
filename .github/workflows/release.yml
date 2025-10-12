@@ -18,6 +18,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install just
+        uses: extractions/setup-just@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -38,57 +41,12 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Publish all image variants (standard, alpine, dev)
-        run: |
-          echo "🚀 Publishing all image variants for release ${{ steps.version.outputs.VERSION }}"
-
-          # Publish standard image (multi-arch)
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            --push \
-            -f docker/Dockerfile.standard \
-            -t dohdalabs/ats-pdf-generator:${{ steps.version.outputs.VERSION }} \
-            -t dohdalabs/ats-pdf-generator:latest \
-            -t dohdalabs/ats-pdf-generator:standard \
-            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:${{ steps.version.outputs.VERSION }} \
-            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:latest \
-            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:standard \
-            --build-arg GIT_SHA=${{ github.sha }} \
-            --build-arg VENDOR="DohDa Labs" \
-            .
-
-          # Publish alpine image (multi-arch)
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            --push \
-            -f docker/Dockerfile.alpine \
-            -t dohdalabs/ats-pdf-generator:alpine-${{ steps.version.outputs.VERSION }} \
-            -t dohdalabs/ats-pdf-generator:alpine \
-            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:alpine-${{ steps.version.outputs.VERSION }} \
-            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:alpine \
-            --build-arg GIT_SHA=${{ github.sha }} \
-            --build-arg VENDOR="DohDa Labs" \
-            .
-
-          # Publish dev image (multi-arch)
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            --push \
-            -f docker/Dockerfile.dev \
-            -t dohdalabs/ats-pdf-generator:dev-${{ steps.version.outputs.VERSION }} \
-            -t dohdalabs/ats-pdf-generator:dev \
-            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:dev-${{ steps.version.outputs.VERSION }} \
-            -t ghcr.io/${{ github.repository_owner }}/ats-pdf-generator:dev \
-            --build-arg GIT_SHA=${{ github.sha }} \
-            --build-arg VENDOR="DohDa Labs" \
-            .
-
-          echo "✅ All image variants published successfully!"
+      - name: Publish release
+        run: just publish ${{ steps.version.outputs.VERSION }}
 
       - name: Generate changelog
         id: changelog
         run: |
-          # Generate changelog from git log
           CHANGELOG=$(git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s" --no-merges)
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
@@ -102,38 +60,14 @@ jobs:
           tag_name: ${{ github.ref_name }}
           release_name: Release ${{ github.ref_name }}
           body: |
-            ## Changes in this release
-
-            ${{ steps.changelog.outputs.changelog }}
-
             ## Docker Images
 
-            ### Optimized (Recommended)
             ```bash
             docker pull dohdalabs/ats-pdf-generator:${{ github.ref_name }}
+            docker pull ghcr.io/dohdalabs/ats-pdf-generator:${{ github.ref_name }}
             ```
 
-            ### Alpine (Minimal)
-            ```bash
-            docker pull dohdalabs/ats-pdf-generator:${{ github.ref_name }}-alpine
-            ```
-
-            ## Usage
-            ```bash
-            docker run --rm -v $(pwd):/app dohdalabs/ats-pdf-generator:${{ github.ref_name }} input.md -o output.pdf
-            ```
-
-            ## What's New
-            - Check the [CHANGELOG.md](CHANGELOG.md) for detailed changes
-            - View the [documentation](README.md) for usage instructions
+            ## Changes
+            ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false
-
-      - name: Update Docker Hub Description
-        uses: peter-evans/dockerhub-description@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: dohdalabs/ats-pdf-generator
-          short-description: "Convert Markdown documents to ATS-optimized PDFs for job applications"
-          readme-filepath: ./README.md

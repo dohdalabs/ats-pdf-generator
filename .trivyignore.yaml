@@ -1,0 +1,26 @@
+# Trivy ignore configuration for targeted vulnerability suppression
+# This file allows ignoring specific CVEs or package:version combinations
+# while still scanning all dependencies for security vulnerabilities
+
+# Example format for ignoring specific vulnerabilities:
+# vulnerabilities:
+#   - id: CVE-2023-12345
+#   - id: CVE-2023-67890
+#     paths:
+#       - "path/to/specific/file"
+#     expired_at: "2024-12-31T23:59:59Z"
+
+# Example format for ignoring misconfigurations:
+# misconfigurations:
+#   - id: "AVD-K8S-0001"
+#     paths:
+#       - "k8s/deployment.yaml"
+
+# Currently no known false positives to ignore
+# Add entries here as needed when legitimate false positives are identified
+# Format: each section should contain objects with required 'id' field and optional fields like 'paths', 'purls', 'expired_at'
+
+vulnerabilities: []
+misconfigurations: []
+secrets: []
+licenses: []

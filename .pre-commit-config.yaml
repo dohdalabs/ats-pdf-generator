@@ -7,30 +7,10 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict
-      - id: check-case-conflict
-      - id: check-docstring-first
-      - id: check-json
-      - id: check-toml
-
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.0
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [types-requests, types-click]
-        args: [--ignore-missing-imports]
-
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.6
-    hooks:
-      - id: shellcheck
-        args: [--severity=warning]
+      - id: check-case-conflict    # Check for files that would conflict in case-insensitive filesystems
+      - id: check-docstring-first   # Check that docstrings are at the beginning of functions
+      - id: check-json             # Check JSON syntax
+      - id: check-toml             # Check TOML syntax
 
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v3.20.0
@@ -40,30 +20,39 @@ repos:
 
   - repo: local
     hooks:
+      - id: docker-validate
+        name: docker validate
+        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just docker-validate; else just docker-validate; fi'
+        language: system
+        types: [dockerfile]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just lint-python; else just lint-python; fi'
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: ruff-format
+        name: ruff format
+        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just format-python; else just format-python; fi'
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: shellcheck
+        name: shellcheck
+        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just lint-shell; else just lint-shell; fi'
+        language: system
+        types: [shell]
+        pass_filenames: false
+
       - id: markdownlint
         name: markdownlint
-        entry: markdownlint
+        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just lint-markdown; else just lint-markdown; fi'
         language: system
-        files: \.md$
-        args: [--config=.markdownlint.jsonc, --fix]
-
-  - repo: local
-    hooks:
-      - id: pytest
-        name: pytest
-        entry: pytest
-        language: system
+        types: [markdown]
         pass_filenames: false
-        always_run: true
-        stages: [manual]
-
-  - repo: local
-    hooks:
-      - id: dockerfile-lint
-        name: Dockerfile lint
-        entry: hadolint
-        language: system
-        files: docker/Dockerfile
-        pass_filenames: false
-        always_run: true
-        stages: [manual]

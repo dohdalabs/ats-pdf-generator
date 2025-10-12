@@ -82,7 +82,7 @@ mise install
 uv sync
 
 # Run tests
-mise run test
+mise run test-all
 # or
 uv run pytest
 
@@ -209,7 +209,6 @@ Images are built for:
 
 - Check the [Issues](https://github.com/dohdalabs/ats-pdf-generator/issues) page
 - Review [Development Guide](DEVELOPMENT.md)
-- Contact: <hello@dohdalabs.com>
 
 ## Multi-Registry Strategy Rationale
 

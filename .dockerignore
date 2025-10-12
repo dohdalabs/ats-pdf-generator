@@ -78,9 +78,34 @@ htmlcov/
 .env.local
 .env.*.local
 
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.yarn-integrity
+package-lock.json
+yarn.lock
+
+# Node.js cache
+.eslintcache
+
+# Build and distribution
+dist/
+build/
+out/
+
+# Editor directories and files
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
 # Misc
 .DS_Store?
 Icon?
-Thumbs.db
 ehthumbs.db
 Desktop.ini

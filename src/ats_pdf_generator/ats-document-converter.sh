@@ -2,6 +2,7 @@
 
 # ATS Document Converter
 # Convert markdown cover letters and profiles to ATS-optimized PDFs
+# pre-commit: skip-help-validation
 
 set -e
 

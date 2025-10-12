@@ -1,0 +1,71 @@
+---
+globs: *.sh
+alwaysApply: false
+---
+# Script Standards and Conventions
+
+## Core Requirements
+
+### Code Quality
+
+- **Shebang**: `#!/bin/bash` or appropriate interpreter
+- **Error handling**: `set -euo pipefail`
+- **Logging**: Use simple logging functions (`log_info`, `log_success`, `log_error`, `log_warning`)
+- **Exit codes**: 0 for success, 1 for failure, 2 for usage errors
+
+### Standard Structure
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# Simple logging functions
+log_info() {
+    echo "INFO: $*"
+}
+
+log_error() {
+    echo "ERROR: $*" >&2
+}
+
+log_success() {
+    echo "SUCCESS: $*"
+}
+
+log_warning() {
+    echo "WARNING: $*" >&2
+}
+
+# Help function (for scripts that need it)
+show_usage() {
+    cat <<'USAGE_EOF'
+SYNOPSIS
+    script-name.sh [OPTIONS]
+
+DESCRIPTION
+    Brief description of what the script does.
+
+OPTIONS
+    -h, --help              Show this help message and exit
+    [other options]
+
+EXAMPLES
+    ./script-name.sh --help
+    ./script-name.sh [args]
+USAGE_EOF
+}
+
+# Help handling (if needed)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    show_usage
+    exit 0
+fi
+
+# Main script logic here
+```
+
+## Validation
+
+- **All scripts MUST pass** `just lint-shell` (uses shellcheck)
+- **Scripts MUST be executable** and have proper shebang
+- **Use simple, clear logging** instead of complex utility systems
