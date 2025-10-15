@@ -16,26 +16,24 @@ The CI process is triggered on:
 ```yaml
 CI: true                           # Indicates CI environment
 UV_COMPILE_BYTECODE: 1            # Optimizes Python bytecode compilation
-UV_CACHE_DIR: ~/.cache/uv         # UV package manager cache location
-UV_INDEX_STRATEGY: unsafe-best-match  # UV package resolution strategy
+CI_STRICT_SECURITY: true          # Enables strict security scanning (fails on HIGH/CRITICAL)
 ```
 
 ## Jobs Overview
 
-The CI pipeline consists of 6 main jobs:
+The CI pipeline consists of 3 main jobs:
 
-1. **quality** - Code quality and linting checks
+1. **quality** - Code quality, linting checks, and security scanning (integrated)
 2. **docker-test** - Docker image building and testing
-3. **security-scan** - Vulnerability scanning (conditional)
-4. **security-scan-summary** - Security scan results summary
-5. **publish** - Image publishing to registries (main branch only)
-6. **summary** - Final CI summary
+3. **publish** - Image publishing to registries (main branch only)
+
+**Note:** Security scanning is now integrated into the quality job rather than running as a separate job, making the pipeline more efficient and providing faster feedback on security issues.
 
 ---
 
 ## Job 1: Quality Checks (`quality`)
 
-**Purpose**: Ensures code quality, style consistency, and proper formatting across the codebase.
+**Purpose**: Ensures code quality, style consistency, proper formatting, and security scanning across the codebase.
 
 ### Quality Job Steps
 
@@ -45,68 +43,100 @@ The CI pipeline consists of 6 main jobs:
 - **Purpose**: Downloads the repository code to the CI runner
 - **Why needed**: Provides access to source code for all subsequent steps
 
-#### 2. Set up Python
+#### 2. Install Just
+
+- **Action**: `extractions/setup-just@v3`
+- **Purpose**: Installs the Just task runner
+- **Why needed**: Just is used to execute the unified CI pipeline commands
+
+#### 3. Extract Python Version
+
+- **Script**: `./scripts/extract-versions.sh python`
+- **Purpose**: Dynamically extracts Python version from mise.toml
+- **Why needed**: Ensures consistent Python version across all environments
+
+#### 4. Set up Python
 
 - **Action**: `actions/setup-python@v6`
-- **Python Version**: 3.13
+- **Python Version**: Dynamically extracted from mise.toml
 - **Purpose**: Installs the specified Python version
 - **Why needed**: Ensures consistent Python environment across all environments
 
-#### 3. Install UV
+#### 5. Install UV
 
 - **Action**: `astral-sh/setup-uv@v1`
 - **Version**: Latest
-- **Purpose**: Installs UV package manager
+- **Purpose**: Installs UV package manager with caching enabled
 - **Why needed**: UV is used for fast Python dependency management and virtual environment handling
 
-#### 4. Cache UV Dependencies
+#### 6. Extract Node.js Version
 
-- **Action**: `actions/cache@v4`
-- **Cache Paths**:
-  - `~/.cache/uv` (UV package cache)
-  - `.venv` (Virtual environment)
-- **Cache Key**: Based on OS, UV lock file, and pyproject.toml hashes
-- **Purpose**: Speeds up builds by reusing downloaded packages and virtual environments
-- **Why needed**: Significantly reduces build times by avoiding re-downloading dependencies
+- **Script**: `./scripts/extract-versions.sh node`
+- **Purpose**: Dynamically extracts Node.js version from mise.toml
+- **Why needed**: Ensures consistent Node.js version for frontend tools
 
-#### 5. Show UV Version Info
+#### 7. Set up Node.js
 
-- **Purpose**: Displays UV and Python versions for debugging
-- **Output**: UV version, Python version, cache directory location
-- **Why needed**: Helps troubleshoot version-related issues
+- **Action**: `actions/setup-node@v4`
+- **Node.js Version**: Dynamically extracted from mise.toml
+- **Purpose**: Installs the specified Node.js version
+- **Why needed**: Required for frontend tooling and pnpm
 
-#### 6. Install Dependencies
+#### 8. Extract pnpm Version
 
-- **Command**: `uv sync --dev`
-- **Purpose**: Installs all project dependencies including development tools
-- **Why needed**: Sets up the complete development environment for quality checks
+- **Script**: `./scripts/extract-versions.sh pnpm`
+- **Purpose**: Dynamically extracts pnpm version from mise.toml
+- **Why needed**: Ensures consistent pnpm version for package management
 
-#### 7. Install Additional Tools
+#### 9. Install pnpm
+
+- **Action**: `pnpm/action-setup@v4`
+- **Version**: Dynamically extracted from mise.toml
+- **Purpose**: Installs pnpm package manager
+- **Why needed**: Required for frontend dependency management
+
+#### 10. Extract hadolint Version
+
+- **Script**: `./scripts/extract-versions.sh hadolint`
+- **Purpose**: Dynamically extracts hadolint version from mise.toml
+- **Why needed**: Ensures consistent hadolint version for Dockerfile linting
+
+#### 11. Install System Dependencies
 
 - **Tools Installed**:
   - `shellcheck`: Shell script linting
-  - `hadolint`: Dockerfile linting
-  - `trivy`: Security vulnerability scanner
-  - `markdownlint-cli`: Markdown linting
-- **Purpose**: Installs all tools needed for comprehensive code quality checks
-- **Why needed**: Ensures all linting and security tools are available
+  - `hadolint`: Dockerfile linting (with checksum verification)
+- **Purpose**: Installs system-level tools needed for quality checks
+- **Why needed**: Ensures all linting tools are available with security verification
 
-#### 8. Run Quality Checks
+#### 12. Install mise
 
-- **Script**: `./scripts/check-all.sh`
-- **Purpose**: Executes all quality checks (linting, formatting, type checking)
-- **Why needed**: Centralized quality validation that can be run locally and in CI
+- **Action**: `jdx/mise-action@v3`
+- **Version**: 2025.10.6
+- **Purpose**: Installs mise for development environment management
+- **Why needed**: Required for consistent tool version management
 
-**High-Level Overview of Tasks Performed by `check-all.sh`:**
+#### 13. Install Project Dependencies
+
+- **Command**: `just install`
+- **Purpose**: Installs all project dependencies using the unified Just interface
+- **Why needed**: Sets up the complete development environment for quality checks
+
+#### 14. Run CI Checks
+
+- **Command**: `just ci`
+- **Purpose**: Executes all quality checks including integrated security scanning
+- **Why needed**: Centralized quality validation that includes linting, formatting, type checking, testing, and security scanning
+
+**High-Level Overview of Tasks Performed by `just ci`:**
 
 - **Python Code Quality:** Runs `ruff` for linting and formatting, and `mypy` for static type checking.
 - **Python Tests:** Executes the test suite using `pytest` to ensure code correctness.
-- **Shell Script Linting:** Uses `shellcheck` to analyze shell scripts for common errors and best practices.
-- **Markdown Linting:** Runs `markdownlint-cli` to check Markdown files for style and formatting issues.
-- **Dockerfile Linting:** Uses `hadolint` to validate Dockerfiles against best practices and common mistakes.
-- **Security Scanning:** Invokes `trivy` to scan for vulnerabilities in dependencies and Docker images (if applicable).
+- **Security Scanning:** Invokes `trivy` to scan for HIGH/CRITICAL vulnerabilities in dependencies and secrets in source code.
+- **Docker Build & Test:** Builds and tests Docker images to ensure containerization works correctly.
+- **Dockerfile Validation:** Uses `hadolint` to validate Dockerfiles against best practices and common mistakes.
 
-All these checks are run in sequence, and the script will fail if any check does not pass, ensuring code quality before merging or deployment.
+All these checks are run in sequence, and the pipeline will fail if any check does not pass, ensuring code quality and security before merging or deployment. Security scanning is now integrated into the quality job, providing faster feedback on security issues.
 
 ---
 
@@ -122,131 +152,55 @@ All these checks are run in sequence, and the script will fail if any check does
 - **Purpose**: Provides access to Dockerfiles and build scripts
 - **Why needed**: Required for building and testing Docker images
 
-#### 2. Set up Docker Buildx (Docker Test)
+#### 2. Install Just (Docker Test)
+
+- **Action**: `extractions/setup-just@v3`
+- **Purpose**: Installs the Just task runner
+- **Why needed**: Just is used to execute the unified Docker workflow commands
+
+#### 3. Install mise (Docker Test)
+
+- **Action**: `jdx/mise-action@v3`
+- **Version**: 2025.10.6
+- **Purpose**: Installs mise for development environment management
+- **Why needed**: Required for consistent tool version management
+
+#### 4. Set up Docker Buildx (Docker Test)
 
 - **Action**: `docker/setup-buildx-action@v3`
 - **Purpose**: Enables advanced Docker build features and multi-platform builds
 - **Why needed**: Provides enhanced build capabilities and better caching
 
-#### 3. Test Existing Docker Images
+#### 5. Build and Test Docker Images
 
-- **Script**: `./scripts/test-docker-images.sh`
-- **Purpose**: Tests currently committed Docker images for functionality
-- **Why needed**: Ensures existing images work correctly before making changes
-
-#### 4. Build and Test New Docker Images
-
-- **Script**: `./scripts/build-all-images.sh`
+- **Commands**:
+  - `just docker-build-ci`
+  - `just docker-test-ci`
 - **Purpose**: Builds all Docker image variants and runs comprehensive tests
 - **Why needed**: Validates that new changes don't break Docker image functionality
 
-#### 5. Install hadolint
+#### 6. Extract hadolint Version
 
-- **Purpose**: Installs hadolint for Dockerfile validation
-- **Method**: Downloads binary from GitHub releases
-- **Why needed**: Required for the Dockerfile validation step
+- **Script**: `./scripts/extract-versions.sh hadolint`
+- **Purpose**: Dynamically extracts hadolint version from mise.toml
+- **Why needed**: Ensures consistent hadolint version for Dockerfile validation
 
-#### 6. Generate and Validate Dockerfiles
+#### 7. Validate Dockerfiles
 
-- **Script**: `./scripts/generate-dockerfiles.sh`
-- **Purpose**: Generates new Dockerfiles and validates them with hadolint
+- **Command**: `just docker-validate`
+- **Purpose**: Downloads hadolint with checksum verification and validates Dockerfiles
 - **Why needed**: Ensures Dockerfiles follow best practices and are syntactically correct
 
 ---
 
-## Job 3: Security Scan (`security-scan`)
-
-**Purpose**: Performs comprehensive security vulnerability scanning on Docker images.
-
-### Security Scan Conditions
-
-- **Runs on**: Push to main branch OR when Docker files or dependencies change
-- **Dependencies**: Requires `quality` and `docker-test` jobs to complete first
-- **Permissions**: Read contents, write security events, read actions
-
-### Security Scan Matrix Strategy
-
-- **Images Scanned**: `alpine` and `standard` variants
-- **Purpose**: Tests both Docker image variants for vulnerabilities
-
-### Security Scan Job Steps
-
-#### 1. Checkout Code (Security Scan)
-
-- **Action**: `actions/checkout@v5`
-- **Purpose**: Provides access to Dockerfiles and build context
-- **Why needed**: Required for building images to scan
-
-#### 2. Set up Docker Buildx (Security Scan)
-
-- **Action**: `docker/setup-buildx-action@v3`
-- **Configuration**: Uses stable buildkit with host networking
-- **Purpose**: Optimized Docker build setup for security scanning
-- **Why needed**: Provides consistent, reliable builds for security analysis
-
-#### 3. Build Image for Scanning
-
-- **Action**: `docker/build-push-action@v6`
-- **Purpose**: Builds Docker image specifically for vulnerability scanning
-- **Platforms**:
-  - Alpine: `linux/amd64` only
-  - Standard: `linux/amd64,linux/arm64`
-- **Caching**: Uses GitHub Actions cache for build optimization
-- **Why needed**: Creates the image that will be scanned for vulnerabilities
-
-#### 4. Cache Trivy Vulnerability Database
-
-- **Action**: `actions/cache@v4`
-- **Cache Path**: `~/.cache/trivy`
-- **Cache Key**: Based on image type, Dockerfiles, and dependency files
-- **Purpose**: Speeds up vulnerability scanning by caching the vulnerability database
-- **Why needed**: Trivy's vulnerability database is large and takes time to download
-
-#### 5. Run Trivy Vulnerability Scanner
-
-- **Action**: `aquasecurity/trivy-action@master`
-- **Format**: SARIF (Static Analysis Results Interchange Format)
-- **Severity Levels**: CRITICAL, HIGH, MEDIUM, LOW
-- **Output**: `trivy-results-{image}.sarif`
-- **Purpose**: Scans Docker image for known vulnerabilities
-- **Why needed**: Identifies security issues that need to be addressed
-
-#### 6. Check SARIF File Creation
-
-- **Purpose**: Verifies that the vulnerability scan results were properly generated
-- **Why needed**: Ensures scan results are available for upload and review
-
-#### 7. Upload Scan Results to GitHub Security Tab
-
-- **Action**: `github/codeql-action/upload-sarif@v3`
-- **Condition**: Only on main branch pushes with valid SARIF files
-- **Purpose**: Makes vulnerability results visible in GitHub's Security tab
-- **Why needed**: Provides centralized security issue tracking and management
-
----
-
-## Job 4: Security Scan Summary (`security-scan-summary`)
-
-**Purpose**: Provides a summary of security scan results and verifies file generation.
-
-### Security Summary Job Steps
-
-#### 1. Check SARIF Files Exist
-
-- **Purpose**: Verifies that security scan results were properly generated
-- **Checks**: Looks for `trivy-results-alpine.sarif` and `trivy-results-standard.sarif`
-- **Why needed**: Ensures security scanning completed successfully and results are available
-
----
-
-## Job 5: Publish (`publish`)
+## Job 3: Publish (`publish`)
 
 **Purpose**: Publishes Docker images to container registries (Docker Hub and GitHub Container Registry).
 
 ### Publish Job Conditions
 
 - **Runs on**: Main branch pushes only
-- **Dependencies**: Requires all previous jobs to complete successfully
+- **Dependencies**: Requires `quality` and `docker-test` jobs to complete successfully
 
 ### Publish Job Steps
 
@@ -256,20 +210,33 @@ All these checks are run in sequence, and the script will fail if any check does
 - **Purpose**: Provides access to Dockerfiles and build context
 - **Why needed**: Required for building final production images
 
-#### 2. Set up Docker Buildx (Publish)
+#### 2. Install Just (Publish)
+
+- **Action**: `extractions/setup-just@v3`
+- **Purpose**: Installs the Just task runner
+- **Why needed**: Just is used to execute the unified publish commands
+
+#### 3. Install mise (Publish)
+
+- **Action**: `jdx/mise-action@v3`
+- **Version**: 2025.10.6
+- **Purpose**: Installs mise for development environment management
+- **Why needed**: Required for consistent tool version management
+
+#### 4. Set up Docker Buildx (Publish)
 
 - **Action**: `docker/setup-buildx-action@v3`
 - **Purpose**: Enables multi-platform builds for production images
 - **Why needed**: Ensures images work on multiple architectures
 
-#### 3. Log in to Docker Hub
+#### 5. Log in to Docker Hub
 
 - **Action**: `docker/login-action@v3`
 - **Credentials**: Uses `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets
 - **Purpose**: Authenticates with Docker Hub for image publishing
 - **Why needed**: Required to push images to Docker Hub registry
 
-#### 4. Log in to GitHub Container Registry
+#### 6. Log in to GitHub Container Registry
 
 - **Action**: `docker/login-action@v3`
 - **Registry**: `ghcr.io`
@@ -277,33 +244,11 @@ All these checks are run in sequence, and the script will fail if any check does
 - **Purpose**: Authenticates with GitHub Container Registry
 - **Why needed**: Required to push images to GitHub's container registry
 
-#### 5. Publish Standard Images
+#### 7. Publish Docker Images
 
-- **Action**: `docker/build-push-action@v6`
-- **Image**: Standard variant only (Alpine is not published)
-- **Platforms**: `linux/amd64,linux/arm64`
-- **Tags**:
-  - `dohdalabs/ats-pdf-generator:latest`
-  - `dohdalabs/ats-pdf-generator:{git-sha}`
-  - `ghcr.io/{owner}/ats-pdf-generator:latest`
-  - `ghcr.io/{owner}/ats-pdf-generator:{git-sha}`
-- **Caching**: Reuses layers from security scan builds
-- **Purpose**: Publishes production-ready images to both registries
+- **Command**: `just publish latest`
+- **Purpose**: Publishes production-ready images to both registries using unified Just interface
 - **Why needed**: Makes the application available for deployment and use
-
----
-
-## Job 6: Summary (`summary`)
-
-**Purpose**: Provides a final summary of all CI job results.
-
-### Summary Job Steps
-
-#### 1. Generate Summary
-
-- **Purpose**: Displays a summary of all completed CI checks
-- **Output**: Lists completion status of quality, Docker, security, and publishing jobs
-- **Why needed**: Provides clear visibility into CI pipeline results
 
 ---
 
@@ -312,33 +257,27 @@ All these checks are run in sequence, and the script will fail if any check does
 ### 1. **Parallel Execution**
 
 - Quality and Docker testing jobs run in parallel
-- Security scanning runs after both complete
-- Publishing only runs on main branch
+- Publishing only runs on main branch after both quality and docker-test complete
 
-### 2. **Caching Strategy**
+### 2. **Dynamic Version Management**
 
-- UV dependencies cached based on lock file and pyproject.toml
-- Docker build layers cached using GitHub Actions cache
-- Trivy vulnerability database cached to speed up scans
+- Tool versions extracted dynamically from mise.toml
+- Ensures consistent versions across all environments
+- Python, Node.js, pnpm, and hadolint versions managed centrally
 
-### 3. **Conditional Execution**
+### 3. **Integrated Security Scanning**
 
-- Security scans only run when relevant files change
-- Publishing only occurs on main branch pushes
-- Summary always runs regardless of other job results
+- Security scanning integrated into quality job for faster feedback
+- Trivy scans for HIGH/CRITICAL vulnerabilities and secrets
+- Fails build immediately on security issues (CI_STRICT_SECURITY: true)
 
-### 4. **Multi-Platform Support**
+### 4. **Unified Task Management**
 
-- Standard images built for both AMD64 and ARM64
-- Alpine images built for AMD64 only (size optimization)
+- All CI operations use Just task runner for consistency
+- Single interface for local development and CI
+- Simplified maintenance and debugging
 
-### 5. **Security Integration**
-
-- SARIF results uploaded to GitHub Security tab
-- Comprehensive vulnerability scanning with Trivy
-- Security issues tracked and managed centrally
-
-### 6. **Registry Publishing**
+### 5. **Registry Publishing**
 
 - Images published to both Docker Hub and GitHub Container Registry
 - Multiple tags for versioning and latest releases
@@ -362,9 +301,10 @@ All these checks are run in sequence, and the script will fail if any check does
 
 ### 3. **Security Scan Issues**
 
-- Check if Trivy database download completed
-- Verify SARIF file generation
-- Review vulnerability reports in GitHub Security tab
+- Security scanning is now integrated into the quality job
+- Check Trivy output for HIGH/CRITICAL vulnerabilities and secrets
+- Review security issues in the quality job logs
+- Ensure CI_STRICT_SECURITY environment variable is set to true
 
 ### 4. **Publishing Failures**
 
