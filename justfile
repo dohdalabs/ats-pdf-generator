@@ -11,7 +11,7 @@ export UV_CACHE_DIR := "$HOME/.cache/uv"
 
 # Show available commands with helpful context
 @default:
-    just --help-custom
+    just help-custom
 
 # Display custom help information
 @help-custom:
