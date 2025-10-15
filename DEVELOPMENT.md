@@ -401,9 +401,6 @@ The project includes Docker Compose files for easy development and testing:
 # Start development environment
 docker-compose -f docker/docker-compose.yml --profile dev up -d
 
-# Start standard development environment
-docker-compose -f docker/docker-compose.optimized.yml --profile dev up -d
-
 # Run a conversion using compose
 docker-compose -f docker/docker-compose.yml run --rm ats-converter input.md -o output.pdf
 
@@ -415,8 +412,7 @@ docker-compose -f docker/docker-compose.yml down
 
 - `ats-converter`: Production service for document conversion
 - `ats-converter-dev`: Development service with debug mode enabled
-- `ats-converter-optimized`: Standard production service
-- `ats-converter-alpine`: Minimal Alpine-based service
+- `ats-convert-task`: Task-focused service for one-off conversions
 
 **Note**: For most development tasks, use the just commands instead:
 
