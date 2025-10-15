@@ -1,0 +1,9 @@
+# Ignore all files in .cursor/rules except the following:
+*
+!commit-messages.mdc
+!python-standards.mdc
+!script-standards.mdc
+!markdown-standards.mdc
+!mise-toml-standards.mdc
+!justfile-standards.mdc
+!.gitignore
