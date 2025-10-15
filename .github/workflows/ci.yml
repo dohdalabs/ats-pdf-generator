@@ -19,8 +19,8 @@ env:
   CI_STRICT_SECURITY: true
 
 jobs:
-  quality:
-    name: Quality Checks
+  build:
+    name: Build & Quality Checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -92,8 +92,8 @@ jobs:
       - name: Run CI checks
         run: just ci
 
-  docker-test:
-    name: Docker Image Testing
+  test:
+    name: Integration Testing
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -114,8 +114,8 @@ jobs:
 
       - name: Build and test Docker images
         run: |
-          just docker-build-ci
-          just docker-test-ci
+          just _ci-build-docker
+          just _ci-test-docker
 
       - name: Extract hadolint version
         id: hadolint-version-publish
@@ -131,7 +131,7 @@ jobs:
           sha256sum -c hadolint-linux-x86_64.sha256
           chmod +x hadolint-linux-x86_64
           sudo mv hadolint-linux-x86_64 /usr/local/bin/hadolint
-          just docker-validate
+          just validate-dockerfiles
 
 
   publish:
@@ -140,7 +140,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    needs: [quality, docker-test]
+    needs: [build, test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Checkout code

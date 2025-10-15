@@ -66,12 +66,13 @@ just install
 
 # Most common daily workflow
 just ci               # Complete CI pipeline (same as GitHub Actions)
-just quick-check      # Quick quality checks for local development
+just quick            # Quick quality checks for local development
+just check            # Thorough pre-commit checks
 just format           # Auto-fix formatting issues
-just docker-test      # Run Docker tests
+just test-docker      # Run Docker tests
 
 # Build and test everything (Docker images, functionality tests)
-just docker-build-all && just docker-test
+just build-all && just test-docker
 
 # Convert PDFs for testing
 just convert examples/sample-profile.md
@@ -79,7 +80,7 @@ just convert examples/sample-profile.md
 # Individual commands for specific needs
 just lint-python      # Python linting only
 just lint-shell       # Shell script linting
-just docker-validate  # Docker linting
+just validate-dockerfiles  # Docker linting
 just lint-markdown    # Markdown linting
 just format-python    # Python formatting
 just format-markdown  # Markdown formatting
@@ -95,7 +96,7 @@ The development environment uses **volume mounting** so you can develop Python c
 
 ```bash
 # Build the development environment (one-time setup)
-just docker-build dev
+just _build-docker dev
 
 # Start the development environment with volume mounting
 just dev-up
@@ -203,12 +204,14 @@ The project provides comprehensive automation for common development tasks:
 **Available Just Commands**:
 
 - `just ci` - Complete CI pipeline (same as GitHub Actions)
-- `just quick-check` - Quick quality checks for local development
+- `just quick` - Quick quality checks (~30s)
+- `just check` - Pre-commit checks (~3min)
 - `just lint` - Run all linting checks
 - `just format` - Auto-fix formatting issues
 - `just test` - Run all tests
-- `just docker-build-all` - Build all Docker image variants
-- `just docker-test` - Test all Docker images
+- `just build` - Build standard Docker image
+- `just build-all` - Build all Docker image variants
+- `just test-docker` - Test all Docker images
 - `just security` - Run security scans with Trivy
 - `just convert` - Convert Markdown to PDF
 - `just publish` - Publish to Docker registries
@@ -241,7 +244,10 @@ The just-based approach was chosen to address the common problem of CI/CD logic 
 just ci
 
 # Run quick quality checks (includes tests)
-just quick-check
+just quick
+
+# Run pre-commit checks
+just check
 
 # Run just the tests
 just test
@@ -256,7 +262,7 @@ pytest tests/test_converter.py
 pytest -v tests/
 
 # Build and test everything (Docker images, functionality tests)
-just docker-build-all && just docker-test
+just build-all && just test-docker
 ```
 
 ### Test Structure
@@ -274,15 +280,18 @@ just docker-build-all && just docker-test
 just ci
 
 # Run quick quality checks for local development
-just quick-check
+just quick
+
+# Run pre-commit checks
+just check
 
 # Individual quality checks
 just lint-python       # Lint Python code
 just format            # Format code
 just typecheck-python  # Python type checking
-just docker-test       # Run Docker tests
+just test-docker       # Run Docker tests
 just lint-shell        # Lint shell scripts
-just docker-validate   # Lint Dockerfiles
+just validate-dockerfiles  # Lint Dockerfiles
 ```
 
 ### Pre-commit Hooks
@@ -317,7 +326,7 @@ The project includes Docker tooling that addresses common issues with Docker dup
 
 ```bash
 # Build and test all Docker images
-just docker-build-all && just docker-test
+just build-all && just test-docker
 ```
 
 ### Image Architecture
@@ -349,15 +358,18 @@ The project uses multi-stage Docker builds to create optimized production images
 
 ```bash
 # Build development image
-just docker-build dev
+just _build-docker dev
 
 # Build and test everything (all images + functionality tests)
-just docker-build-all && just docker-test
+just build-all && just test-docker
+
+# Build standard image (default)
+just build
 
 # Manual builds (if needed)
-just docker-build standard
-just docker-build alpine
-just docker-build dev
+just _build-docker standard
+just _build-docker alpine
+just _build-docker dev
 ```
 
 ### Development with Docker
@@ -366,7 +378,7 @@ just docker-build dev
 
 ```bash
 # Build development container locally
-just docker-build dev
+just _build-docker dev
 
 # Run development shell
 just docker-shell
@@ -410,7 +422,7 @@ docker-compose -f docker/docker-compose.yml down
 
 ```bash
 just convert examples/sample-profile.md  # PDF conversion
-just docker-build-all && just docker-test  # Build and test everything
+just build-all && just test-docker  # Build and test everything
 ```
 
 ### Docker Usage Guide
@@ -598,7 +610,7 @@ The project uses [Semantic Versioning](https://semver.org/):
 
 - [ ] Update version in `pyproject.toml`
 - [ ] Update `CHANGELOG.md` with new features/fixes
-- [ ] Test all functionality thoroughly (run `just ci` and `just docker-build-all && just docker-test`)
+- [ ] Test all functionality thoroughly (run `just ci` and `just build-all && just test-docker`)
 - [ ] Update documentation if needed
 - [ ] Create git tag: `git tag v1.2.3`
 - [ ] Push tag: `git push origin v1.2.3`
@@ -652,7 +664,7 @@ The project uses GitHub Actions with a script-first approach for automated quali
 
 - **Security Scanning**: Runs Trivy security scan via GitHub Action
 - **Quality Checks**: Runs `just ci` (Python, Shell, Docker, Markdown)
-- **Docker Testing**: Runs `just docker-build-ci && just docker-test-ci` (Docker builds and tests)
+- **Docker Testing**: Runs `just _ci-build-docker && just _ci-test-docker` (Docker builds and tests)
 - **Docker Validation**: Validates Dockerfiles with hadolint
 
 ### Release Workflow (`release.yml`)

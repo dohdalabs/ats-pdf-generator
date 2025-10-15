@@ -9,12 +9,61 @@ export CI := env_var_or_default("CI", "false")
 export UV_COMPILE_BYTECODE := "1"
 export UV_CACHE_DIR := "$HOME/.cache/uv"
 
-# Show available recipes
+# Show available commands with helpful context
 @default:
-    just --list
+    just --help-custom
+
+# Display custom help information
+@help-custom:
+    echo "ATS PDF Generator - Development Tasks"
+    echo ""
+    echo "MAIN COMMANDS:"
+    echo "  quick        Fast checks (~30s)"
+    echo "  check        Pre-commit checks (~3min)"
+    echo "  ci           Full CI pipeline (~10min)"
+    echo "  install      Setup development environment"
+    echo ""
+    echo "QUALITY:"
+    echo "  lint         Lint all code"
+    echo "  format       Format all code"
+    echo "  test         Run all tests"
+    echo ""
+    echo "DOCKER:"
+    echo "  build        Build standard image"
+    echo "  build-all    Build all variants"
+    echo "  test-docker  Test all images"
+    echo ""
+    echo "PDF OPERATIONS:"
+    echo "  convert      Convert Markdown to PDF"
+    echo ""
+    echo "Full list: just --list"
+    echo "Internal tasks: just --list | grep '^  _'"
+    echo ""
+    echo "Tasks with _ prefix are internal helpers."
+    echo "You can call them for debugging: just _build-docker alpine"
 
 # ============================================================================
-# Environment Setup
+# Quick Entry Points (Most Common Workflows)
+# ============================================================================
+
+# Fast local checks (~30 seconds)
+quick: lint-python test-python
+    @echo ""
+    @echo "✅ Quick checks passed!"
+
+# Thorough pre-commit checks (~3 minutes)
+check: lint format-check typecheck test
+    @echo ""
+    @echo "✅ Ready to commit!"
+
+# Complete CI pipeline (~10 minutes)
+ci: lint format-check typecheck check-docstrings test-python security _ci-build-docker _ci-test-docker validate-dockerfiles
+    @echo ""
+    @echo "✅ Complete CI pipeline passed!"
+    @echo "This matches what GitHub Actions runs."
+
+# ============================================================================
+# Development Environment
 # ============================================================================
 
 # Install all dependencies and setup dev environment
@@ -56,6 +105,25 @@ setup-local:
     ./scripts/setup-local-env.sh
 
 # ============================================================================
+# Code Quality (Aggregators)
+# ============================================================================
+
+# Lint all code
+lint: lint-python lint-shell lint-markdown
+
+# Format all code
+format: format-python format-markdown
+
+# Check formatting (no changes)
+format-check: _format-check-python
+
+# Run all tests
+test: test-python test-docker
+
+# Type check code
+typecheck: typecheck-python
+
+# ============================================================================
 # Python Quality Checks
 # ============================================================================
 
@@ -63,11 +131,6 @@ setup-local:
 lint-python:
     @echo "🔍 Linting Python code..."
     uv run ruff check .
-
-# Check Python code formatting
-check-format-python:
-    @echo "🎨 Checking Python formatting..."
-    uv run ruff format --check .
 
 # Format Python code
 format-python:
@@ -94,9 +157,6 @@ security-python:
     @echo "🔒 Running Python security scan with bandit..."
     uv run bandit -c pyproject.toml -r src/ats_pdf_generator/
 
-# Complete Python quality checks
-check-python: lint-python check-format-python typecheck-python check-docstrings test-python security-python
-
 # ============================================================================
 # Shell Script Quality Checks
 # ============================================================================
@@ -117,95 +177,32 @@ lint-shell:
 # Docker Operations
 # ============================================================================
 
-# Build a specific Docker image variant
-docker-build variant="standard":
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🔨 Building {{variant}} image..."
-    GIT_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
-    docker build \
-        --build-arg GIT_SHA="$GIT_SHA" \
-        --build-arg VENDOR="DohDa Labs" \
-        -f docker/Dockerfile.{{variant}} \
-        -t ats-pdf-generator:{{variant}} .
-    echo "✅ Built ats-pdf-generator:{{variant}}"
+# Build standard image (default)
+build: (_build-docker "standard")
 
-# Build all Docker image variants
-docker-build-all:
+# Build all image variants
+build-all:
     @echo "🔨 Building all Docker images..."
-    just docker-build alpine
-    just docker-build standard
-    just docker-build dev
+    just _build-docker alpine
+    just _build-docker standard
+    just _build-docker dev
     @echo "✅ All images built successfully!"
 
-# Build Docker images based on branch (CI optimization)
-docker-build-ci:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    # Check if we're on main branch
-    if [ "${GITHUB_REF:-}" = "refs/heads/main" ] || [ "$(git branch --show-current 2>/dev/null || echo 'unknown')" = "main" ]; then
-        echo "🔨 Building all Docker images (main branch detected)..."
-        just docker-build-all
-    else
-        echo "🔨 Building standard Docker image only (non-main branch)..."
-        just docker-build standard
-    fi
-
-# Test a specific Docker image
-docker-test-image variant:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🧪 Testing {{variant}} image..."
-
-    # Determine shell to use (Alpine uses ash, others use bash)
-    if [ "{{variant}}" = "alpine" ]; then
-        SHELL_CMD="ash -c"
-    else
-        SHELL_CMD="bash -c"
-    fi
-
-    # Test 1: Run help command (skip for dev image)
-    if [ "{{variant}}" != "dev" ]; then
-        docker run --rm ats-pdf-generator:{{variant}} --help >/dev/null
-    else
-        docker run --rm ats-pdf-generator:{{variant}} bash -c "echo 'Dev image working'" >/dev/null
-    fi
-
-    # Test 2: Check /app/tmp permissions
-    docker run --rm --entrypoint="" ats-pdf-generator:{{variant}} $SHELL_CMD 'test -d /app/tmp && test -w /app/tmp && echo "✅ /app/tmp exists and is writable"'
-
-    echo "✅ {{variant}} image passed all tests"
-
 # Test all Docker images
-docker-test:
+test-docker:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🧪 Testing all Docker images..."
 
-    # Test each image variant using the centralized docker-test-image recipe
-    just docker-test-image alpine
-    just docker-test-image standard
-    just docker-test-image dev
+    # Test each image variant using the centralized test helper
+    just _test-docker-image alpine
+    just _test-docker-image standard
+    just _test-docker-image dev
 
     echo "✅ All Docker tests passed!"
 
-# Test Docker images based on branch (CI optimization)
-docker-test-ci:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    # Check if we're on main branch
-    if [ "${GITHUB_REF:-}" = "refs/heads/main" ] || [ "$(git branch --show-current 2>/dev/null || echo 'unknown')" = "main" ]; then
-        echo "🧪 Testing all Docker images (main branch detected)..."
-        just docker-test
-    else
-        echo "🧪 Testing standard Docker image only (non-main branch)..."
-        just docker-test-image standard
-    fi
-
 # Validate Dockerfiles with hadolint
-docker-validate:
+validate-dockerfiles:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔍 Validating Dockerfiles with hadolint..."
@@ -235,7 +232,7 @@ docker-validate:
 docker-info:
     @echo "📦 Docker image information:"
     @echo ""
-    @docker images ats-pdf-generator --format "table {{{{.Repository}}}}\t{{{{.Tag}}}}\t{{{{.Size}}}}\t{{{{.CreatedSince}}}}" 2>/dev/null || echo "No images found. Run 'just docker-build-all' to create them."
+    @docker images ats-pdf-generator --format "table {{{{.Repository}}}}\t{{{{.Tag}}}}\t{{{{.Size}}}}\t{{{{.CreatedSince}}}}" 2>/dev/null || echo "No images found. Run 'just build-all' to create them."
 
 # Clean Docker images
 docker-clean:
@@ -312,30 +309,6 @@ security:
     echo "✅ Security scan completed - no HIGH/CRITICAL issues found"
 
 # ============================================================================
-# Combined Quality Checks
-# ============================================================================
-
-# Run all linting checks
-lint: lint-python lint-shell lint-markdown
-
-# Run all formatting
-format: format-python format-markdown
-
-# Run all tests
-test: test-python docker-test
-
-# Run quick quality checks (fast local development)
-quick-check: lint check-format-python typecheck-python test-python security
-    @echo ""
-    @echo "✅ Quick checks passed!"
-
-# Run complete CI pipeline (same as GitHub Actions)
-ci: lint check-format-python typecheck-python test-python security docker-build-ci docker-test-ci docker-validate
-    @echo ""
-    @echo "✅ Complete CI pipeline passed!"
-    @echo "This matches what GitHub Actions runs."
-
-# ============================================================================
 # Publishing & Deployment
 # ============================================================================
 
@@ -346,7 +319,7 @@ publish version="latest":
     echo "🚀 Publishing version: {{version}}"
 
     # Build standard image
-    just docker-build standard
+    just build
 
     # Tag for registries
     docker tag ats-pdf-generator:standard dohdalabs/ats-pdf-generator:{{version}}
@@ -371,7 +344,7 @@ publish version="latest":
 # ============================================================================
 
 # Convert Markdown to PDF
-convert input output="": (docker-build "dev")
+convert input output="": (_build-docker "dev")
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -480,7 +453,7 @@ uv-update:
     uv lock --upgrade
 
 # Open shell in dev Docker container
-docker-shell: (docker-build "dev")
+docker-shell: (_build-docker "dev")
     docker run --rm -it -v "$(pwd):/app" -w /app ats-pdf-generator:dev bash
 
 # ============================================================================
@@ -506,3 +479,84 @@ dev-logs:
 # Open shell in running development container
 dev-shell:
     docker-compose -f docker/docker-compose.yml exec ats-converter-dev bash
+
+# ============================================================================
+# Internal Helpers (visible for debugging)
+# ============================================================================
+
+# Build a specific Docker image variant
+_build-docker variant:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔨 Building {{variant}} image..."
+    GIT_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+    docker build \
+        --build-arg GIT_SHA="$GIT_SHA" \
+        --build-arg VENDOR="DohDa Labs" \
+        -f docker/Dockerfile.{{variant}} \
+        -t ats-pdf-generator:{{variant}} .
+    echo "✅ Built ats-pdf-generator:{{variant}}"
+
+# Test a specific Docker image variant
+_test-docker-image variant:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Testing {{variant}} image..."
+
+    # Determine shell to use (Alpine uses ash, others use bash)
+    if [ "{{variant}}" = "alpine" ]; then
+        SHELL_CMD="ash -c"
+    else
+        SHELL_CMD="bash -c"
+    fi
+
+    # Test 1: Run help command (skip for dev image)
+    if [ "{{variant}}" != "dev" ]; then
+        docker run --rm ats-pdf-generator:{{variant}} --help >/dev/null
+    else
+        docker run --rm ats-pdf-generator:{{variant}} bash -c "echo 'Dev image working'" >/dev/null
+    fi
+
+    # Test 2: Check /app/tmp permissions
+    docker run --rm --entrypoint="" ats-pdf-generator:{{variant}} $SHELL_CMD 'test -d /app/tmp && test -w /app/tmp && echo "✅ /app/tmp exists and is writable"'
+
+    echo "✅ {{variant}} image passed all tests"
+
+# Check Python code formatting (no changes)
+_format-check-python:
+    @echo "🎨 Checking Python formatting..."
+    uv run ruff format --check .
+
+# ============================================================================
+# Hidden Internals (CI-only, use with caution)
+# ============================================================================
+
+# Build Docker images based on branch (CI optimization)
+[private]
+_ci-build-docker:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Check if we're on main branch
+    if [ "${GITHUB_REF:-}" = "refs/heads/main" ] || [ "$(git branch --show-current 2>/dev/null || echo 'unknown')" = "main" ]; then
+        echo "🔨 Building all Docker images (main branch detected)..."
+        just build-all
+    else
+        echo "🔨 Building standard Docker image only (non-main branch)..."
+        just build
+    fi
+
+# Test Docker images based on branch (CI optimization)
+[private]
+_ci-test-docker:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Check if we're on main branch
+    if [ "${GITHUB_REF:-}" = "refs/heads/main" ] || [ "$(git branch --show-current 2>/dev/null || echo 'unknown')" = "main" ]; then
+        echo "🧪 Testing all Docker images (main branch detected)..."
+        just test-docker
+    else
+        echo "🧪 Testing standard Docker image only (non-main branch)..."
+        just _test-docker-image standard
+    fi
