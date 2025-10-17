@@ -57,10 +57,10 @@ check: lint format-check typecheck test
     @echo "✅ Ready to commit!"
 
 # Complete CI pipeline (~10 minutes)
-ci: lint format-check typecheck check-docstrings test-python security _ci-build-docker _ci-test-docker validate-dockerfiles
+ci: lint format-check typecheck check-docstrings test-python security
     @echo ""
     @echo "✅ Complete CI pipeline passed!"
-    @echo "This matches what GitHub Actions runs."
+    @echo "This matches the 'build' job in GitHub Actions."
 
 # ============================================================================
 # Development Environment

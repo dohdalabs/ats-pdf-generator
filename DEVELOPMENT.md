@@ -65,7 +65,7 @@ This script will:
 just install
 
 # Most common daily workflow
-just ci               # Complete CI pipeline (same as GitHub Actions)
+just ci               # Build job pipeline (quality checks)
 just quick            # Quick quality checks for local development
 just check            # Thorough pre-commit checks
 just format           # Auto-fix formatting issues
@@ -203,7 +203,7 @@ The project provides comprehensive automation for common development tasks:
 
 **Available Just Commands**:
 
-- `just ci` - Complete CI pipeline (same as GitHub Actions)
+- `just ci` - Build job pipeline (quality checks)
 - `just quick` - Quick quality checks (~30s)
 - `just check` - Pre-commit checks (~3min)
 - `just lint` - Run all linting checks
@@ -269,14 +269,14 @@ just build-all && just test-docker
 
 - `tests/test_converter.py` - Unit tests for the main converter
 - `justfile` - All development and testing commands
-- `just ci` - Comprehensive quality checks including tests
+- `just ci` - Build job pipeline (quality checks)
 
 ## 🔧 Development Tools
 
 ### Code Quality
 
 ```bash
-# Run comprehensive quality checks (Python, Shell, Docker, Security)
+# Run build job pipeline (Python, Shell, Security)
 just ci
 
 # Run quick quality checks for local development
@@ -659,7 +659,7 @@ The project uses GitHub Actions with a script-first approach for automated quali
 ### CI Workflow (`ci.yml`)
 
 - **Security Scanning**: Runs Trivy security scan via GitHub Action
-- **Quality Checks**: Runs `just ci` (Python, Shell, Docker, Markdown)
+- **Quality Checks**: Runs `just ci` (Python, Shell, Markdown)
 - **Docker Testing**: Runs `just _ci-build-docker && just _ci-test-docker` (Docker builds and tests)
 - **Docker Validation**: Validates Dockerfiles with hadolint
 
