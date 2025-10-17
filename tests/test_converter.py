@@ -54,6 +54,93 @@ class TestATSConverter:
         content = css_file.read_text()
         assert "Fallback CSS" in content
 
+    def test_create_fallback_css_readonly_directory(self, tmp_path: Path) -> None:
+        """Test fallback CSS creation fails with read-only directory."""
+        readonly_dir = tmp_path / "readonly_dir"
+        readonly_dir.mkdir()
+        css_file = readonly_dir / "test.css"
+
+        # Make directory read-only
+        readonly_dir.chmod(0o444)
+
+        try:
+            with pytest.raises(FileOperationError, match="Cannot create CSS file"):
+                _create_fallback_css(css_file)
+        finally:
+            # Restore permissions for cleanup
+            readonly_dir.chmod(0o755)
+
+    def test_create_fallback_css_io_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test fallback CSS creation with mocked I/O failure."""
+        css_file = tmp_path / "test.css"
+
+        # Mock Path.write_text to raise OSError
+        def mock_write_text(*args: object, **kwargs: object) -> None:
+            raise OSError("Mocked I/O error")
+
+        monkeypatch.setattr(Path, "write_text", mock_write_text)
+
+        with pytest.raises(FileOperationError, match="Cannot create CSS file"):
+            _create_fallback_css(css_file)
+
+    def test_create_fallback_css_existing_file(self, tmp_path: Path) -> None:
+        """Test fallback CSS creation when target file already exists."""
+        css_file = tmp_path / "existing.css"
+        original_content = "/* Original content */"
+        css_file.write_text(original_content)
+
+        # Should overwrite existing file
+        _create_fallback_css(css_file)
+        assert css_file.exists()
+        content = css_file.read_text()
+        assert "Fallback CSS" in content
+        assert original_content not in content
+
+    def test_create_fallback_css_readonly_file(self, tmp_path: Path) -> None:
+        """Test fallback CSS creation when target file is read-only."""
+        css_file = tmp_path / "readonly.css"
+        css_file.write_text("/* Original content */")
+
+        # Make file read-only
+        css_file.chmod(0o444)
+
+        try:
+            with pytest.raises(FileOperationError, match="Cannot create CSS file"):
+                _create_fallback_css(css_file)
+        finally:
+            # Restore permissions for cleanup
+            css_file.chmod(0o644)
+
+    def test_create_fallback_css_parent_dir_creation(self, tmp_path: Path) -> None:
+        """Test fallback CSS creation when parent directory doesn't exist."""
+        nested_dir = tmp_path / "nested" / "deep" / "path"
+        css_file = nested_dir / "test.css"
+
+        # Should create parent directories automatically
+        _create_fallback_css(css_file)
+        assert css_file.exists()
+        assert nested_dir.exists()
+        content = css_file.read_text()
+        assert "Fallback CSS" in content
+
+    def test_create_fallback_css_parent_dir_creation_failure(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test fallback CSS creation when parent directory creation fails."""
+        nested_dir = tmp_path / "nested" / "deep" / "path"
+        css_file = nested_dir / "test.css"
+
+        # Mock Path.mkdir to raise OSError
+        def mock_mkdir(*args: object, **kwargs: object) -> None:
+            raise OSError("Mocked directory creation error")
+
+        monkeypatch.setattr(Path, "mkdir", mock_mkdir)
+
+        with pytest.raises(FileOperationError, match="Cannot create CSS file"):
+            _create_fallback_css(css_file)
+
     def test_preprocess_markdown(self, tmp_path: Path) -> None:
         """Test markdown preprocessing."""
         input_file = tmp_path / "input.md"
