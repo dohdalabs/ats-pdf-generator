@@ -27,6 +27,7 @@ export UV_CACHE_DIR := "$HOME/.cache/uv"
     echo "  lint         Lint all code"
     echo "  format       Format all code"
     echo "  test         Run all tests"
+    echo "  security     Run security scans (Trivy + Bandit)"
     echo ""
     echo "DOCKER:"
     echo "  build        Build standard image"
@@ -52,7 +53,7 @@ quick: lint-python test-python
     @echo "✅ Quick checks passed!"
 
 # Thorough pre-commit checks (~3 minutes)
-check: lint format-check typecheck test
+check: lint format-check typecheck test-python security-python
     @echo ""
     @echo "✅ Ready to commit!"
 
@@ -276,8 +277,11 @@ format-markdown:
 # Security Scanning
 # ============================================================================
 
+# Run all security scans (Python + Trivy)
+security: security-python security-trivy
+
 # Run security scan with Trivy
-security:
+security-trivy:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Running security scan..."
