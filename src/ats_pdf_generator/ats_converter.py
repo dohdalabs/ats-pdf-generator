@@ -51,14 +51,60 @@ body {
     margin: 1in;
     color: #000;
 }
+
 h1, h2, h3, h4, h5, h6 {
     font-weight: bold;
     margin-top: 1em;
     margin-bottom: 0.5em;
 }
+
+h1 { font-size: 18pt; }
+h2 { font-size: 16pt; }
+h3 { font-size: 14pt; }
+
 p {
     margin-bottom: 0.5em;
     text-align: justify;
+}
+
+ul, ol {
+    margin-bottom: 0.5em;
+    padding-left: 1.5em;
+}
+
+li {
+    margin-bottom: 0.25em;
+}
+
+strong, b {
+    font-weight: bold;
+}
+
+em, i {
+    font-style: italic;
+}
+
+/* Ensure proper page breaks */
+.page-break {
+    page-break-before: always;
+}
+
+/* Basic table styling */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1em;
+}
+
+th, td {
+    border: 1px solid #000;
+    padding: 0.25em;
+    text-align: left;
+}
+
+th {
+    background-color: #f0f0f0;
+    font-weight: bold;
 }
 """
     try:

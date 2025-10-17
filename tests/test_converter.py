@@ -147,6 +147,36 @@ class TestCli:
         assert "Pandoc conversion failed" in result.output
         assert "pandoc error" in result.output
 
+    def test_cli_metadata_parameters(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Test that metadata parameters are passed to pandoc."""
+        input_file = tmp_path / "test.md"
+        input_file.write_text("# Hello")
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(
+                cli,
+                [
+                    str(input_file),
+                    "--title",
+                    "My Title",
+                    "--author",
+                    "My Author",
+                    "--date",
+                    "2023-01-01",
+                ],
+            )
+
+        assert result.exit_code == 0
+        mock_run.assert_called_once()
+        cmd = mock_run.call_args[0][0]
+        assert "--metadata" in cmd
+        assert "title=My Title" in cmd
+        assert "author=My Author" in cmd
+        assert "date=2023-01-01" in cmd
+
 
 class TestCSSDetermination:
     """Test cases for CSS file determination logic."""
