@@ -65,7 +65,7 @@ This script will:
 just install
 
 # Most common daily workflow
-just ci               # Build job pipeline (quality checks)
+just ci               # Complete CI pipeline (same as GitHub Actions)
 just quick            # Quick quality checks for local development
 just check            # Thorough pre-commit checks
 just format           # Auto-fix formatting issues
@@ -203,7 +203,7 @@ The project provides comprehensive automation for common development tasks:
 
 **Available Just Commands**:
 
-- `just ci` - Build job pipeline (quality checks)
+- `just ci` - Complete CI pipeline (same as GitHub Actions)
 - `just quick` - Quick quality checks (~30s)
 - `just check` - Pre-commit checks (~3min)
 - `just lint` - Run all linting checks
@@ -659,7 +659,7 @@ The project uses GitHub Actions with a script-first approach for automated quali
 ### CI Workflow (`ci.yml`)
 
 - **Security Scanning**: Runs Trivy security scan via GitHub Action
-- **Quality Checks**: Runs `just ci` (Python, Shell, Markdown)
+- **Quality Checks**: Runs `just ci` (Python, Shell, Docker, Markdown)
 - **Docker Testing**: Runs `just _ci-build-docker && just _ci-test-docker` (Docker builds and tests)
 - **Docker Validation**: Validates Dockerfiles with hadolint
 

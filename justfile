@@ -27,7 +27,6 @@ export UV_CACHE_DIR := "$HOME/.cache/uv"
     echo "  lint         Lint all code"
     echo "  format       Format all code"
     echo "  test         Run all tests"
-    echo "  security     Run security scans (Trivy + Bandit)"
     echo ""
     echo "DOCKER:"
     echo "  build        Build standard image"
@@ -53,15 +52,15 @@ quick: lint-python test-python
     @echo "✅ Quick checks passed!"
 
 # Thorough pre-commit checks (~3 minutes)
-check: lint format-check typecheck test-python security-python
+check: lint format-check typecheck test
     @echo ""
     @echo "✅ Ready to commit!"
 
 # Complete CI pipeline (~10 minutes)
-ci: lint format-check typecheck check-docstrings test-python security
+ci: lint format-check typecheck check-docstrings test-python security _ci-build-docker _ci-test-docker validate-dockerfiles
     @echo ""
     @echo "✅ Complete CI pipeline passed!"
-    @echo "This matches the 'build' job in GitHub Actions."
+    @echo "This matches what GitHub Actions runs."
 
 # ============================================================================
 # Development Environment

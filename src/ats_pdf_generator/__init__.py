@@ -10,7 +10,6 @@ from .ats_converter import (
     FileOperationError,
     ValidationError,
     cli,
-    main,
 )
 
 __version__ = "1.0.0"
@@ -20,5 +19,4 @@ __all__ = [
     "FileOperationError",
     "ValidationError",
     "cli",
-    "main",
 ]

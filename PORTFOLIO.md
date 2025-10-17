@@ -10,6 +10,7 @@ Job seekers often struggle with Applicant Tracking Systems (ATS) that don't prop
 
 ## Technical Highlights
 
+- **Just-Based Task Automation**: Unified command interface (`just ci`, `just quick`, `just check`) that works identically in local development and CI/CD environments
 - **Modern Python Stack**: Python 3.13 with uv for fast dependency management and type hints for safety
 - **Multi-Platform Containers**: Docker multi-stage builds supporting both Alpine (minimal) and Ubuntu (compatible)
 - **Automated Quality Gates**: GitHub Actions with testing, linting, type checking, and security scanning
@@ -18,14 +19,16 @@ Job seekers often struggle with Applicant Tracking Systems (ATS) that don't prop
 
 ## Key Challenges Addressed
 
+- **CI/CD Consistency**: Eliminated the common problem of different behavior between local development and CI environments by implementing all operations as just recipes
+- **Developer Experience**: Created unified command interface (`just ci`, `just quick`, `just check`) that reduces cognitive load and ensures consistent quality standards
 - **Modern Python Tooling**: Evaluated and adopted cutting-edge tools (uv, mise, ruff) for faster development workflows
 - **Cross-Platform Compatibility**: Solved the challenge of consistent environments across different development machines
 - **Container Security**: Implemented security-first container practices with non-root users and vulnerability scanning
-- **Developer Experience**: Created one-command setup and quality gates to reduce friction for contributors
-- **CI/CD Complexity**: Balanced automation power with build speed for a personal project context
+- **Maintainability**: Reduced CI/CD complexity by centralizing all automation logic in just recipes rather than duplicating YAML workflows
 
 ## Key Technologies
 
+- **just**: Task runner providing unified command interface for all development operations
 - **Python 3.13**: Latest Python with modern features and performance improvements
 - **uv**: Fast Python package manager, chosen for speed over pip
 - **Docker**: Multi-stage builds for both development and production images
@@ -33,6 +36,19 @@ Job seekers often struggle with Applicant Tracking Systems (ATS) that don't prop
 - **mise**: Python version management for consistent development environments
 - **Type checking**: mypy for static type analysis
 - **Linting**: ruff for fast Python linting and formatting
+
+## Architecture & Implementation
+
+**Just-Based Development Workflow**: The project's most significant architectural decision was implementing all operations as just recipes rather than duplicating logic between local development and CI/CD environments. This approach provides:
+
+- **Unified Interface**: Commands like `just ci`, `just quick`, and `just check` work identically locally and in GitHub Actions
+- **Reduced Complexity**: GitHub Actions workflows are simple just calls rather than complex YAML logic
+- **Better Testability**: All automation can be tested locally before pushing to CI
+- **Self-Documenting**: `just --list` provides clear documentation of available commands
+
+**Multi-Stage Docker Strategy**: Implemented separate builder and runtime stages for both Alpine (minimal size) and Ubuntu (maximum compatibility) variants, achieving ~40% size reduction while maintaining security with non-root users.
+
+**Modern Python Toolchain**: Adopted cutting-edge tools (uv, ruff, mise) for faster development cycles while maintaining comprehensive quality gates through automated testing, linting, type checking, and security scanning.
 
 ## Project Links
 
@@ -43,4 +59,4 @@ Job seekers often struggle with Applicant Tracking Systems (ATS) that don't prop
 
 ---
 
-*This project demonstrates practical application of modern Python development practices and containerization. It's a solid example of building tools that solve real problems while exploring current best practices in the Python ecosystem.*
+*This project demonstrates practical application of modern Python development practices, containerization, and developer experience optimization. The just-based approach to CI/CD consistency is particularly noteworthy as it solves a common pain point in modern development workflows while showcasing how to build maintainable automation that works identically across local and cloud environments.*

@@ -2,7 +2,7 @@
 
 🎯 **Convert Markdown documents to ATS-optimized PDFs for job applications**
 
-[![Build Status](https://github.com/dohdalabs/ats-pdf-generator/workflows/Build%20and%20Test/badge.svg)](https://github.com/dohdalabs/ats-pdf-generator/actions)
+[![Build Status](https://github.com/dohdalabs/ats-pdf-generator/actions/workflows/ci.yml/badge.svg)](https://github.com/dohdalabs/ats-pdf-generator/actions/workflows/ci.yml)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dohdalabs/ats-pdf-generator)](https://hub.docker.com/r/dohdalabs/ats-pdf-generator)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/dohdalabs/ats-pdf-generator.svg)](https://github.com/dohdalabs/ats-pdf-generator/releases)
@@ -198,17 +198,6 @@ docker pull ghcr.io/dohdalabs/ats-pdf-generator:v1.0.0
 ## 🛠️ Development
 
 Want to customize or extend this tool for your own needs? Check out the [Development Guide](DEVELOPMENT.md) for setup instructions and how to build your own version.
-
-### Multi-Registry Publishing
-
-This project publishes to Docker Hub and GitHub Container Registry for maximum availability. For detailed setup instructions, see the [Docker Distribution Guide](docs/DOCKER_DISTRIBUTION.md).
-
-**Quick Publishing:**
-
-```bash
-# Build and push to both registries
-just publish 1.0.0
-```
 
 ## 🔄 Updates
 
