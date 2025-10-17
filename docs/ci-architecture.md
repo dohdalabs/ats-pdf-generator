@@ -102,12 +102,6 @@ graph LR
 - Shell script validation (shellcheck)
 - Markdown linting (markdownlint)
 
-**What it runs**:
-
-```bash
-just ci  # Executes: lint + format-check + typecheck + test-python + security
-```
-
 **Key Architectural Decisions**:
 
 1. **Integrated Security Scanning**: Security scanning runs in the build stage rather than as a separate job. This provides faster feedback—developers know within minutes if their PR introduces vulnerabilities rather than waiting for a separate security job to start.
