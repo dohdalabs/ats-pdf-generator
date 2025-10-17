@@ -38,17 +38,9 @@ jobs:
         with:
           version: latest
           enable-cache: true
-          cache-dependency-glob: |
-            pyproject.toml
-            uv.lock
-          cache-suffix: build-${{ steps.python-version.outputs.version }}
           activate-environment: true
           python-version: ${{ steps.python-version.outputs.version }}
-          tool-dir: $HOME/.local/bin
-          tool-bin-dir: $HOME/.local/bin
 
-      - name: Set up uv cache directory
-        run: mkdir -p $HOME/.cache/uv
 
       - name: Extract Node.js version
         id: node-version
