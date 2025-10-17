@@ -17,6 +17,7 @@ env:
   CI: true
   UV_COMPILE_BYTECODE: 1
   CI_STRICT_SECURITY: true
+  NODE_OPTIONS: "--trace-deprecation"
 
 jobs:
   build:
