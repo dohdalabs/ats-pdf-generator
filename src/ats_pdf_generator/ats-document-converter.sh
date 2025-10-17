@@ -2,9 +2,8 @@
 
 # ATS Document Converter
 # Convert markdown cover letters and profiles to ATS-optimized PDFs
-# pre-commit: skip-help-validation
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -129,6 +128,8 @@ convert_with_docker() {
     local title="$4"
     local author="$5"
     local date="$6"
+    local input_dir="$7"
+    local input_basename="$8"
 
     local docker_cmd=("docker" "run" "--rm" "-v" "$input_dir:/app" "-w" "/app" "dohdalabs/ats-pdf-generator:latest")
 
@@ -140,9 +141,9 @@ convert_with_docker() {
         docker_cmd+=("-o" "${output_file}")
     else
         # Generate output filename from input filename
-        local input_basename
-        input_basename=$(basename "$input_file" .md)
-        local default_output="${input_basename}.pdf"
+        local output_basename
+        output_basename=$(basename "$input_file" .md)
+        local default_output="${output_basename}.pdf"
         docker_cmd+=("-o" "${default_output}")
     fi
 
@@ -186,6 +187,8 @@ convert_with_local() {
     local title="$4"
     local author="$5"
     local date="$6"
+    local input_dir="$7"
+    local input_basename="$8"
 
     local pandoc_cmd=("pandoc" "${input_file}")
 
@@ -319,7 +322,7 @@ main() {
         exit 1
     fi
 
-    # Get the directory of the input file for relative path handling
+    # Get the directory and basename of the input file for relative path handling
     local input_dir
     local input_basename
     input_dir=$(dirname "$(realpath "$input_file")")
@@ -338,7 +341,7 @@ main() {
     # Use Docker if available, otherwise show error
     if check_docker; then
         print_info "Converting with Docker (ATS-optimized)"
-        convert_with_docker "$input_file" "$output_file" "$css_file" "$title" "$author" "$date"
+        convert_with_docker "$input_file" "$output_file" "$css_file" "$title" "$author" "$date" "$input_dir" "$input_basename"
     else
         print_error "Docker is required for this tool"
         print_info "Please install Docker to use the ATS Document Converter"

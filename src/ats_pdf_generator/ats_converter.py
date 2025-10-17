@@ -2,16 +2,19 @@
 """
 ATS Document Converter
 
-Simple Python wrapper for pandoc with weasyprint.
-Optimized for cover letters and professional profiles.
+A robust and developer-friendly tool for converting Markdown documents
+into ATS-optimized PDFs. It uses Pandoc and WeasyPrint for high-quality
+output, with a focus on simplicity and content-first authoring.
 """
 
 # Standard library
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
+
+# Third-party
+import click
 
 
 class ATSGeneratorError(Exception):
@@ -30,14 +33,14 @@ class ConversionError(ATSGeneratorError):
     """PDF conversion failed."""
 
 
-def _create_fallback_css(css_path: str) -> None:
+def _create_fallback_css(css_path: Path) -> None:
     """Create a fallback CSS file with basic styling.
 
     Args:
-        css_path: Path where the fallback CSS file should be created
+        css_path: Path where the fallback CSS file should be created.
 
     Raises:
-        FileOperationError: If the CSS file cannot be created
+        FileOperationError: If the CSS file cannot be created.
     """
     fallback_content = """/* Fallback CSS for ATS PDF Generator */
 body {
@@ -103,280 +106,201 @@ th {
     font-weight: bold;
 }
 """
-
     try:
-        with open(css_path, "w", encoding="utf-8") as f:
-            f.write(fallback_content)
+        css_path.parent.mkdir(parents=True, exist_ok=True)
+        css_path.write_text(fallback_content, encoding="utf-8")
     except OSError as e:
         raise FileOperationError(f"Cannot create CSS file {css_path}: {e}") from e
 
 
-def _determine_css_file(files: list[str]) -> str:
-    """Determine the appropriate CSS file based on file content and names.
+def _determine_css_file(document_type: str, custom_css: str | None) -> str:
+    """Determine the appropriate CSS file.
 
-    Always returns a valid CSS file path or creates a fallback CSS file.
+    Priority:
+    1. Custom CSS if provided and exists.
+    2. Document type-specific CSS.
+    3. Fallback CSS if no other options are available.
 
     Args:
-        files: List of markdown files to analyze
+        document_type: The type of document ('cover-letter' or 'profile').
+        custom_css: Path to a custom CSS file.
 
     Returns:
-        Path to the appropriate CSS file (guaranteed to exist)
+        Path to the appropriate CSS file (guaranteed to exist).
 
     Raises:
-        FileOperationError: If CSS templates directory doesn't exist and can't be created
+        FileOperationError: If CSS templates directory can't be created.
+        ValidationError: If custom CSS file is not found.
     """
-    # Define CSS templates and their associated keywords
-    css_templates = {
-        "templates/ats-profile.css": {
-            "filename_keywords": ["profile", "summary", "overview", "background"],
-            "content_keywords": [
-                "profile",
-                "summary",
-                "overview",
-                "background",
-                "experience",
-                "skills",
-            ],
-        },
-        "templates/ats-cover-letter.css": {
-            "filename_keywords": ["cover", "letter", "application"],
-            "content_keywords": [
-                "dear",
-                "sincerely",
-                "application",
-                "position",
-                "role",
-            ],
-        },
-        "templates/ats-document.css": {
-            "filename_keywords": ["document", "general"],
-            "content_keywords": ["document", "content"],
-        },
+    if custom_css:
+        if not Path(custom_css).exists():
+            raise ValidationError(f"Custom CSS file not found: {custom_css}")
+        return custom_css
+
+    css_map = {
+        "cover-letter": "templates/ats-cover-letter.css",
+        "profile": "templates/ats-profile.css",
     }
+    css_path = Path(css_map.get(document_type, "templates/ats-cover-letter.css"))
 
-    # Default CSS file
-    default_css = "templates/ats-cover-letter.css"
-
-    # Validate that templates directory exists
-    templates_dir = Path("templates")
-    if not templates_dir.exists():
-        try:
-            templates_dir.mkdir(exist_ok=True)
-        except OSError as e:
-            raise FileOperationError(f"Cannot create templates directory: {e}") from e
-
-    # Check if any CSS templates exist
-    available_templates = [
-        css_path for css_path in css_templates.keys() if os.path.exists(css_path)
-    ]
-
-    # If no templates exist, create a fallback CSS file
-    if not available_templates:
-        fallback_css = "templates/ats-fallback.css"
+    if not css_path.exists():
+        fallback_css = Path("templates/ats-fallback.css")
         _create_fallback_css(fallback_css)
-        return fallback_css
+        return str(fallback_css)
 
-    # If no files provided, return first available template or default
-    if not files:
-        return default_css if os.path.exists(default_css) else available_templates[0]
+    return str(css_path)
 
-    # First pass: Check filenames for definitive signals
-    for file_path in files:
-        filename_lower = os.path.basename(file_path).lower()
-        # Normalize separators: replace non-alphanumeric chars with spaces for keyword matching
-        # This treats underscores, hyphens, etc. as word boundaries
-        normalized_filename = re.sub(r"[^a-z0-9]+", " ", filename_lower)
 
-        # Check each CSS template's filename keywords
-        for css_path, config in css_templates.items():
-            if os.path.exists(css_path):
-                for keyword in config["filename_keywords"]:
-                    # Use word boundary matching on normalized filename
-                    # This ensures keywords like "profile" match in "my_profile.md", "my-profile.md", etc.
-                    pattern = r"\b" + re.escape(keyword) + r"\b"
-                    if re.search(pattern, normalized_filename):
-                        return css_path
+def _preprocess_markdown(input_path: Path, output_path: Path) -> None:
+    """Preprocess markdown file to convert custom bullets to standard list items.
 
-    # Second pass: Analyze content if filename didn't provide definitive match
-    for file_path in files:
-        try:
-            with open(file_path, encoding="utf-8") as f:
-                content = f.read().lower()
+    Args:
+        input_path: Path to the source markdown file.
+        output_path: Path to the preprocessed markdown file.
 
-                # Check each CSS template's content keywords
-                for css_path, config in css_templates.items():
-                    if os.path.exists(css_path):
-                        # Use word boundary matching for content analysis
-                        for keyword in config["content_keywords"]:
-                            pattern = r"\b" + re.escape(keyword) + r"\b"
-                            if re.search(pattern, content):
-                                return css_path
-
-        except OSError:
-            # Skip files that can't be read, continue with others
-            continue
-
-    # If no match found, return default CSS or first available template
-    return default_css if os.path.exists(default_css) else available_templates[0]
+    Raises:
+        FileOperationError: If file processing fails.
+    """
+    try:
+        with (
+            input_path.open("r", encoding="utf-8") as f_in,
+            output_path.open("w", encoding="utf-8") as f_out,
+        ):
+            for line in f_in:
+                stripped = line.lstrip()
+                if stripped.startswith(("• ", "* ")):
+                    indent = line[: len(line) - len(stripped)]
+                    content = stripped[2:]
+                    f_out.write(f"{indent}- {content}")
+                else:
+                    f_out.write(line)
+    except OSError as e:
+        raise FileOperationError(f"Failed to preprocess file {input_path}: {e}") from e
 
 
 def _validate_input_file(file_path: str) -> None:
     """Validate input file exists and is readable.
 
     Args:
-        file_path: Path to the input file
+        file_path: Path to the input file.
 
     Raises:
-        ValidationError: If file validation fails
-        FileOperationError: If file cannot be accessed
+        ValidationError: If file validation fails.
+        FileOperationError: If file cannot be accessed.
     """
     path = Path(file_path)
-
     if not path.exists():
         raise ValidationError(f"Input file does not exist: {file_path}")
-
     if not path.is_file():
-        raise ValidationError(f"Path is not a file: {file_path}")
-
+        raise ValidationError(f"Input path is not a file: {file_path}")
     if not os.access(path, os.R_OK):
-        raise FileOperationError(f"Cannot read file: {file_path}")
+        raise FileOperationError(f"Cannot read input file: {file_path}")
 
 
-def main() -> None:
-    """Simple wrapper to call pandoc with weasyprint engine.
+@click.command(
+    help="Convert Markdown documents to ATS-optimized PDFs.",
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+@click.argument(
+    "input_file",
+    type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True),
+)
+@click.option(
+    "-o",
+    "--output",
+    "output_file",
+    type=click.Path(writable=True, resolve_path=True),
+    help="Output PDF filename. Defaults to input filename with .pdf extension.",
+)
+@click.option(
+    "--type",
+    "document_type",
+    type=click.Choice(["cover-letter", "profile"], case_sensitive=False),
+    default="cover-letter",
+    show_default=True,
+    help="Specifies the document type for styling.",
+)
+@click.option(
+    "--css", "custom_css", type=click.Path(), help="Path to a custom CSS file."
+)
+@click.option("--title", help="PDF document title.")
+@click.option("--author", help="PDF document author.")
+@click.option("--date", help="PDF document date (e.g., '2023-10-26').")
+@click.option(
+    "--pdf-engine", default="weasyprint", show_default=True, help="PDF engine to use."
+)
+def cli(
+    input_file: str,
+    output_file: str | None,
+    document_type: str,
+    custom_css: str | None,
+    title: str | None,
+    author: str | None,
+    date: str | None,
+    pdf_engine: str,
+) -> None:
+    """Main CLI for the ATS PDF Generator."""
+    try:
+        _validate_input_file(input_file)
+        input_path = Path(input_file)
 
-    Raises:
-        ConversionError: If pandoc conversion fails
-        FileOperationError: If file operations fail
-        ValidationError: If input validation fails
-    """
-    if len(sys.argv) < 2 or "--help" in sys.argv or "-h" in sys.argv:
-        print("ATS Document Converter")
-        print("Convert Markdown documents to ATS-optimized PDFs for job applications")
-        print("")
-        print("Usage: python3 ats_converter.py input.md [options]")
-        print("")
-        print("Options:")
-        print("  -o FILE, --output=FILE    Output file (default: input.pdf)")
-        print("  --css=FILE               Custom CSS file")
-        print("  --pdf-engine=ENGINE      PDF engine (default: weasyprint)")
-        print("  -h, --help               Show this help message")
-        print("")
-        print("Examples:")
-        print("  python3 ats_converter.py cover-letter.md -o cover-letter.pdf")
-        print("  python3 ats_converter.py profile.md --css custom.css")
-        sys.exit(0)
+        if not output_file:
+            output_file = str(input_path.with_suffix(".pdf"))
 
-    # Preprocess: convert lines beginning with a bullet '•' to markdown list '- '
-    args: list[str] = sys.argv[1:]
-    files: list[str] = [a for a in args if a.lower().endswith(".md")]
-
-    # Validate input files
-    for file_path in files:
-        _validate_input_file(file_path)
-
-    temp_files: list[Path] = []
-    processed_args: list[str] = []
-
-    # Ensure tmp directory exists - use /app/tmp if available, otherwise use current directory
-    tmp_dir: Path
-    if Path("/app/tmp").exists():
-        tmp_dir = Path("/app/tmp")
-    else:
-        tmp_dir = Path("tmp")
+        # Prepare for preprocessing
+        tmp_dir = Path("/app/tmp") if Path("/app/tmp").exists() else Path("tmp")
         tmp_dir.mkdir(exist_ok=True)
+        preprocessed_file = tmp_dir / f"{input_path.stem}.preprocessed.md"
 
-    for index, a in enumerate(args):
-        if a in files:
-            src = Path(a)
-            tmp = tmp_dir / f"{src.stem}-{index}.preprocessed.md"
-            try:
-                with (
-                    src.open("r", encoding="utf-8") as f_in,
-                    tmp.open("w", encoding="utf-8") as f_out,
-                ):
-                    for line in f_in:
-                        # Normalize bullet chars to markdown list item
-                        stripped = line.lstrip()
-                        if stripped.startswith("• ") or stripped.startswith("* "):
-                            indent = line[: len(line) - len(stripped)]
-                            # Remove bullet and space (first 2 chars), keep rest including newline
-                            content = stripped[2:]
-                            f_out.write(f"{indent}- {content}")
-                        else:
-                            f_out.write(line)
-                temp_files.append(tmp)
-                processed_args.append(str(tmp))
-            except OSError as e:
-                raise FileOperationError(f"Failed to process file {src}: {e}") from e
-        else:
-            processed_args.append(a)
+        _preprocess_markdown(input_path, preprocessed_file)
 
-    # Build pandoc command
-    cmd: list[str] = ["pandoc", *processed_args]
+        # Build pandoc command
+        cmd = ["pandoc", str(preprocessed_file), "-o", output_file]
+        cmd.extend(["--pdf-engine", pdf_engine])
 
-    # Ensure we use weasyprint engine if not specified
-    if "--pdf-engine" not in " ".join(sys.argv):
-        cmd.extend(["--pdf-engine", "weasyprint"])
-
-    # Add default CSS if not specified
-    if "--css" not in " ".join(sys.argv):
-        css_file: str = _determine_css_file(files)
+        css_file = _determine_css_file(document_type, custom_css)
         cmd.extend(["--css", css_file])
 
-    try:
-        # Execute pandoc command
+        # Add metadata if provided
+        if title:
+            cmd.extend(["--metadata", f"title={title}"])
+        if author:
+            cmd.extend(["--metadata", f"author={author}"])
+        if date:
+            cmd.extend(["--metadata", f"date={date}"])
+
+        # Execute pandoc
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print("Successfully converted to PDF")
+        click.secho(
+            f"Successfully converted '{input_file}' to '{output_file}'", fg="green"
+        )
         if result.stdout:
-            print(result.stdout)
+            click.echo(result.stdout)
+
+    except (ValidationError, FileOperationError, ConversionError) as e:
+        click.secho(f"Error: {e}", fg="red", err=True)
+        sys.exit(1)
     except subprocess.CalledProcessError as e:
-        error_msg = f"Pandoc conversion failed with return code {e.returncode}"
-        if e.stderr:
-            error_msg += f": {e.stderr}"
-        raise ConversionError(error_msg) from e
-    except FileNotFoundError as e:
-        raise ConversionError(
-            "Pandoc not found. Please ensure pandoc is installed."
-        ) from e
-    finally:
-        # Cleanup temporary files
-        for tmp in temp_files:
-            try:
-                os.remove(tmp)
-            except OSError:
-                pass  # Ignore cleanup errors
-
-
-def cli() -> None:
-    """CLI entrypoint with user-friendly error handling.
-
-    Catches exceptions from main() and displays clean error messages
-    instead of Python tracebacks.
-
-    Exit codes:
-        0: Success
-        1: Conversion, file operation, or validation error
-        2: Unexpected error
-    """
-    try:
-        main()
-    except ValidationError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        error_msg = f"Pandoc conversion failed: {e.stderr or e.stdout}"
+        click.secho(error_msg, fg="red", err=True)
         sys.exit(1)
-    except FileOperationError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except ConversionError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except KeyboardInterrupt:
-        print("\nOperation cancelled by user.", file=sys.stderr)
+    except FileNotFoundError:
+        click.secho(
+            "Error: pandoc not found. Please ensure it is installed.",
+            fg="red",
+            err=True,
+        )
         sys.exit(1)
     except Exception as e:
-        print(f"Unexpected error: {e}", file=sys.stderr)
-        print("Please report this issue with the command you ran.", file=sys.stderr)
+        click.secho(f"An unexpected error occurred: {e}", fg="red", err=True)
         sys.exit(2)
+    finally:
+        # Cleanup
+        if "preprocessed_file" in locals() and preprocessed_file.exists():
+            try:
+                os.remove(preprocessed_file)
+            except OSError:
+                pass
 
 
 if __name__ == "__main__":

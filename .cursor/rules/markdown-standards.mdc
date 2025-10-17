@@ -4,49 +4,21 @@ alwaysApply: false
 ---
 # Markdown Standards
 
-## Quality Requirements
-
 **ALL markdown files MUST pass markdownlint before being committed.**
 
-### Required Checks
+## Process
 
 - Run `just format-markdown` to automatically fix violations before committing
 - If issues remain, manually fix all markdownlint violations
-- Ensure proper heading hierarchy
-- Use consistent formatting
+- Re-run `just format-markdown` to ensure no remaining issues
+- Ensure proper heading hierarchy and consistent formatting
 
-### Formatting Standards
+## Configuration
 
-- **MD022**: Blank lines around headings - Use blank lines around all headings
-- **MD032**: Blank lines around lists - Use blank lines around all lists
-- **MD031**: Blank lines around fenced code blocks - Use blank lines around all fenced code blocks
-- **MD013**: Line length limits (disabled in project)
-- **MD033**: HTML tags (disabled in project)
-- **MD041**: First line heading (disabled in project)
+- Current rules: See `.markdownlint.jsonc` for disabled rules
+- Commands: See `justfile` for `lint-markdown` and `format-markdown` targets
 - Use consistent heading hierarchy (H1 → H2 → H3 → H4)
 - Use kebab-case for file names
 - Include table of contents for long documents
-
-### AI Assistant Guidelines
-
-- Always run `just format-markdown` after editing markdown files
-- Fix all violations before completing changes
-- Use consistent formatting patterns
-- Include proper heading structure
-- Add blank lines for readability
-
-### Validation Commands
-
-**Check-only (validation):**
-
-```bash
-just lint-markdown
-```
-
-**Auto-fix (repair violations):**
-
-```bash
-just format-markdown
-```
 
 **Note**: This file itself must pass markdownlint validation.

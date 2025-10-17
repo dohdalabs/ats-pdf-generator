@@ -1,0 +1,76 @@
+---
+globs: justfile
+alwaysApply: false
+---
+# Justfile Standards
+
+## Naming Conventions
+
+**Action-Tool Pattern (Preferred):**
+
+- `build-docker`, `test-python`, `lint-shell`, `format-markdown`
+- NOT: `docker-build`, `python-test`, `shell-lint`
+
+**Tool-Action Pattern (Exceptions):**
+
+- `docker-login`, `uv-update`, `git-setup` (when tool is the direct object)
+
+**Task Hierarchy:**
+
+- Tier 1: `build`, `test`, `lint`, `format` (primary actions)
+- Tier 2: `build-docker`, `test-python` (specific variants)
+- Tier 3: `build-docker-alpine` (deep specificity)
+
+## Visibility Rules
+
+**Public Tasks (no prefix):** Main workflow commands developers use
+**Internal Helpers (`_` prefix):** Implementation details, visible for debugging
+**Hidden Tasks (`[private]`):** CI-only, dangerous, or valueless operations
+
+## File Organization
+
+```just
+# ============================================================================
+# Quick Entry Points
+# ============================================================================
+@default: just --list
+quick: lint-python test-python
+check: lint format-check typecheck test
+ci: check test-docker security
+
+# ============================================================================
+# Code Quality
+# ============================================================================
+lint: lint-python lint-shell
+format: format-python format-markdown
+test: test-python test-docker
+
+# ============================================================================
+# Internal Helpers
+# ============================================================================
+_build-docker variant:
+    docker build -f Dockerfile.{{variant}}
+
+[private]
+_ci-only-task:
+    # CI-specific logic
+```
+
+## Key Principles
+
+1. **Developer Intent First**: Name by what developers want to do
+2. **Discoverability**: Easy to find tasks without reading entire file
+3. **Clear Hierarchy**: Simple → specific → deep-specific
+4. **Self-Documenting**: Code explains itself through naming
+
+## Anti-Patterns
+
+❌ Don't expose every internal step as public tasks
+❌ Don't create aggregators that just call other tasks
+❌ Don't use tool-first naming for actions
+❌ Don't hide useful debugging tasks with `[private]`
+
+## Quick Decision Tree
+
+**Hide task?** → Helper? Use `_` | CI-only? Use `[private]` | Primary? No prefix
+**Name task?** → Action on tool? `action-tool` | Tool setup? `tool-action` | Workflow? Simple name
