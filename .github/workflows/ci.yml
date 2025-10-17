@@ -43,6 +43,11 @@ jobs:
         with:
           version: latest
           enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+          cache-suffix: ""
+
+      - name: Set up uv cache directory
+        run: mkdir -p $HOME/.cache/uv
 
       - name: Extract Node.js version
         id: node-version
