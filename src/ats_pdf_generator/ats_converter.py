@@ -12,7 +12,6 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Third-party
 import click
@@ -114,7 +113,7 @@ th {
         raise FileOperationError(f"Cannot create CSS file {css_path}: {e}") from e
 
 
-def _determine_css_file(document_type: str, custom_css: Optional[str]) -> str:
+def _determine_css_file(document_type: str, custom_css: str | None) -> str:
     """Determine the appropriate CSS file.
 
     Priority:
@@ -163,9 +162,10 @@ def _preprocess_markdown(input_path: Path, output_path: Path) -> None:
         FileOperationError: If file processing fails.
     """
     try:
-        with input_path.open("r", encoding="utf-8") as f_in, output_path.open(
-            "w", encoding="utf-8"
-        ) as f_out:
+        with (
+            input_path.open("r", encoding="utf-8") as f_in,
+            output_path.open("w", encoding="utf-8") as f_out,
+        ):
             for line in f_in:
                 stripped = line.lstrip()
                 if stripped.startswith(("• ", "* ")):
@@ -220,7 +220,9 @@ def _validate_input_file(file_path: str) -> None:
     show_default=True,
     help="Specifies the document type for styling.",
 )
-@click.option("--css", "custom_css", type=click.Path(), help="Path to a custom CSS file.")
+@click.option(
+    "--css", "custom_css", type=click.Path(), help="Path to a custom CSS file."
+)
 @click.option("--title", help="PDF document title.")
 @click.option("--author", help="PDF document author.")
 @click.option("--date", help="PDF document date (e.g., '2023-10-26').")
@@ -229,12 +231,12 @@ def _validate_input_file(file_path: str) -> None:
 )
 def cli(
     input_file: str,
-    output_file: Optional[str],
+    output_file: str | None,
     document_type: str,
-    custom_css: Optional[str],
-    title: Optional[str],
-    author: Optional[str],
-    date: Optional[str],
+    custom_css: str | None,
+    title: str | None,
+    author: str | None,
+    date: str | None,
     pdf_engine: str,
 ) -> None:
     """Main CLI for the ATS PDF Generator."""
@@ -269,7 +271,9 @@ def cli(
 
         # Execute pandoc
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        click.secho(f"Successfully converted '{input_file}' to '{output_file}'", fg="green")
+        click.secho(
+            f"Successfully converted '{input_file}' to '{output_file}'", fg="green"
+        )
         if result.stdout:
             click.echo(result.stdout)
 
@@ -282,7 +286,9 @@ def cli(
         sys.exit(1)
     except FileNotFoundError:
         click.secho(
-            "Error: pandoc not found. Please ensure it is installed.", fg="red", err=True
+            "Error: pandoc not found. Please ensure it is installed.",
+            fg="red",
+            err=True,
         )
         sys.exit(1)
     except Exception as e:

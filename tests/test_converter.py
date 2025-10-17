@@ -84,9 +84,7 @@ class TestCli:
             mock_run.return_value = subprocess.CompletedProcess(
                 args=[], returncode=0, stdout="", stderr=""
             )
-            result = runner.invoke(
-                cli, [str(input_file), "-o", str(output_file)]
-            )
+            result = runner.invoke(cli, [str(input_file), "-o", str(output_file)])
 
         assert result.exit_code == 0
         assert f"Successfully converted '{input_file}'" in result.output
@@ -215,9 +213,7 @@ class TestCSSDetermination:
                 # To avoid modifying the real filesystem, we mock the creation
                 # and just check that the correct path would be returned.
                 # We also need to mock the path object for the return value
-                with patch(
-                    "ats_pdf_generator.ats_converter.Path"
-                ) as mock_path:
+                with patch("ats_pdf_generator.ats_converter.Path") as mock_path:
                     mock_path.return_value = fallback_css
                     css_file = _determine_css_file("cover-letter", None)
                     assert css_file == str(fallback_css)
