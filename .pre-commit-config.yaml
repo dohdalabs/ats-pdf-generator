@@ -56,3 +56,10 @@ repos:
         language: system
         types: [markdown]
         pass_filenames: false
+
+      - id: security-python
+        name: security-python
+        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just security-python; else just security-python; fi'
+        language: system
+        types: [python]
+        pass_filenames: false
