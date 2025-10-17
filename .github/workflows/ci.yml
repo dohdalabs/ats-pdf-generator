@@ -33,18 +33,19 @@ jobs:
         id: python-version
         run: echo "version=$(./scripts/extract-versions.sh python)" >> $GITHUB_OUTPUT
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ steps.python-version.outputs.version }}
-
       - name: Install uv
-        uses: astral-sh/setup-uv@v1
+        uses: astral-sh/setup-uv@v7
         with:
           version: latest
           enable-cache: true
-          cache-dependency-glob: "pyproject.toml"
-          cache-suffix: ""
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
+          cache-suffix: build-${{ steps.python-version.outputs.version }}
+          activate-environment: true
+          python-version: ${{ steps.python-version.outputs.version }}
+          tool-dir: $HOME/.local/bin
+          tool-bin-dir: $HOME/.local/bin
 
       - name: Set up uv cache directory
         run: mkdir -p $HOME/.cache/uv
