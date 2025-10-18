@@ -269,14 +269,14 @@ just build-all && just test-docker
 
 - `tests/test_converter.py` - Unit tests for the main converter
 - `justfile` - All development and testing commands
-- `just ci` - Comprehensive quality checks including tests
+- `just ci` - Build job pipeline (quality checks)
 
 ## 🔧 Development Tools
 
 ### Code Quality
 
 ```bash
-# Run comprehensive quality checks (Python, Shell, Docker, Security)
+# Run build job pipeline (Python, Shell, Security)
 just ci
 
 # Run quick quality checks for local development

@@ -11,7 +11,7 @@ export UV_CACHE_DIR := "$HOME/.cache/uv"
 
 # Show available commands with helpful context
 @default:
-    just --help-custom
+    just help-custom
 
 # Display custom help information
 @help-custom:
@@ -27,6 +27,9 @@ export UV_CACHE_DIR := "$HOME/.cache/uv"
     echo "  lint         Lint all code"
     echo "  format       Format all code"
     echo "  test         Run all tests"
+    echo "  typecheck    Type check Python code"
+    echo "  check-docstrings  Validate docstrings"
+    echo "  security     Run security scans (Trivy + Bandit)"
     echo ""
     echo "DOCKER:"
     echo "  build        Build standard image"
@@ -276,8 +279,11 @@ format-markdown:
 # Security Scanning
 # ============================================================================
 
+# Run all security scans (Python + Trivy)
+security: security-python security-trivy
+
 # Run security scan with Trivy
-security:
+security-trivy:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Running security scan..."
