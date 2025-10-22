@@ -1,6 +1,14 @@
+::: {.resume-header}
+
 # Sarah Johnson
 
-Senior Software Engineer | <sarah.johnson@email.com> | (555) 987-6543 | linkedin.com/in/sarahjohnson
+**Senior Software Engineer | Full-Stack Web Applications & Platform Reliability**
+
+**Email:** sarah.johnson@email.com | **Phone:** (555) 987-6543 | **Location:** Seattle, WA
+
+**LinkedIn:** linkedin.com/in/sarahjohnson | **GitHub:** github.com/sjohnson
+
+:::
 
 ## Professional Summary
 

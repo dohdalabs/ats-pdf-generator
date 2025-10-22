@@ -37,7 +37,9 @@ def test_validate_document_with_special_characters(tmp_path: Path) -> None:
     Test that a document with special characters fails validation.
     """
     file_path = tmp_path / "test.md"
-    file_path.write_text("This is a document with a special character: →", encoding="utf-8")
+    file_path.write_text(
+        "This is a document with a special character: →", encoding="utf-8"
+    )
     violations = validate_document(file_path)
     assert len(violations) == 1
     assert violations[0].line_number == 1
@@ -49,6 +51,8 @@ def test_validate_document_with_allowed_characters(tmp_path: Path) -> None:
     Test that a document with allowed special characters passes validation.
     """
     file_path = tmp_path / "test.md"
-    file_path.write_text("This is a document with allowed characters: $ € £ ° &", encoding="utf-8")
+    file_path.write_text(
+        "This is a document with allowed characters: $ € £ ° &", encoding="utf-8"
+    )
     violations = validate_document(file_path)
     assert not violations
