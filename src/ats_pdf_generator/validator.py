@@ -60,13 +60,14 @@ def validate_document(file_path: Path) -> list[Violation]:
     with file_path.open("r", encoding="utf-8") as f:
         for i, line in enumerate(f, 1):
             for match in EMOJI_PATTERN.finditer(line):
-                char = match.group(0)
-                if char not in ALLOWED_CHARS:
-                    violations.append(
-                        Violation(
-                            line_number=i,
-                            line_content=line.strip(),
-                            message=f"Disallowed character: '{char}'",
+                matched_chars = match.group(0)
+                for char in matched_chars:
+                    if char not in ALLOWED_CHARS:
+                        violations.append(
+                            Violation(
+                                line_number=i,
+                                line_content=line.strip(),
+                                message=f"Disallowed character: '{char}'",
+                            )
                         )
-                    )
     return violations
