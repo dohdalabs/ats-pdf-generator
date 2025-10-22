@@ -350,7 +350,7 @@ publish version="latest":
 # ============================================================================
 
 # Convert Markdown to PDF
-convert input output="": (_build-docker "dev")
+convert input output="" doc_type="cover-letter": (_build-docker "dev")
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -456,6 +456,9 @@ convert input output="": (_build-docker "dev")
     INPUT_DIR=$(dirname "{{input}}")
     INPUT_FILENAME=$(basename "{{input}}")
     OUTPUT_BASENAME=$(basename "$OUTPUT_FILE")
+
+    # Document type for styling
+    DOC_TYPE="{{doc_type}}"
 
     # Resolve absolute path for Docker mount (portable across systems)
     RESOLVED_INPUT_DIR=""
