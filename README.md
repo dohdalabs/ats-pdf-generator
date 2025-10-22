@@ -7,21 +7,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/dohdalabs/ats-pdf-generator.svg)](https://github.com/dohdalabs/ats-pdf-generator/releases)
 
-A simple, easy-to-use tool that converts your Markdown content into clean, **ATS-compatible** PDFs—so you can stay focused on crafting great content without worrying about formatting quirks that can trip up automated tracking system parsers.
+ATS PDF Generator converts Markdown cover letters and professional profiles into clean, ATS-friendly PDFs. Keep writing in Markdown; we’ll handle the formatting that recruiters and Applicant Tracking Systems can parse reliably.
 
-## Why This Tool Exists
+For a full walkthrough (examples, profile layout tips, customization, and manual Docker usage) see the [User Guide](docs/user-guide.md).
 
-I built this because I got tired of fighting with AI-generated PDFs that looked great to humans but confused Applicant Tracking Systems (ATS). You know the drill - you spend time crafting the perfect cover letter, export it as a PDF, and then wonder if the ATS can actually read it properly.
-
-This tool solves that problem by focusing on what actually matters: **content that ATS systems can parse reliably**. Write your cover letters and professional profiles in Markdown (which is much easier to focus on content with), and let this tool handle creating PDFs that both humans and machines can read.
-
-## What Makes This Different
-
-- **Actually ATS-Friendly**: Uses fonts and layouts that tracking systems can parse
-- **Content-First**: Write in Markdown so you can focus on your message, not formatting
-- **No Font Surprises**: Standard fonts that work everywhere, every time
-- **Simple**: One command, reliable output, no complex setup
-- **Works Everywhere**: Same results whether you're on Mac, Linux, or Windows
+**For developers:** See the [Development Guide](DEVELOPMENT.md) for technical details and local setup.
 
 ## 🚀 Quick Start
 
@@ -96,6 +86,7 @@ docker run --rm -v $(pwd):/app ghcr.io/dohdalabs/ats-pdf-generator:latest profil
 - Optimized for summary/overview documents
 - Validates for profile structure
 - Clean, readable layout
+- Supports compact resume header with structured contact information (see [User Guide](docs/user-guide.md#professional-profile-header))
 - Perfect for LinkedIn exports or portfolio additions
 
 ## 📁 Examples
@@ -104,119 +95,11 @@ Complete, working examples are available in the [GitHub repository](https://gith
 
 - **[sample-cover-letter.md](https://github.com/dohdalabs/ats-pdf-generator/blob/main/examples/sample-cover-letter.md)** - Complete cover letter with styling classes
 - **[sample-profile.md](https://github.com/dohdalabs/ats-pdf-generator/blob/main/examples/sample-profile.md)** - Professional profile example
+- **[resume-markdown-template.md](https://github.com/dohdalabs/ats-pdf-generator/blob/main/templates/resume-markdown-template.md)** - Starter template for profile-style resumes (great context to share with an LLM)
 
 To use these examples, download them directly:
 
-### Option 1: Download individual files
-
-```bash
-# Download cover letter example
-curl -O https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/examples/sample-cover-letter.md
-
-# Download profile example
-curl -O https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/examples/sample-profile.md
-
-# Try them out
-ats-pdf sample-cover-letter.md -o sample-cover-letter.pdf
-ats-pdf sample-profile.md --type profile -o sample-profile.pdf
-```
-
-### Option 2: Clone the repository
-
-```bash
-git clone https://github.com/dohdalabs/ats-pdf-generator.git
-cd ats-pdf-generator
-ats-pdf examples/sample-cover-letter.md -o sample-cover-letter.pdf
-```
-
-## 📄 Formatting Your Documents
-
-Write your content in standard Markdown. The tool includes special formatting for cover letters:
-
-**Cover Letter Special Formatting:**
-
-- `<div class="salutation">Dear [Name],</div>` - Properly formats the greeting
-- `<div class="signature">Sincerely,<br>Your Name</div>` - Professional signature block
-
-**Examples:**
-
-- Cover letters: [sample-cover-letter.md](examples/sample-cover-letter.md)
-- Professional profiles: [sample-profile.md](examples/sample-profile.md)
-
-## 🎨 Customization
-
-Want to change fonts, colors, or spacing? Create a `custom.css` file in your project directory or `~/.ats-pdf/` and the tool will automatically use it instead of the default styling.
-
-The default styling is already ATS-optimized, so most users don't need to customize anything.
-
-## 🐳 How It Works
-
-The tool uses Docker to ensure consistent, ATS-optimized results:
-
-- **No Setup Required**: Just install and use
-- **Consistent Output**: Same results on any system
-- **ATS Optimized**: Built-in fonts and formatting that work with tracking systems
-- **Clean Operation**: No local dependencies or installation needed
-
-## 💻 Supported Platforms
-
-The tool works seamlessly across all major platforms:
-
-- **macOS**: Intel (x64) and Apple Silicon (ARM64)
-- **Linux**: x64, ARM64, and other architectures
-- **Windows**: WSL2 (Windows Subsystem for Linux)
-- **Cloud**: Any environment with Docker support
-
-Docker automatically selects the correct architecture for your system, so you get optimal performance without any configuration.
-
-## 📦 Installation Options
-
-The ATS PDF Generator is available on two public registries for maximum availability:
-
-### Docker Hub (Primary Registry)
-
-```bash
-# Latest standard version
-docker pull dohdalabs/ats-pdf-generator:latest
-
-# Specific version
-docker pull dohdalabs/ats-pdf-generator:1.0.0
-```
-
-### GitHub Container Registry
-
-```bash
-# Latest version
-docker pull ghcr.io/dohdalabs/ats-pdf-generator:latest
-
-# Specific version
-docker pull ghcr.io/dohdalabs/ats-pdf-generator:v1.0.0
-```
-
-> **Note**: Both registries provide the same image with multi-architecture support (linux/amd64, linux/arm64). Both are completely free for public repositories with unlimited downloads.
-
-## 🛠️ Development
-
-Want to customize or extend this tool for your own needs? Check out the [Development Guide](DEVELOPMENT.md) for setup instructions and how to build your own version.
-
-## 🔄 Updates
-
-The installed version is stable and won't change unexpectedly. To get the latest features and bug fixes:
-
-```bash
-# Update to latest version
-ats-pdf update
-
-# Or reinstall from scratch
-curl -sSL https://raw.githubusercontent.com/dohdalabs/ats-pdf-generator/main/install.sh | bash -s -- --update
-```
-
-### Version Strategy
-
-- **Installation**: Uses stable version (v1.0.0) for reliability
-- **Updates**: Available on-demand with `ats-pdf update`
-- **No Breaking Changes**: Updates maintain compatibility
-- **Fast Downloads**: Subsequent uses benefit from cached images
+> Looking for installation details, advanced formatting, or manual Docker commands? Head over to the [User Guide](docs/user-guide.md).
 
 ## 📄 License
 
