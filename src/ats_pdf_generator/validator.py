@@ -41,9 +41,6 @@ EMOJI_PATTERN = re.compile(
     "]+"
 )
 
-# Allowed special characters
-ALLOWED_CHARS = {"$", "€", "£", "°", "&"}
-
 
 def validate_document(file_path: Path) -> list[Violation]:
     """
@@ -62,12 +59,11 @@ def validate_document(file_path: Path) -> list[Violation]:
             for match in EMOJI_PATTERN.finditer(line):
                 matched_chars = match.group(0)
                 for char in matched_chars:
-                    if char not in ALLOWED_CHARS:
-                        violations.append(
-                            Violation(
-                                line_number=i,
-                                line_content=line.strip(),
-                                message=f"Disallowed character: '{char}'",
-                            )
+                    violations.append(
+                        Violation(
+                            line_number=i,
+                            line_content=line.strip(),
+                            message=f"Disallowed character: '{char}'",
                         )
+                    )
     return violations

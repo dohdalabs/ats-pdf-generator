@@ -49,6 +49,10 @@ def test_validate_document_with_special_characters(tmp_path: Path) -> None:
 def test_validate_document_with_allowed_characters(tmp_path: Path) -> None:
     """
     Test that a document with allowed special characters passes validation.
+
+    Note: Currency symbols ($, €, £), degree symbol (°), and ampersand (&)
+    are not matched by EMOJI_PATTERN, so they don't trigger violations.
+    This test verifies that these characters are ignored by the validator.
     """
     file_path = tmp_path / "test.md"
     file_path.write_text(
@@ -103,6 +107,10 @@ def test_validate_document_mixed_allowed_disallowed(tmp_path: Path) -> None:
     """
     Test that documents with both allowed and disallowed characters
     are handled correctly.
+
+    Note: Currency symbols ($, €, £) are not matched by EMOJI_PATTERN,
+    so they don't trigger violations. Only emojis and special Unicode
+    characters that match the pattern will be flagged.
     """
     file_path = tmp_path / "test.md"
     file_path.write_text(
@@ -110,7 +118,7 @@ def test_validate_document_mixed_allowed_disallowed(tmp_path: Path) -> None:
     )
     violations = validate_document(file_path)
 
-    # Should only flag the disallowed emojis, not the allowed currency symbols
+    # Should only flag the emojis, not the currency symbols (which aren't matched by EMOJI_PATTERN)
     assert len(violations) == 2
     assert all(v.line_number == 1 for v in violations)
 
