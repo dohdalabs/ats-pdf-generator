@@ -146,8 +146,17 @@ h1, h2 {
 hr {
     border: none;
     border-top: 1px solid #ccc;
-    margin: 1.0em 0;
+    margin: 0.6em 0;
     height: 1px;
+}
+
+.resume-header + hr {
+    margin-top: 0.4em;
+    margin-bottom: 0.5em;
+}
+
+.resume-header + hr + h2 {
+    margin-top: 0.5em;
 }
 
 /* Email and contact info formatting */
@@ -190,4 +199,50 @@ p strong {
     -moz-user-select: text;
     -ms-user-select: text;
     user-select: text;
+}
+
+/* Tight resume header override */
+.resume-header {
+    text-align: center;
+    margin-bottom: 0.35em !important;
+    padding-bottom: 0.05em !important;
+}
+
+.resume-header h1 {
+    font-size: 18pt;
+    font-weight: bold;
+    color: #000;
+    margin: 0 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    border: none !important;
+    padding: 0 !important;
+    line-height: 1.05 !important;
+}
+
+.resume-header p {
+    font-size: 9.5pt;
+    color: #000;
+    margin: 0.14em 0 !important;
+    line-height: 1.12 !important;
+    padding: 0 !important;
+}
+
+.resume-header p:first-of-type {
+    margin-top: 0.35em !important;
+    margin-bottom: 0.35em !important;
+}
+
+.resume-header strong {
+    font-weight: 700;
+}
+
+.resume-header p + p {
+    font-size: 8pt;
+    margin-top: 0.25em !important;
+}
+
+.resume-header * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
 }

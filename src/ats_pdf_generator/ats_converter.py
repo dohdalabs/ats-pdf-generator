@@ -250,13 +250,26 @@ def cli(
         # Validate the document for ATS compatibility
         violations = validate_document(input_path)
         if violations:
-            click.secho("Validation failed:", fg="red", err=True)
+            click.secho(
+                "❌ CRITICAL: Validation failed!", fg="red", bold=True, err=True
+            )
+            click.secho(
+                "The following issues will likely cause ATS parsing failures:\n",
+                fg="red",
+                err=True,
+            )
             for violation in violations:
                 click.secho(
-                    f"  - Line {violation.line_number}: {violation.message}",
+                    f"  [CRITICAL] Line {violation.line_number}: {violation.message}",
                     fg="red",
                     err=True,
                 )
+            click.secho(
+                "\n💡 Tip: Remove emojis and special characters. "
+                "Allowed symbols: $ € £ ° &",
+                fg="yellow",
+                err=True,
+            )
             sys.exit(1)
 
         if not output_file:
