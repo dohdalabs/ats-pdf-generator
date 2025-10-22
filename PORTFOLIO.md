@@ -23,6 +23,7 @@ Job seekers often struggle with Applicant Tracking Systems (ATS) that don't prop
 - **Developer Experience**: Created unified command interface (`just ci`, `just quick`, `just check`) that reduces cognitive load and ensures consistent quality standards
 - **Modern Python Tooling**: Evaluated and adopted cutting-edge tools (uv, mise, ruff) for faster development workflows
 - **Cross-Platform Compatibility**: Solved the challenge of consistent environments across different development machines
+- **Candidate Experience Focus**: Tuned profile formatting so resumes stay ATS-safe while remaining easy for candidates to personalize quickly
 - **Container Security**: Implemented security-first container practices with non-root users and vulnerability scanning
 - **Maintainability**: Reduced CI/CD complexity by centralizing all automation logic in just recipes rather than duplicating YAML workflows
 
