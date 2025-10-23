@@ -465,7 +465,7 @@ convert input output="": (_build-docker "dev")
     # Note: On Linux, we run as host UID/GID to avoid ownership issues
     case "$(uname -s)" in
         "Linux")
-            USER_FLAG="-u \"$(id -u):$(id -g)\""
+            USER_FLAG="-u $(id -u):$(id -g)"
             ;;
         "Darwin"|MINGW*|MSYS*|CYGWIN*)
             USER_FLAG=""
