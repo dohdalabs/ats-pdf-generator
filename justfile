@@ -424,14 +424,14 @@ convert input output="": (_build-docker "dev")
 
             # Mirror the entire input directory so relative assets (images/includes) resolve
             if command -v rsync >/dev/null 2>&1; then
-              if ! rsync -aL "$RESOLVED_INPUT_DIR"/ "$TEMP_DIR"/ 2>&1; then
+              if ! rsync -aL "$RESOLVED_INPUT_DIR"/ "$TEMP_DIR"/; then
                 RSYNC_EXIT_CODE=$?
                 echo "Error: rsync failed with exit code $RSYNC_EXIT_CODE" >&2
                 echo "Command: rsync -aL \"$RESOLVED_INPUT_DIR\"/ \"$TEMP_DIR\"/" >&2
                 exit $RSYNC_EXIT_CODE
               fi
             else
-              if ! cp -RL "$RESOLVED_INPUT_DIR"/. "$TEMP_DIR"/ 2>&1; then
+              if ! cp -RL "$RESOLVED_INPUT_DIR"/. "$TEMP_DIR"/; then
                 CP_EXIT_CODE=$?
                 echo "Error: cp failed with exit code $CP_EXIT_CODE" >&2
                 echo "Command: cp -RL \"$RESOLVED_INPUT_DIR\"/. \"$TEMP_DIR\"/" >&2
