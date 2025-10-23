@@ -408,20 +408,30 @@ convert input output="": (_build-docker "dev")
     # Note: macOS uses /Library/CloudStorage/ as the real path for cloud-synced folders
     USE_TEMP_COPY=false
     case "$RESOLVED_INPUT_DIR" in
-        *"/OneDrive/"*|*"/OneDrive-"*|*"/iCloud"*|*"/Dropbox/"*|*"/Google Drive/"*|*"/CloudStorage/"*)
+        *"/OneDrive/"*|*"/OneDrive-"*|*"/iCloud"*|*"/Dropbox/"*|*"/Google Drive/"*|*"/CloudStorage/"*|*"/Mobile Documents/"*|*"/com~apple~CloudDocs/"*)
             echo "⚠️  Cloud storage detected. Using temporary copy for Docker compatibility..."
             USE_TEMP_COPY=true
 
             # Create temporary directory in workspace (guaranteed to be accessible to Docker)
             WORKSPACE_DIR="$(cd "$(dirname "{{justfile()}}")" && pwd)"
-            TEMP_DIR="$WORKSPACE_DIR/.tmp-convert-$$"
-            mkdir -p "$TEMP_DIR"
-            trap "rm -rf '$TEMP_DIR'" EXIT
+            if command -v mktemp >/dev/null 2>&1; then
+              TEMP_DIR="$(mktemp -d "$WORKSPACE_DIR/.tmp-convert-XXXXXX")" || { echo "Error: mktemp failed" >&2; exit 1; }
+            else
+              TEMP_DIR="$WORKSPACE_DIR/.tmp-convert-$$"
+              mkdir -p "$TEMP_DIR"
+            fi
+            trap 'rm -rf "$TEMP_DIR"' EXIT
 
-            # Copy input file to temp directory
-            if ! cp "{{input}}" "$TEMP_DIR/$INPUT_FILENAME"; then
-                echo "Error: Failed to copy input file '{{input}}' to temporary directory '${TEMP_DIR}/${INPUT_FILENAME}'" >&2
-                exit 1
+            # Mirror the entire input directory so relative assets (images/includes) resolve
+            if command -v rsync >/dev/null 2>&1; then
+              rsync -a "$RESOLVED_INPUT_DIR"/ "$TEMP_DIR"/
+            else
+              cp -R "$RESOLVED_INPUT_DIR"/. "$TEMP_DIR"/
+            fi
+            # Sanity check: ensure input file exists in temp
+            if [ ! -f "$TEMP_DIR/$INPUT_FILENAME" ]; then
+              echo "Error: Input file missing after temp sync: $TEMP_DIR/$INPUT_FILENAME" >&2
+              exit 1
             fi
             DOCKER_INPUT_DIR="$TEMP_DIR"
             ;;
