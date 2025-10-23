@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 ATS Document Validator
 
@@ -35,8 +34,8 @@ EMOJI_PATTERN = re.compile(
     "\U0001f900-\U0001f9ff"  # Supplemental Symbols and Pictographs
     "\U0001fa00-\U0001fa6f"  # Chess Symbols
     "\U0001fa70-\U0001faff"  # Symbols and Pictographs Extended-A
-    "\U00002702-\U000027b0"  # Dingbats
-    "\U000024c2-\U0001f251"
+    "\U00002600-\U000026ff"  # Miscellaneous Symbols
+    "\U00002700-\U000027bf"  # Dingbats
     "\U00002190-\U000021ff"  # Arrows
     "]+"
 )
