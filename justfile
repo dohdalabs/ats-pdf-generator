@@ -424,10 +424,30 @@ convert input output="": (_build-docker "dev")
 
             # Mirror the entire input directory so relative assets (images/includes) resolve
             if command -v rsync >/dev/null 2>&1; then
-              rsync -aL "$RESOLVED_INPUT_DIR"/ "$TEMP_DIR"/
+              if ! rsync -aL "$RESOLVED_INPUT_DIR"/ "$TEMP_DIR"/ 2>&1; then
+                RSYNC_EXIT_CODE=$?
+                echo "Error: rsync failed with exit code $RSYNC_EXIT_CODE" >&2
+                echo "Command: rsync -aL \"$RESOLVED_INPUT_DIR\"/ \"$TEMP_DIR\"/" >&2
+                exit $RSYNC_EXIT_CODE
+              fi
             else
-              cp -RL "$RESOLVED_INPUT_DIR"/. "$TEMP_DIR"/
+              if ! cp -RL "$RESOLVED_INPUT_DIR"/. "$TEMP_DIR"/ 2>&1; then
+                CP_EXIT_CODE=$?
+                echo "Error: cp failed with exit code $CP_EXIT_CODE" >&2
+                echo "Command: cp -RL \"$RESOLVED_INPUT_DIR\"/. \"$TEMP_DIR\"/" >&2
+                exit $CP_EXIT_CODE
+              fi
             fi
+
+            # Verify directory copy succeeded by comparing file counts
+            SOURCE_FILE_COUNT=$(find "$RESOLVED_INPUT_DIR" -type f | wc -l)
+            TEMP_FILE_COUNT=$(find "$TEMP_DIR" -type f | wc -l)
+            if [ "$SOURCE_FILE_COUNT" -ne "$TEMP_FILE_COUNT" ]; then
+              echo "Error: Directory copy verification failed" >&2
+              echo "Source file count: $SOURCE_FILE_COUNT, Temp file count: $TEMP_FILE_COUNT" >&2
+              exit 1
+            fi
+
             # Sanity check: ensure input file exists in temp
             if [ ! -f "$TEMP_DIR/$INPUT_FILENAME" ]; then
               echo "Error: Input file missing after temp sync: $TEMP_DIR/$INPUT_FILENAME" >&2
