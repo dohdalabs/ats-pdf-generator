@@ -432,12 +432,23 @@ convert input output="": (_build-docker "dev")
 
     # Run conversion in Docker container
     # PDF is generated in the input directory (or temp directory for cloud storage)
-    # Note: Container runs as 'developer' user. Output file may have different ownership.
-    docker run --rm \
-        -v "$DOCKER_INPUT_DIR:/app/input" \
-        -w /app \
-        ats-pdf-generator:dev \
-        bash -c "source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py input/$INPUT_FILENAME -o input/$OUTPUT_BASENAME"
+    # Note: On Linux, we run as host UID/GID to avoid ownership issues
+    if [ "$(uname)" != "Darwin" ]; then
+        # Linux: Run as host user to avoid ownership issues
+        docker run --rm \
+            -u "$(id -u):$(id -g)" \
+            -v "$DOCKER_INPUT_DIR:/app/input" \
+            -w /app \
+            ats-pdf-generator:dev \
+            bash -c "source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py \"input/$INPUT_FILENAME\" -o \"input/$OUTPUT_BASENAME\""
+    else
+        # macOS: Use default user (ownership handled differently)
+        docker run --rm \
+            -v "$DOCKER_INPUT_DIR:/app/input" \
+            -w /app \
+            ats-pdf-generator:dev \
+            bash -c "source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py \"input/$INPUT_FILENAME\" -o \"input/$OUTPUT_BASENAME\""
+    fi
 
     # If we used a temp copy, move the PDF back to the original location
     if [ "$USE_TEMP_COPY" = true ]; then
@@ -447,17 +458,20 @@ convert input output="": (_build-docker "dev")
         fi
     fi
 
-    # Fix file ownership if running on Linux (not needed on macOS due to how Docker mounts work)
+    # Fix file ownership if running on Linux (fallback for cases where -u didn't work)
     if [ "$(uname)" != "Darwin" ]; then
         USER_ID=$(id -u)
         GROUP_ID=$(id -g)
         GENERATED_FILE="$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME"
         if [ -f "$GENERATED_FILE" ]; then
-            if ! sudo chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
-                echo "⚠️  Could not fix file ownership (sudo unavailable or failed)."
-                echo "    File: $GENERATED_FILE"
-                echo "    Target ownership: $USER_ID:$GROUP_ID"
-                echo "    File may be owned by root."
+            # Check if file is already owned by the correct user
+            if [ "$(stat -c '%u:%g' "$GENERATED_FILE" 2>/dev/null)" != "$USER_ID:$GROUP_ID" ]; then
+                if ! sudo chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
+                    echo "⚠️  Could not fix file ownership (sudo unavailable or failed)."
+                    echo "    File: $GENERATED_FILE"
+                    echo "    Target ownership: $USER_ID:$GROUP_ID"
+                    echo "    File may be owned by root."
+                fi
             fi
         fi
     fi
