@@ -684,6 +684,80 @@ The project uses GitHub Actions with a script-first approach for automated quali
 - ✅ **Release**: On tag pushes (v*) with versioned images
 - ✅ **Pre-commit hooks**: Local development
 
+## 🔄 Merge Queue & Commit Message Best Practices
+
+### GitHub Merge Queue Support
+
+The project supports GitHub merge queues for improved CI/CD reliability:
+
+**Benefits:**
+
+- **Automatic CI validation** on queued changes
+- **Conflict resolution** through automatic rebasing
+- **Sequential merging** prevents race conditions
+- **Clean linear history** maintained
+
+**Usage:**
+
+```bash
+# Add PR to merge queue (automatic CI validation)
+gh pr merge --squash --delete-branch
+# GitHub will automatically run CI and merge when ready
+```
+
+### Commit Message Standards for AI Context
+
+**For comprehensive PRs, use detailed commit messages that provide context for AI assistants:**
+
+```text
+feat(docker): add comprehensive cloud storage compatibility and cross-platform improvements
+
+## Key Improvements
+
+### Cloud Storage Compatibility
+- Enhanced path detection for cloud storage directories
+- Improved handling of temporary directories in cloud storage environments
+- Better file ownership management for cloud-synced files
+
+### Cross-Platform Compatibility
+- Streamlined Docker run commands for consistent behavior across platforms
+- Improved user flag handling for different operating systems
+- Enhanced file ownership adjustment logic for cross-platform compatibility
+
+### Error Handling & Reliability
+- Enhanced error handling for directory copying operations
+- Improved verification of file copy operations
+- Better temporary directory cleanup and management
+
+## Impact
+These changes significantly improve the reliability and usability of Docker-based
+PDF conversion, especially for users working with cloud storage solutions and
+across different operating systems.
+```
+
+**Commit Message Requirements:**
+
+- **Comprehensive context** for AI assistants to understand changes
+- **Structured format** with clear sections and bullet points
+- **Technical details** explaining what was changed and why
+- **Impact description** for future maintainers
+- **Testing information** when relevant
+
+### GitHub Squash Merge Settings
+
+**Recommended GitHub Settings for Squash Merges:**
+
+1. **Enable squash merging** in repository settings
+2. **Set default commit message to "Pull request title and description"**
+3. **Avoid "Pull request title and commit details"** (includes experimental commits)
+
+**Why "Pull request title and description" is best:**
+
+- ✅ **Clean history** - No experimental commit noise
+- ✅ **Comprehensive context** - Full PR description preserved
+- ✅ **AI-friendly** - Structured format with clear sections
+- ✅ **Maintainable** - Easy to update PR descriptions vs commit messages
+
 ## 🎯 Technical Decisions & Trade-offs
 
 ### Architecture Choices
