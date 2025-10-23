@@ -462,7 +462,7 @@ convert input output="": (_build-docker "dev")
 
     # If we used a temp copy, move the PDF back to the original location
     if [ "$USE_TEMP_COPY" = true ]; then
-        if ! mv "$TEMP_DIR/$OUTPUT_BASENAME" "$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME"; then
+        if ! mv -f "$TEMP_DIR/$OUTPUT_BASENAME" "$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME"; then
             echo "Error: Failed to move generated PDF from '$TEMP_DIR/$OUTPUT_BASENAME' to '$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME'" >&2
             exit 1
         fi
