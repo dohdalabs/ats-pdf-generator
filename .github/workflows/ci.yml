@@ -5,7 +5,6 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  merge_group:
   workflow_dispatch:
     inputs:
       branch:
@@ -18,8 +17,6 @@ env:
   CI: true
   UV_COMPILE_BYTECODE: 1
   CI_STRICT_SECURITY: true
-  # Merge queue context
-  MERGE_QUEUE: ${{ github.event_name == 'merge_group' }}
 
 jobs:
   build:
@@ -28,14 +25,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-
-      - name: Log merge queue context
-        if: github.event_name == 'merge_group'
-        run: |
-          echo "Running in merge queue context"
-          echo "Event name: ${{ github.event_name }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "SHA: ${{ github.sha }}"
 
       - name: Install just
         uses: extractions/setup-just@v3
@@ -150,9 +139,7 @@ jobs:
       contents: read
       packages: write
     needs: [build, test]
-    if: |
-      github.ref == 'refs/heads/main' &&
-      (github.event_name == 'push' || github.event_name == 'merge_group')
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
