@@ -426,7 +426,7 @@ convert input output="": (_build-docker "dev")
             if command -v rsync >/dev/null 2>&1; then
               rsync -aL "$RESOLVED_INPUT_DIR"/ "$TEMP_DIR"/
             else
-              cp -R "$RESOLVED_INPUT_DIR"/. "$TEMP_DIR"/
+              cp -RL "$RESOLVED_INPUT_DIR"/. "$TEMP_DIR"/
             fi
             # Sanity check: ensure input file exists in temp
             if [ ! -f "$TEMP_DIR/$INPUT_FILENAME" ]; then
