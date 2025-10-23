@@ -463,11 +463,18 @@ convert input output="": (_build-docker "dev")
     # Run conversion in Docker container
     # PDF is generated in the input directory (or temp directory for cloud storage)
     # Note: On Linux, we run as host UID/GID to avoid ownership issues
-    if [ "$(uname)" != "Darwin" ]; then
-        USER_FLAG="-u \"$(id -u):$(id -g)\""
-    else
-        USER_FLAG=""
-    fi
+    case "$(uname -s)" in
+        "Linux")
+            USER_FLAG="-u \"$(id -u):$(id -g)\""
+            ;;
+        "Darwin"|MINGW*|MSYS*|CYGWIN*)
+            USER_FLAG=""
+            ;;
+        *)
+            # For unknown platforms, default to no user flag
+            USER_FLAG=""
+            ;;
+    esac
 
     docker run --rm \
         $USER_FLAG \
@@ -485,7 +492,7 @@ convert input output="": (_build-docker "dev")
     fi
 
     # Fix file ownership if running on Linux (fallback for cases where -u didn't work)
-    if [ "$(uname)" != "Darwin" ]; then
+    if [ "$(uname -s)" = "Linux" ]; then
         USER_ID=$(id -u)
         GROUP_ID=$(id -g)
         GENERATED_FILE="$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME"
