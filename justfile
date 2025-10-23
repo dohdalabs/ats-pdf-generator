@@ -422,7 +422,10 @@ convert input output="" doc_type="cover-letter": (_build-docker "dev")
             trap "rm -rf '$TEMP_DIR'" EXIT
 
             # Copy input file to temp directory
-            cp "{{input}}" "$TEMP_DIR/$INPUT_FILENAME"
+            if ! cp "{{input}}" "$TEMP_DIR/$INPUT_FILENAME"; then
+                echo "Error: Failed to copy input file '{{input}}' to temporary directory '${TEMP_DIR}/${INPUT_FILENAME}'" >&2
+                exit 1
+            fi
             DOCKER_INPUT_DIR="$TEMP_DIR"
             ;;
         *)
@@ -441,7 +444,10 @@ convert input output="" doc_type="cover-letter": (_build-docker "dev")
 
     # If we used a temp copy, move the PDF back to the original location
     if [ "$USE_TEMP_COPY" = true ]; then
-        mv "$TEMP_DIR/$OUTPUT_BASENAME" "$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME"
+        if ! mv "$TEMP_DIR/$OUTPUT_BASENAME" "$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME"; then
+            echo "Error: Failed to move generated PDF from '$TEMP_DIR/$OUTPUT_BASENAME' to '$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME'" >&2
+            exit 1
+        fi
     fi
 
     # Fix file ownership if running on Linux (not needed on macOS due to how Docker mounts work)
