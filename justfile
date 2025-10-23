@@ -478,7 +478,9 @@ convert input output="": (_build-docker "dev")
             OWNER_ID=$(stat -c '%u' "$GENERATED_FILE" 2>/dev/null || stat -f '%u' "$GENERATED_FILE" 2>/dev/null || echo "")
             if [ -n "$OWNER_ID" ] && [ "$OWNER_ID" -eq "$USER_ID" ]; then
                 :
-            elif ! sudo chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
+            elif chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
+                :
+            elif ! sudo -n chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
                 echo "⚠️  Could not fix file ownership (sudo unavailable or failed)."
                 echo "    File: $GENERATED_FILE"
                 echo "    Target ownership: $USER_ID:$GROUP_ID"
