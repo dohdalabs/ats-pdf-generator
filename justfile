@@ -403,13 +403,59 @@ convert input output="": (_build-docker "dev")
 
     echo "Converting: {{input}} -> $OUTPUT_FILE"
 
+    # Check if path is in a cloud storage directory (OneDrive, iCloud, Dropbox, etc.)
+    # These often have permission issues with Docker on macOS
+    # Note: macOS uses /Library/CloudStorage/ as the real path for cloud-synced folders
+    USE_TEMP_COPY=false
+    case "$RESOLVED_INPUT_DIR" in
+        *"/OneDrive/"*|*"/OneDrive-"*|*"/iCloud"*|*"/Dropbox/"*|*"/Google Drive/"*|*"/CloudStorage/"*)
+            echo "⚠️  Cloud storage detected. Using temporary copy for Docker compatibility..."
+            USE_TEMP_COPY=true
+
+            # Create temporary directory in workspace (guaranteed to be accessible to Docker)
+            WORKSPACE_DIR="$(cd "$(dirname "{{justfile()}}")" && pwd)"
+            TEMP_DIR="$WORKSPACE_DIR/.tmp-convert-$$"
+            mkdir -p "$TEMP_DIR"
+            trap "rm -rf '$TEMP_DIR'" EXIT
+
+            # Copy input file to temp directory
+            if ! cp "{{input}}" "$TEMP_DIR/$INPUT_FILENAME"; then
+                echo "Error: Failed to copy input file '{{input}}' to temporary directory '${TEMP_DIR}/${INPUT_FILENAME}'" >&2
+                exit 1
+            fi
+            DOCKER_INPUT_DIR="$TEMP_DIR"
+            ;;
+        *)
+            DOCKER_INPUT_DIR="$RESOLVED_INPUT_DIR"
+            ;;
+    esac
+
     # Run conversion in Docker container
-    # PDF is generated in the input directory first
+    # PDF is generated in the input directory (or temp directory for cloud storage)
+    # Note: Container runs as 'developer' user. Output file may have different ownership.
     docker run --rm \
-        -v "$RESOLVED_INPUT_DIR:/app/input" \
+        -v "$DOCKER_INPUT_DIR:/app/input" \
         -w /app \
         ats-pdf-generator:dev \
         bash -c "source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py input/$INPUT_FILENAME -o input/$OUTPUT_BASENAME"
+
+    # If we used a temp copy, move the PDF back to the original location
+    if [ "$USE_TEMP_COPY" = true ]; then
+        if ! mv "$TEMP_DIR/$OUTPUT_BASENAME" "$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME"; then
+            echo "Error: Failed to move generated PDF from '$TEMP_DIR/$OUTPUT_BASENAME' to '$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME'" >&2
+            exit 1
+        fi
+    fi
+
+    # Fix file ownership if running on Linux (not needed on macOS due to how Docker mounts work)
+    if [ "$(uname)" != "Darwin" ]; then
+        USER_ID=$(id -u)
+        GROUP_ID=$(id -g)
+        GENERATED_FILE="$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME"
+        if [ -f "$GENERATED_FILE" ]; then
+            sudo chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null || true
+        fi
+    fi
 
     # Move the generated PDF to the requested output location if different
     GENERATED_FILE="$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME"
