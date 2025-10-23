@@ -453,7 +453,12 @@ convert input output="": (_build-docker "dev")
         GROUP_ID=$(id -g)
         GENERATED_FILE="$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME"
         if [ -f "$GENERATED_FILE" ]; then
-            sudo chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null || true
+            if ! sudo chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
+                echo "⚠️  Could not fix file ownership (sudo unavailable or failed)."
+                echo "    File: $GENERATED_FILE"
+                echo "    Target ownership: $USER_ID:$GROUP_ID"
+                echo "    File may be owned by root."
+            fi
         fi
     fi
 
