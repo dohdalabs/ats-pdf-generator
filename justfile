@@ -408,7 +408,7 @@ convert input output="": (_build-docker "dev")
     # Note: macOS uses /Library/CloudStorage/ as the real path for cloud-synced folders
     USE_TEMP_COPY=false
     case "$RESOLVED_INPUT_DIR" in
-        *"/OneDrive/"*|*"/OneDrive-"*|*"/iCloud"*|*"/Dropbox/"*|*"/Google Drive/"*|*"/CloudStorage/"*|*"/Mobile Documents/"*|*"/com~apple~CloudDocs/"*)
+        *"/OneDrive/"*|*"/OneDrive-"*|*"/iCloud"*|*"/Dropbox/"*|*"/Google Drive/"*|*/Library/CloudStorage/*|*/Users/*/Library/CloudStorage/*|*"/Mobile Documents/"*|*"/com~apple~CloudDocs/"*)
             echo "⚠️  Cloud storage detected. Using temporary copy for Docker compatibility..."
             USE_TEMP_COPY=true
 
