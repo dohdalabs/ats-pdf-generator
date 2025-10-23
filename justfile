@@ -420,11 +420,11 @@ convert input output="": (_build-docker "dev")
               TEMP_DIR="$WORKSPACE_DIR/.tmp-convert-$$"
               mkdir -p "$TEMP_DIR"
             fi
-            trap 'rm -rf "$TEMP_DIR"' EXIT
+            trap 'set +e; [ -n "${TEMP_DIR:-}" ] && rm -rf -- "$TEMP_DIR"' EXIT
 
             # Mirror the entire input directory so relative assets (images/includes) resolve
             if command -v rsync >/dev/null 2>&1; then
-              rsync -a "$RESOLVED_INPUT_DIR"/ "$TEMP_DIR"/
+              rsync -aL "$RESOLVED_INPUT_DIR"/ "$TEMP_DIR"/
             else
               cp -R "$RESOLVED_INPUT_DIR"/. "$TEMP_DIR"/
             fi
