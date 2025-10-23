@@ -464,21 +464,17 @@ convert input output="": (_build-docker "dev")
     # PDF is generated in the input directory (or temp directory for cloud storage)
     # Note: On Linux, we run as host UID/GID to avoid ownership issues
     if [ "$(uname)" != "Darwin" ]; then
-        # Linux: Run as host user to avoid ownership issues
-        docker run --rm \
-            -u "$(id -u):$(id -g)" \
-            -v "$DOCKER_INPUT_DIR:/app/input" \
-            -w /app \
-            ats-pdf-generator:dev \
-            bash -c "source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py \"input/$INPUT_FILENAME\" -o \"input/$OUTPUT_BASENAME\""
+        USER_FLAG="-u \"$(id -u):$(id -g)\""
     else
-        # macOS: Use default user (ownership handled differently)
-        docker run --rm \
-            -v "$DOCKER_INPUT_DIR:/app/input" \
-            -w /app \
-            ats-pdf-generator:dev \
-            bash -c "source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py \"input/$INPUT_FILENAME\" -o \"input/$OUTPUT_BASENAME\""
+        USER_FLAG=""
     fi
+
+    docker run --rm \
+        $USER_FLAG \
+        -v "$DOCKER_INPUT_DIR:/app/input" \
+        -w /app \
+        ats-pdf-generator:dev \
+        bash -c "source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py \"input/$INPUT_FILENAME\" -o \"input/$OUTPUT_BASENAME\""
 
     # If we used a temp copy, move the PDF back to the original location
     if [ "$USE_TEMP_COPY" = true ]; then
