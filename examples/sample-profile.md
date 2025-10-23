@@ -6,7 +6,7 @@
 
 **Email:** sarah.johnson@email.com | **Phone:** (555) 987-6543 | **Location:** Seattle, WA
 
-**LinkedIn:** linkedin.com/in/sarahjohnson | **GitHub:** github.com/sjohnson
+**LinkedIn:** [linkedin.com/in/sarahjohnson](https://linkedin.com/in/sarahjohnson) | **GitHub:** [github.com/sjohnson](https://github.com/sjohnson)
 
 :::
 

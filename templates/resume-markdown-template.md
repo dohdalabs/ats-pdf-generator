@@ -1,5 +1,5 @@
 [//]: # (ATS-friendly resume Markdown starter. Replace placeholders and remove comment lines.)
-[//]: # (Render with: just convert resume-template.md doc_type=profile)
+[//]: # (Render with: just convert resume-markdown-template.md doc_type=profile)
 
 ::: {.resume-header}
 
