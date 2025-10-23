@@ -172,3 +172,76 @@ def test_validate_document_multiple_lines_with_emojis(tmp_path: Path) -> None:
     # Check that line 3 (with allowed character) has no violations
     line_3_violations = [v for v in violations if v.line_number == 3]
     assert len(line_3_violations) == 0
+
+
+def test_validate_document_previously_matched_characters_now_allowed(
+    tmp_path: Path,
+) -> None:
+    """
+    Test that characters that were previously matched by the overly broad range
+    U+24C2-U+1F251 are no longer flagged as violations.
+
+    This test verifies the fix for the overly broad Unicode range that included
+    many non-emoji characters like circled letters, enclosed alphanumerics,
+    and other symbols that shouldn't be flagged for ATS compatibility.
+    """
+    file_path = tmp_path / "test.md"
+    # Test characters that were previously matched by the broad range:
+    # U+24C2 (Ⓜ), U+24C7 (Ⓡ), U+24D0 (ⓐ), U+24E9 (ⓩ), U+1F251 (🉑)
+    file_path.write_text(
+        "Test characters: Ⓜ Ⓡ ⓐ ⓩ 🉑 (these should not be flagged)", encoding="utf-8"
+    )
+    violations = validate_document(file_path)
+
+    # These characters should no longer be flagged as violations
+    # None of these characters are in the current emoji ranges, so no violations
+    assert len(violations) == 0
+
+
+def test_validate_document_complete_dingbats_range(tmp_path: Path) -> None:
+    """
+    Test that the complete Dingbats range U+2700–U+27BF is properly matched.
+
+    This test verifies that characters from the previously missing ranges
+    U+2700–U+2701 and U+27B1–U+27BF are now properly flagged as violations.
+    """
+    file_path = tmp_path / "test.md"
+    # Test characters from the complete Dingbats range:
+    # U+2700 (✀), U+2701 (✁), U+2702 (✂), U+27B0 (➰), U+27B1 (➱), U+27BF (➿)
+    file_path.write_text(
+        "Dingbats test: ✀ ✁ ✂ ➰ ➱ ➿ (these should be flagged)", encoding="utf-8"
+    )
+    violations = validate_document(file_path)
+
+    # All these characters should be flagged as violations
+    assert len(violations) == 6
+    assert all(v.line_number == 1 for v in violations)
+
+    # Check that each character gets its own violation
+    violation_chars = {v.message.split("'")[1] for v in violations}
+    expected_chars = {"✀", "✁", "✂", "➰", "➱", "➿"}
+    assert violation_chars == expected_chars
+
+
+def test_validate_document_miscellaneous_symbols_range(tmp_path: Path) -> None:
+    """
+    Test that the Miscellaneous Symbols range U+2600–U+26FF is properly matched.
+
+    This test verifies that symbols like ☀, ★, ✈ are now properly flagged as violations.
+    """
+    file_path = tmp_path / "test.md"
+    # Test characters from the Miscellaneous Symbols range:
+    # U+2600 (☀), U+2605 (★), U+2708 (✈), U+26A0 (⚠), U+26BD (⚽), U+26C4 (⛄)
+    file_path.write_text(
+        "Misc symbols test: ☀ ★ ✈ ⚠ ⚽ ⛄ (these should be flagged)", encoding="utf-8"
+    )
+    violations = validate_document(file_path)
+
+    # All these characters should be flagged as violations
+    assert len(violations) == 6
+    assert all(v.line_number == 1 for v in violations)
+
+    # Check that each character gets its own violation
+    violation_chars = {v.message.split("'")[1] for v in violations}
+    expected_chars = {"☀", "★", "✈", "⚠", "⚽", "⛄"}
+    assert violation_chars == expected_chars
