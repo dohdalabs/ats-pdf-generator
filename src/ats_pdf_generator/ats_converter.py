@@ -251,7 +251,7 @@ def cli(
         violations = validate_document(input_path)
         if violations:
             click.secho(
-                "❌ CRITICAL: Validation failed!", fg="red", bold=True, err=True
+                "  [CRITICAL]: Validation failed!", fg="red", bold=True, err=True
             )
             click.secho(
                 "The following issues will likely cause ATS parsing failures:\n",
