@@ -362,9 +362,13 @@ convert input output="": (_build-docker "dev")
 
     # Set default output if not provided
     if [ -z "{{output}}" ]; then
-        # Remove .md extension and add .pdf
+        # Remove .md/.MD/.mdx extension and add .pdf (case-insensitive)
         INPUT_BASE="{{input}}"
-        OUTPUT_FILE="${INPUT_BASE%.md}.pdf"
+        case "$INPUT_BASE" in
+          *.md|*.MD) OUTPUT_FILE="${INPUT_BASE%.[mM][dD]}.pdf" ;;
+          *.mdx|*.MDX) OUTPUT_FILE="${INPUT_BASE%.[mM][dD][xX]}.pdf" ;;
+          *) OUTPUT_FILE="${INPUT_BASE}.pdf" ;;
+        esac
     else
         OUTPUT_FILE="{{output}}"
     fi
@@ -408,7 +412,12 @@ convert input output="": (_build-docker "dev")
     # Note: macOS uses /Library/CloudStorage/ as the real path for cloud-synced folders
     USE_TEMP_COPY=false
     case "$RESOLVED_INPUT_DIR" in
-        *"/OneDrive/"*|*"/OneDrive-"*|*"/iCloud"*|*"/Dropbox/"*|*"/Google Drive/"*|*/Library/CloudStorage/*|*/Users/*/Library/CloudStorage/*|*"/Mobile Documents/"*|*"/com~apple~CloudDocs/"*)
+        *"/OneDrive/"*|*"/OneDrive-"*|*"/iCloud"*|*"/Dropbox/"*|*"/Google Drive/"*|*"/GoogleDrive/"*|*/Library/CloudStorage/*|*/Users/*/Library/CloudStorage/*|*"/Mobile Documents/"*|*"/com~apple~CloudDocs/"*)
+            if [ "${CONVERT_NO_TEMP_COPY:-0}" = "1" ]; then
+              echo "⚠️  Cloud storage detected but temp copy disabled via CONVERT_NO_TEMP_COPY. Proceeding without temp copy..."
+              DOCKER_INPUT_DIR="$RESOLVED_INPUT_DIR"
+              break
+            fi
             echo "⚠️  Cloud storage detected. Using temporary copy for Docker compatibility..."
             USE_TEMP_COPY=true
 
@@ -449,6 +458,43 @@ convert input output="": (_build-docker "dev")
             fi
             DOCKER_INPUT_DIR="$TEMP_DIR"
             ;;
+        *"/GoogleDrive/"*|*"/.gdfuse/"*)
+            echo "⚠️  Google Drive (Linux/Fuse) detected. Using temporary copy for Docker compatibility..."
+            USE_TEMP_COPY=true
+            # Create temporary directory in workspace (guaranteed to be accessible to Docker)
+            WORKSPACE_DIR="$(cd "$(dirname "{{justfile()}}")" && pwd)"
+            if command -v mktemp >/dev/null 2>&1; then
+              TEMP_DIR="$(mktemp -d "$WORKSPACE_DIR/.tmp-convert-XXXXXX")" || { echo "Error: mktemp failed" >&2; exit 1; }
+            else
+              TEMP_DIR="$WORKSPACE_DIR/.tmp-convert-$$"
+              mkdir -p "$TEMP_DIR"
+            fi
+            trap 'set +e; [ -n "${TEMP_DIR:-}" ] && rm -rf -- "$TEMP_DIR"' EXIT
+
+            # Mirror the entire input directory so relative assets (images/includes) resolve
+            if command -v rsync >/dev/null 2>&1; then
+              if ! rsync -aL "$RESOLVED_INPUT_DIR"/ "$TEMP_DIR"/; then
+                RSYNC_EXIT_CODE=$?
+                echo "Error: rsync failed with exit code $RSYNC_EXIT_CODE" >&2
+                echo "Command: rsync -aL \"$RESOLVED_INPUT_DIR\"/ \"$TEMP_DIR\"/" >&2
+                exit $RSYNC_EXIT_CODE
+              fi
+            else
+              if ! cp -RL "$RESOLVED_INPUT_DIR"/. "$TEMP_DIR"/; then
+                CP_EXIT_CODE=$?
+                echo "Error: cp failed with exit code $CP_EXIT_CODE" >&2
+                echo "Command: cp -RL \"$RESOLVED_INPUT_DIR\"/. \"$TEMP_DIR\"/" >&2
+                exit $CP_EXIT_CODE
+              fi
+            fi
+
+            # Sanity check: ensure input file exists in temp
+            if [ ! -f "$TEMP_DIR/$INPUT_FILENAME" ]; then
+              echo "Error: Input file missing after temp sync: $TEMP_DIR/$INPUT_FILENAME" >&2
+              exit 1
+            fi
+            DOCKER_INPUT_DIR="$TEMP_DIR"
+            ;;
         *)
             DOCKER_INPUT_DIR="$RESOLVED_INPUT_DIR"
             ;;
@@ -459,7 +505,11 @@ convert input output="": (_build-docker "dev")
     # Note: On Linux, we run as host UID/GID to avoid ownership issues
     case "$(uname -s)" in
         "Linux")
-            USER_FLAG="-u $(id -u):$(id -g)"
+            if docker info 2>/dev/null | grep -qi 'userns'; then
+              USER_FLAG="--userns=keep-id"
+            else
+              USER_FLAG="-u $(id -u):$(id -g)"
+            fi
             ;;
         "Darwin"|MINGW*|MSYS*|CYGWIN*)
             USER_FLAG=""
@@ -475,7 +525,7 @@ convert input output="": (_build-docker "dev")
         -v "$DOCKER_INPUT_DIR:/app/input" \
         -w /app \
         ats-pdf-generator:dev \
-        bash -c "source .venv/bin/activate && python src/ats_pdf_generator/ats_converter.py \"input/$INPUT_FILENAME\" -o \"input/$OUTPUT_BASENAME\""
+        bash -c 'set -euo pipefail; source .venv/bin/activate; python src/ats_pdf_generator/ats_converter.py "input/'"$INPUT_FILENAME"'" -o "input/'"$OUTPUT_BASENAME"'"'
 
     # If we used a temp copy, move the PDF back to the original location
     if [ "$USE_TEMP_COPY" = true ]; then
@@ -497,7 +547,7 @@ convert input output="": (_build-docker "dev")
                 :
             elif chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
                 :
-            elif ! sudo -n chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
+            elif command -v sudo >/dev/null 2>&1 && ! sudo -n chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
                 echo "⚠️  Could not fix file ownership (sudo unavailable or failed)."
                 echo "    File: $GENERATED_FILE"
                 echo "    Target ownership: $USER_ID:$GROUP_ID"
