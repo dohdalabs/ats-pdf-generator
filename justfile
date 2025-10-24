@@ -438,8 +438,8 @@ convert input output="": (_build-docker "dev")
         # Remove .md/.MD/.mdx extension and add .pdf (case-insensitive)
         INPUT_BASE="{{input}}"
         case "$INPUT_BASE" in
-          *.md|*.MD) OUTPUT_FILE="${INPUT_BASE%.[mM][dD]}.pdf" ;;
-          *.mdx|*.MDX) OUTPUT_FILE="${INPUT_BASE%.[mM][dD][xX]}.pdf" ;;
+          *.[mM][dD]) OUTPUT_FILE="${INPUT_BASE%.[mM][dD]}.pdf" ;;
+          *.[mM][dD][xX]) OUTPUT_FILE="${INPUT_BASE%.[mM][dD][xX]}.pdf" ;;
           *) OUTPUT_FILE="${INPUT_BASE}.pdf" ;;
         esac
     else
