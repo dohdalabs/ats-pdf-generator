@@ -439,14 +439,8 @@ convert input output="": (_build-docker "dev")
               fi
             fi
 
-            # Verify directory copy succeeded by comparing file counts
-            SOURCE_FILE_COUNT=$(find "$RESOLVED_INPUT_DIR" -type f | wc -l)
-            TEMP_FILE_COUNT=$(find "$TEMP_DIR" -type f | wc -l)
-            if [ "$SOURCE_FILE_COUNT" -ne "$TEMP_FILE_COUNT" ]; then
-              echo "Error: Directory copy verification failed" >&2
-              echo "Source file count: $SOURCE_FILE_COUNT, Temp file count: $TEMP_FILE_COUNT" >&2
-              exit 1
-            fi
+            # Note: Skip file count verification since rsync -L/cp -RL follow symlinks,
+            # which can legitimately change file counts. The input file check below is sufficient.
 
             # Sanity check: ensure input file exists in temp
             if [ ! -f "$TEMP_DIR/$INPUT_FILENAME" ]; then
