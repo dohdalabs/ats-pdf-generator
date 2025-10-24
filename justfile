@@ -397,7 +397,6 @@ convert input output="": (_build-docker "dev")
             temp_dir="$workspace_dir/.tmp-convert-$$"
             mkdir -p "$temp_dir"
         fi
-        trap 'set +e; [ -n "${temp_dir:-}" ] && rm -rf -- "$temp_dir"' EXIT
 
         # Mirror the entire input directory so relative assets (images/includes) resolve
         if command -v rsync >/dev/null 2>&1; then
@@ -502,6 +501,7 @@ convert input output="": (_build-docker "dev")
               USE_TEMP_COPY=true
               WORKSPACE_DIR="$(cd "$(dirname "{{justfile()}}")" && pwd)"
               TEMP_DIR="$(_create_temp_copy "$RESOLVED_INPUT_DIR" "$WORKSPACE_DIR" "$INPUT_FILENAME")"
+              trap 'set +e; [ -n "${TEMP_DIR:-}" ] && rm -rf -- "$TEMP_DIR"' EXIT
               DOCKER_INPUT_DIR="$TEMP_DIR"
             fi
             ;;
