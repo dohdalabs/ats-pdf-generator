@@ -525,10 +525,15 @@ convert input output="": (_build-docker "dev")
             # Determine current owner; prefer GNU stat, fallback to BSD stat
             OWNER_ID=$(stat -c '%u' "$GENERATED_FILE" 2>/dev/null || stat -f '%u' "$GENERATED_FILE" 2>/dev/null || echo "")
             if [ -n "$OWNER_ID" ] && [ "$OWNER_ID" -eq "$USER_ID" ]; then
-                :
+                # Already owned by current user, nothing to do
+                true
             elif chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
-                :
-            elif command -v sudo >/dev/null 2>&1 && ! sudo -n chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
+                # Successfully changed ownership
+                true
+            elif command -v sudo >/dev/null 2>&1 && sudo -n chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
+                # Successfully changed ownership with sudo
+                true
+            else
                 echo "⚠️  Could not fix file ownership (sudo unavailable or failed)."
                 echo "    File: $GENERATED_FILE"
                 echo "    Target ownership: $USER_ID:$GROUP_ID"
