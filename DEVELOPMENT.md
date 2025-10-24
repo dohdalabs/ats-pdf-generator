@@ -702,8 +702,17 @@ The project supports GitHub merge queues for improved CI/CD reliability:
 ```bash
 # Add PR to merge queue (automatic CI validation)
 gh pr merge --squash --delete-branch
-# GitHub will automatically run CI and merge when ready
+# GitHub will automatically queue the PR when target branch requires merge queue
+# This enables auto-merge even if checks are not yet passing
 ```
+
+**Important Notes:**
+
+- **Automatic queuing**: `gh pr merge` will automatically queue a PR when the target branch requires a merge queue (no extra flag needed)
+- **Auto-merge capability**: Invoking `gh pr merge` can enable auto-merge even if checks are not yet passing
+- **CI execution**: The relevant GitHub Actions workflows are triggered by the `merge_group` event, ensuring queued merges execute CI as expected
+
+For more details, see the [GitHub CLI documentation](https://cli.github.com/manual/gh_pr_merge) and [GitHub Actions merge group events](https://docs.github.com/actions/using-workflows/events-that-trigger-workflows#merge_group).
 
 ### Commit Message Standards for AI Context
 
