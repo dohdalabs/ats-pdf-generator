@@ -354,6 +354,35 @@ convert input output="": (_build-docker "dev")
     #!/usr/bin/env bash
     set -euo pipefail
 
+    # Helper: Fix file ownership on Linux (fallback for cases where -u flag didn't work)
+    _fix_linux_ownership() {
+        local file="$1"
+        local user_id="$2"
+        local group_id="$3"
+
+        if [ ! -f "$file" ]; then
+            return 0
+        fi
+
+        # Determine current owner; prefer GNU stat, fallback to BSD stat
+        local owner_id
+        owner_id=$(stat -c '%u' "$file" 2>/dev/null || stat -f '%u' "$file" 2>/dev/null || echo "")
+
+        if [ -n "$owner_id" ] && [ "$owner_id" -eq "$user_id" ]; then
+            return 0  # Already owned by current user
+        elif chown "$user_id:$group_id" "$file" 2>/dev/null; then
+            return 0  # Successfully changed ownership
+        elif command -v sudo >/dev/null 2>&1 && sudo -n chown "$user_id:$group_id" "$file" 2>/dev/null; then
+            return 0  # Successfully changed with sudo
+        else
+            echo "⚠️  Could not fix file ownership (sudo unavailable or failed)." >&2
+            echo "    File: $file" >&2
+            echo "    Target ownership: $user_id:$group_id" >&2
+            echo "    File may be owned by root." >&2
+            return 1
+        fi
+    }
+
     # Helper function to create temporary copy for cloud storage compatibility
     _create_temp_copy() {
         local source_dir="$1"
@@ -518,28 +547,7 @@ convert input output="": (_build-docker "dev")
 
     # Fix file ownership if running on Linux (fallback for cases where -u didn't work)
     if [ "$(uname -s)" = "Linux" ]; then
-        USER_ID=$(id -u)
-        GROUP_ID=$(id -g)
-        GENERATED_FILE="$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME"
-        if [ -f "$GENERATED_FILE" ]; then
-            # Determine current owner; prefer GNU stat, fallback to BSD stat
-            OWNER_ID=$(stat -c '%u' "$GENERATED_FILE" 2>/dev/null || stat -f '%u' "$GENERATED_FILE" 2>/dev/null || echo "")
-            if [ -n "$OWNER_ID" ] && [ "$OWNER_ID" -eq "$USER_ID" ]; then
-                # Already owned by current user, nothing to do
-                true
-            elif chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
-                # Successfully changed ownership
-                true
-            elif command -v sudo >/dev/null 2>&1 && sudo -n chown "$USER_ID:$GROUP_ID" "$GENERATED_FILE" 2>/dev/null; then
-                # Successfully changed ownership with sudo
-                true
-            else
-                echo "⚠️  Could not fix file ownership (sudo unavailable or failed)."
-                echo "    File: $GENERATED_FILE"
-                echo "    Target ownership: $USER_ID:$GROUP_ID"
-                echo "    File may be owned by root."
-            fi
-        fi
+        _fix_linux_ownership "$RESOLVED_INPUT_DIR/$OUTPUT_BASENAME" "$(id -u)" "$(id -g)" || true
     fi
 
     # Move the generated PDF to the requested output location if different
