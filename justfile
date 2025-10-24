@@ -416,47 +416,47 @@ convert input output="": (_build-docker "dev")
             if [ "${CONVERT_NO_TEMP_COPY:-0}" = "1" ]; then
               echo "⚠️  Cloud storage detected but temp copy disabled via CONVERT_NO_TEMP_COPY. Proceeding without temp copy..."
               DOCKER_INPUT_DIR="$RESOLVED_INPUT_DIR"
-              break
-            fi
-            echo "⚠️  Cloud storage detected. Using temporary copy for Docker compatibility..."
-            USE_TEMP_COPY=true
-
-            # Create temporary directory in workspace (guaranteed to be accessible to Docker)
-            WORKSPACE_DIR="$(cd "$(dirname "{{justfile()}}")" && pwd)"
-            if command -v mktemp >/dev/null 2>&1; then
-              TEMP_DIR="$(mktemp -d "$WORKSPACE_DIR/.tmp-convert-XXXXXX")" || { echo "Error: mktemp failed" >&2; exit 1; }
             else
-              TEMP_DIR="$WORKSPACE_DIR/.tmp-convert-$$"
-              mkdir -p "$TEMP_DIR"
-            fi
-            trap 'set +e; [ -n "${TEMP_DIR:-}" ] && rm -rf -- "$TEMP_DIR"' EXIT
+              echo "⚠️  Cloud storage detected. Using temporary copy for Docker compatibility..."
+              USE_TEMP_COPY=true
 
-            # Mirror the entire input directory so relative assets (images/includes) resolve
-            if command -v rsync >/dev/null 2>&1; then
-              if ! rsync -aL "$RESOLVED_INPUT_DIR"/ "$TEMP_DIR"/; then
-                RSYNC_EXIT_CODE=$?
-                echo "Error: rsync failed with exit code $RSYNC_EXIT_CODE" >&2
-                echo "Command: rsync -aL \"$RESOLVED_INPUT_DIR\"/ \"$TEMP_DIR\"/" >&2
-                exit $RSYNC_EXIT_CODE
+              # Create temporary directory in workspace (guaranteed to be accessible to Docker)
+              WORKSPACE_DIR="$(cd "$(dirname "{{justfile()}}")" && pwd)"
+              if command -v mktemp >/dev/null 2>&1; then
+                TEMP_DIR="$(mktemp -d "$WORKSPACE_DIR/.tmp-convert-XXXXXX")" || { echo "Error: mktemp failed" >&2; exit 1; }
+              else
+                TEMP_DIR="$WORKSPACE_DIR/.tmp-convert-$$"
+                mkdir -p "$TEMP_DIR"
               fi
-            else
-              if ! cp -RL "$RESOLVED_INPUT_DIR"/. "$TEMP_DIR"/; then
-                CP_EXIT_CODE=$?
-                echo "Error: cp failed with exit code $CP_EXIT_CODE" >&2
-                echo "Command: cp -RL \"$RESOLVED_INPUT_DIR\"/. \"$TEMP_DIR\"/" >&2
-                exit $CP_EXIT_CODE
+              trap 'set +e; [ -n "${TEMP_DIR:-}" ] && rm -rf -- "$TEMP_DIR"' EXIT
+
+              # Mirror the entire input directory so relative assets (images/includes) resolve
+              if command -v rsync >/dev/null 2>&1; then
+                if ! rsync -aL "$RESOLVED_INPUT_DIR"/ "$TEMP_DIR"/; then
+                  RSYNC_EXIT_CODE=$?
+                  echo "Error: rsync failed with exit code $RSYNC_EXIT_CODE" >&2
+                  echo "Command: rsync -aL \"$RESOLVED_INPUT_DIR\"/ \"$TEMP_DIR\"/" >&2
+                  exit $RSYNC_EXIT_CODE
+                fi
+              else
+                if ! cp -RL "$RESOLVED_INPUT_DIR"/. "$TEMP_DIR"/; then
+                  CP_EXIT_CODE=$?
+                  echo "Error: cp failed with exit code $CP_EXIT_CODE" >&2
+                  echo "Command: cp -RL \"$RESOLVED_INPUT_DIR\"/. \"$TEMP_DIR\"/" >&2
+                  exit $CP_EXIT_CODE
+                fi
               fi
-            fi
 
-            # Note: Skip file count verification since rsync -L/cp -RL follow symlinks,
-            # which can legitimately change file counts. The input file check below is sufficient.
+              # Note: Skip file count verification since rsync -L/cp -RL follow symlinks,
+              # which can legitimately change file counts. The input file check below is sufficient.
 
-            # Sanity check: ensure input file exists in temp
-            if [ ! -f "$TEMP_DIR/$INPUT_FILENAME" ]; then
-              echo "Error: Input file missing after temp sync: $TEMP_DIR/$INPUT_FILENAME" >&2
-              exit 1
+              # Sanity check: ensure input file exists in temp
+              if [ ! -f "$TEMP_DIR/$INPUT_FILENAME" ]; then
+                echo "Error: Input file missing after temp sync: $TEMP_DIR/$INPUT_FILENAME" >&2
+                exit 1
+              fi
+              DOCKER_INPUT_DIR="$TEMP_DIR"
             fi
-            DOCKER_INPUT_DIR="$TEMP_DIR"
             ;;
         *"/GoogleDrive/"*|*"/.gdfuse/"*)
             echo "⚠️  Google Drive (Linux/Fuse) detected. Using temporary copy for Docker compatibility..."
