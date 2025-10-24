@@ -486,24 +486,24 @@ convert input output="": (_build-docker "dev")
     # Note: macOS uses /Library/CloudStorage/ as the real path for cloud-synced folders
     USE_TEMP_COPY=false
     case "$RESOLVED_INPUT_DIR" in
-        *"/OneDrive/"*|*"/OneDrive-"*|*"/iCloud"*|*"/Dropbox/"*|*"/Google Drive/"*|*"/GoogleDrive/"*|*/Library/CloudStorage/*|*/Users/*/Library/CloudStorage/*|*"/Mobile Documents/"*|*"/com~apple~CloudDocs/"*)
+        *"/OneDrive/"*|*"/OneDrive-"*|*"/iCloud"*|*"/Dropbox/"*|*"/Google Drive/"*|*"/GoogleDrive/"*|*/Library/CloudStorage/*|*/Users/*/Library/CloudStorage/*|*"/Mobile Documents/"*|*"/com~apple~CloudDocs/"*|*"/.gdfuse/"*)
             if [ "${CONVERT_NO_TEMP_COPY:-0}" = "1" ]; then
               echo "⚠️  Cloud storage detected but temp copy disabled via CONVERT_NO_TEMP_COPY. Proceeding without temp copy..."
               DOCKER_INPUT_DIR="$RESOLVED_INPUT_DIR"
             else
-              echo "⚠️  Cloud storage detected. Using temporary copy for Docker compatibility..."
+              case "$RESOLVED_INPUT_DIR" in
+                *"/.gdfuse/"*)
+                  echo "⚠️  Google Drive (Linux/Fuse) detected. Using temporary copy for Docker compatibility..."
+                  ;;
+                *)
+                  echo "⚠️  Cloud storage detected. Using temporary copy for Docker compatibility..."
+                  ;;
+              esac
               USE_TEMP_COPY=true
               WORKSPACE_DIR="$(cd "$(dirname "{{justfile()}}")" && pwd)"
               TEMP_DIR="$(_create_temp_copy "$RESOLVED_INPUT_DIR" "$WORKSPACE_DIR" "$INPUT_FILENAME")"
               DOCKER_INPUT_DIR="$TEMP_DIR"
             fi
-            ;;
-        *"/GoogleDrive/"*|*"/.gdfuse/"*)
-            echo "⚠️  Google Drive (Linux/Fuse) detected. Using temporary copy for Docker compatibility..."
-            USE_TEMP_COPY=true
-            WORKSPACE_DIR="$(cd "$(dirname "{{justfile()}}")" && pwd)"
-            TEMP_DIR="$(_create_temp_copy "$RESOLVED_INPUT_DIR" "$WORKSPACE_DIR" "$INPUT_FILENAME")"
-            DOCKER_INPUT_DIR="$TEMP_DIR"
             ;;
         *)
             DOCKER_INPUT_DIR="$RESOLVED_INPUT_DIR"
