@@ -534,8 +534,10 @@ convert input output="": (_build-docker "dev")
         $USER_FLAG \
         -v "$DOCKER_INPUT_DIR:/app/input" \
         -w /app \
+        -e INPUT_FILENAME \
+        -e OUTPUT_BASENAME \
         ats-pdf-generator:dev \
-        bash -c 'set -euo pipefail; source .venv/bin/activate; python src/ats_pdf_generator/ats_converter.py "input/'"$INPUT_FILENAME"'" -o "input/'"$OUTPUT_BASENAME"'"'
+        bash -c 'set -euo pipefail; source .venv/bin/activate; python src/ats_pdf_generator/ats_converter.py "input/$INPUT_FILENAME" -o "input/$OUTPUT_BASENAME"'
 
     # If we used a temp copy, move the PDF back to the original location
     if [ "$USE_TEMP_COPY" = true ]; then
