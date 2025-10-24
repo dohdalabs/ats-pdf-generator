@@ -515,7 +515,7 @@ convert input output="": (_build-docker "dev")
     # Note: On Linux, we run as host UID/GID to avoid ownership issues
     case "$(uname -s)" in
         "Linux")
-            if docker info 2>/dev/null | grep -qE '^\s+userns\s*$'; then
+            if command -v podman >/dev/null 2>&1; then
               USER_FLAG="--userns=keep-id"
             else
               USER_FLAG="-u $(id -u):$(id -g)"
