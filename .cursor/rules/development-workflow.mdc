@@ -1,0 +1,181 @@
+---
+description: Development Workflow Rules
+alwaysApply: false
+---
+# AI Assistant Development Workflow Rules
+
+## Quick Reference
+
+**Always use `just` commands - never call tools directly:**
+
+- `just check` - Run all quality checks
+- `just test` - Run tests
+- `just format` - Auto-fix formatting
+- `just ci` - Complete CI pipeline
+
+## Workflow
+
+### 1. Branch-Based Development
+
+```bash
+git checkout -b feature/descriptive-name
+# Never work directly on main
+```
+
+### 2. Quality Checks
+
+```bash
+just check  # Run all quality checks before changes
+just test   # Run tests after changes
+```
+
+### 3. Commit Standards
+
+```bash
+git commit -m "feat: descriptive change"
+# Use conventional commits: feat, fix, docs, style, refactor, test, chore
+```
+
+### 4. Pull Request Process
+
+1. **Create the Pull Request**
+
+   - Open your PR _after_ completing all checks locally.
+   - Use a descriptive title and a detailed body summarizing all meaningful changes:
+     ```bash
+     gh pr create --title "feat: clear, specific title" --body "## What & Why\n- Summarize each change\n- Explain reasoning & impact\n"
+     ```
+
+2. **Validate Build & Checks**
+
+   - Wait for all CI checks and builds to pass on the PR.
+   - Do **not** merge unless every required check is green.
+   - If a check fails, investigate, push a fix, and wait for successful rerun.
+
+3. **Address Feedback**
+
+   - Review feedback from reviewers.
+   - Push follow-up commits addressing review comments.
+   - Repeat until approvals are granted and all checks pass.
+
+4. **Final Review Before Merge**
+
+   - Confirm all required checks have passed _after_ latest changes.
+   - Carefully review the PR description:
+     - Ensure it thoroughly documents **every significant change**.
+     - Write with future debugging/investigation in mind; think about what later AI or people will need to understand the context.
+     - If relevant, copy release notes or changelog-style bullet points into the description.
+
+5. **Merge via Merge Queue (Squash Only)**
+
+   - Only squash merges via merge queue are allowed; direct pushes to main are forbidden.
+   - The PR **title and description** will form the final commit message.
+   - Use:
+
+     ```bash
+     gh pr merge --squash --delete-branch
+     ```
+
+   - Double-check that the squash commit includes a comprehensive and clear message (title + description).
+
+**Summary:**
+A clear and complete PR description is mandatory. This description directly becomes the commit message and will be critical for future teams and AI tools seeking to understand the intent, scope, and reasoning behind changes.
+
+## Code Quality Standards
+
+**Required checks:**
+
+- Python: `just lint-python` (ruff + black + mypy)
+- Shell: `just lint-shell` (shellcheck)
+- Docker: `just lint-docker` (hadolint)
+- Markdown: `just lint-markdown` (markdownlint)
+
+**All must pass before suggesting changes.**
+
+## Commit Message Best Practices
+
+**For comprehensive PRs, use detailed commit messages:**
+
+```text
+feat(docker): add comprehensive cloud storage compatibility
+
+## Key Improvements
+### Cloud Storage Compatibility
+- Enhanced path detection for cloud storage directories
+- Improved handling of temporary directories in cloud storage environments
+
+### Cross-Platform Compatibility
+- Streamlined Docker run commands for consistent behavior across platforms
+- Improved user flag handling for different operating systems
+
+## Impact
+These changes significantly improve the reliability and usability of Docker-based
+PDF conversion, especially for users working with cloud storage solutions.
+```
+
+## GitHub Squash Merge Settings
+
+**Recommended settings:**
+
+1. Enable squash merging
+2. Set default commit message to "Pull request title and description"
+3. Avoid "Pull request title and commit details" (includes experimental commits)
+
+**Why "Pull request title and description" is best:**
+
+- ✅ Clean history - No experimental commit noise
+- ✅ Comprehensive context - Full PR description preserved
+- ✅ AI-friendly - Structured format with clear sections
+
+## Changelog Updates
+
+**Update CHANGELOG.md for user-facing changes:**
+
+- New features → Add to "Added"
+- Bug fixes → Add to "Fixed"
+- Breaking changes → Add to "Changed" or "Removed"
+
+```markdown
+## [Unreleased]
+
+### Added
+- Support for custom CSS templates in PDF generation
+
+### Fixed
+- Resolve issue where bullet points weren't converted properly (#123)
+```
+
+## AI Assistant Guidelines
+
+### When Making Changes
+
+1. **Always work in feature branch**
+2. **Run `just check` before suggesting changes**
+3. **Use `just` commands instead of direct tool calls**
+4. **Follow established patterns:**
+
+   - Use conventional commits
+   - Update documentation for new features
+   - Update CHANGELOG.md for user-facing changes
+   - Add tests for new functionality
+
+### When Debugging
+
+```bash
+just check           # Run all quality checks
+just test            # Run tests
+just lint-python     # Python linting only
+just lint-shell      # Shell script linting
+just lint-docker     # Dockerfile linting
+just lint-markdown   # Markdown linting
+```
+
+### Quality Standards
+
+- All Python code must pass ruff, black, mypy
+- All shell scripts must pass shellcheck
+- All Dockerfiles must pass hadolint
+- All markdown must pass markdownlint
+- New features require tests
+- Use conventional commit messages
+- Update relevant docs for all changes
