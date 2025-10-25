@@ -58,7 +58,7 @@ This document is for technical reviewers and developers who want to understand t
   - [CI Workflow (`ci.yml`)](#ci-workflow-ciyml)
   - [Release Workflow (`release.yml`)](#release-workflow-releaseyml)
   - [CI/CD Architecture Decisions](#cicd-architecture-decisions)
-- [🔄 Merge Queue & Commit Message Best Practices](#-merge-queue--commit-message-best-practices)
+- [📋 Merge Queue & Commit Message Best Practices](#-merge-queue--commit-message-best-practices)
   - [GitHub Merge Queue Support](#github-merge-queue-support)
   - [Commit Message Standards for AI Context](#commit-message-standards-for-ai-context)
   - [GitHub Squash Merge Settings](#github-squash-merge-settings)
@@ -751,7 +751,7 @@ The project uses GitHub Actions with a script-first approach for automated quali
 - ✅ **Release**: On tag pushes (v*) with versioned images
 - ✅ **Pre-commit hooks**: Local development
 
-## 🔄 Merge Queue & Commit Message Best Practices
+## 📋 Merge Queue & Commit Message Best Practices
 
 ### GitHub Merge Queue Support
 
