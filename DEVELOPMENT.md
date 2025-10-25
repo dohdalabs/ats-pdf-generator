@@ -2,6 +2,73 @@
 
 This document is for technical reviewers and developers who want to understand the codebase architecture, explore the implementation, and set up a local development environment.
 
+## Table of Contents
+
+- [Key Technical Highlights](#key-technical-highlights)
+- [🏗️ Key Components](#key-components)
+- [🛠️ Development Environment Setup](#development-environment-setup)
+  - [Local Development (Recommended)](#local-development-recommended)
+  - [Alternative: Manual Setup](#alternative-manual-setup)
+  - [Quick Development Setup](#quick-development-setup)
+- [🐳 Efficient Docker Development Workflow](#-efficient-docker-development-workflow)
+  - [Why Volume Mounting Matters](#why-volume-mounting-matters)
+  - [Development Environment Setup](#development-environment-setup)
+  - [Daily Development Workflow](#daily-development-workflow)
+  - [Development Commands Reference](#development-commands-reference)
+  - [Volume Mounting Benefits](#volume-mounting-benefits)
+  - [When to Rebuild](#when-to-rebuild)
+- [🎯 Key Challenges Addressed](#-key-challenges-addressed)
+  - [Just-Based Task Runner](#just-based-task-runner)
+  - [Multi-Stage Docker Optimization](#multi-stage-docker-optimization)
+  - [Developer Experience Optimization](#developer-experience-optimization)
+  - [Development Automation](#development-automation)
+  - [Architectural Benefits](#architectural-benefits)
+  - [Implementation Notes](#implementation-notes)
+- [🧪 Testing](#-testing)
+  - [Running Tests](#running-tests)
+  - [Test Structure](#test-structure)
+- [🔧 Development Tools](#-development-tools)
+  - [Code Quality](#code-quality)
+  - [Pre-commit Hooks](#pre-commit-hooks)
+- [🐳 Docker Development](#-docker-development)
+  - [Docker Setup](#docker-setup)
+  - [Docker Development Tools](#docker-development-tools)
+  - [Image Architecture](#image-architecture)
+  - [Multi-Stage Build Strategy](#multi-stage-build-strategy)
+  - [Building Images](#building-images)
+  - [Development with Docker](#development-with-docker)
+  - [Docker Compose for Development](#docker-compose-for-development)
+  - [Docker Usage Guide](#docker-usage-guide)
+- [🔍 Debugging](#-debugging)
+  - [Local Debugging](#local-debugging)
+  - [Docker Debugging](#docker-debugging)
+- [📦 Dependencies](#-dependencies)
+  - [Core Dependencies](#core-dependencies)
+  - [Development Dependencies](#development-dependencies)
+  - [Dependency Management Strategy](#dependency-management-strategy)
+- [🚀 Release Process](#-release-process)
+  - [Version Management](#version-management)
+  - [Release Checklist](#release-checklist)
+  - [Automated Release Process](#automated-release-process)
+- [📊 Performance Characteristics](#-performance-characteristics)
+  - [Build Performance](#build-performance)
+  - [Runtime Performance](#runtime-performance)
+  - [Quality Metrics](#quality-metrics)
+- [🔄 Continuous Integration](#-continuous-integration)
+  - [CI Workflow (`ci.yml`)](#ci-workflow-ciyml)
+  - [Release Workflow (`release.yml`)](#release-workflow-releaseyml)
+  - [CI/CD Architecture Decisions](#cicd-architecture-decisions)
+- [📋 Merge Queue & Commit Message Best Practices](#-merge-queue--commit-message-best-practices)
+  - [GitHub Merge Queue Support](#github-merge-queue-support)
+  - [Commit Message Standards for AI Context](#commit-message-standards-for-ai-context)
+  - [GitHub Squash Merge Settings](#github-squash-merge-settings)
+- [🎯 Technical Decisions & Trade-offs](#-technical-decisions--trade-offs)
+  - [Architecture Choices](#architecture-choices)
+  - [Implementation Trade-offs](#implementation-trade-offs)
+  - [Lessons Learned](#lessons-learned)
+- [📚 Additional Resources](#-additional-resources)
+- [🔗 Related Projects](#-related-projects)
+
 ## Key Technical Highlights
 
 - **Just-Based Task Runner**: All operations implemented as just recipes for consistency across local and CI environments
@@ -683,6 +750,89 @@ The project uses GitHub Actions with a script-first approach for automated quali
 - ✅ **Publish**: On push to main branch (latest images)
 - ✅ **Release**: On tag pushes (v*) with versioned images
 - ✅ **Pre-commit hooks**: Local development
+
+## 📋 Merge Queue & Commit Message Best Practices
+
+### GitHub Merge Queue Support
+
+The project supports GitHub merge queues for improved CI/CD reliability:
+
+**Benefits:**
+
+- **Automatic CI validation** on queued changes
+- **Conflict resolution** through automatic rebasing
+- **Sequential merging** prevents race conditions
+- **Clean linear history** maintained
+
+**Usage:**
+
+```bash
+# Add PR to merge queue (automatic CI validation)
+gh pr merge --squash --delete-branch
+# GitHub will automatically queue the PR when target branch requires merge queue
+# This enables auto-merge even if checks are not yet passing
+```
+
+**Important Notes:**
+
+- **Automatic queuing**: `gh pr merge` will automatically queue a PR when the target branch requires a merge queue (no extra flag needed)
+- **Auto-merge capability**: Invoking `gh pr merge` can enable auto-merge even if checks are not yet passing
+- **CI execution**: The relevant GitHub Actions workflows are triggered by the `merge_group` event, ensuring queued merges execute CI as expected
+
+For more details, see the [GitHub CLI documentation](https://cli.github.com/manual/gh_pr_merge) and [GitHub Actions merge group events](https://docs.github.com/actions/using-workflows/events-that-trigger-workflows#merge_group).
+
+### Commit Message Standards for AI Context
+
+**For comprehensive PRs, use detailed commit messages that provide context for AI assistants:**
+
+```text
+feat(docker): add comprehensive cloud storage compatibility and cross-platform improvements
+
+## Key Improvements
+
+### Cloud Storage Compatibility
+- Enhanced path detection for cloud storage directories
+- Improved handling of temporary directories in cloud storage environments
+- Better file ownership management for cloud-synced files
+
+### Cross-Platform Compatibility
+- Streamlined Docker run commands for consistent behavior across platforms
+- Improved user flag handling for different operating systems
+- Enhanced file ownership adjustment logic for cross-platform compatibility
+
+### Error Handling & Reliability
+- Enhanced error handling for directory copying operations
+- Improved verification of file copy operations
+- Better temporary directory cleanup and management
+
+## Impact
+These changes significantly improve the reliability and usability of Docker-based
+PDF conversion, especially for users working with cloud storage solutions and
+across different operating systems.
+```
+
+**Commit Message Requirements:**
+
+- **Comprehensive context** for AI assistants to understand changes
+- **Structured format** with clear sections and bullet points
+- **Technical details** explaining what was changed and why
+- **Impact description** for future maintainers
+- **Testing information** when relevant
+
+### GitHub Squash Merge Settings
+
+**Recommended GitHub Settings for Squash Merges:**
+
+1. **Enable squash merging** in repository settings
+2. **Set default commit message to "Pull request title and description"**
+3. **Avoid "Pull request title and commit details"** (includes experimental commits)
+
+**Why "Pull request title and description" is best:**
+
+- ✅ **Clean history** - No experimental commit noise
+- ✅ **Comprehensive context** - Full PR description preserved
+- ✅ **AI-friendly** - Structured format with clear sections
+- ✅ **Maintainable** - Easy to update PR descriptions vs commit messages
 
 ## 🎯 Technical Decisions & Trade-offs
 
