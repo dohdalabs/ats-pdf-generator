@@ -73,8 +73,21 @@ git commit -m "feat: descriptive change"
    - Use:
 
      ```bash
-     gh pr merge --squash --delete-branch
+     gh pr merge --squash
      ```
+
+   - **Merge Queue Benefits:**
+     - Automatically runs full CI pipeline on merged state
+     - Only merges if ALL checks pass
+     - Automatically kicks out failed PRs
+     - Ensures main branch always has passing code
+
+   - **Merge Queue Process:**
+     - PR is added to queue when ready
+     - Queue runs complete CI pipeline
+     - If CI fails → PR is automatically removed from queue
+     - If CI passes → PR is automatically merged
+     - No manual intervention needed for quality gates
 
    - Double-check that the squash commit includes a comprehensive and clear message (title + description).
 
