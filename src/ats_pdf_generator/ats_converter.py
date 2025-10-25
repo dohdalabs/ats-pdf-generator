@@ -16,6 +16,9 @@ from pathlib import Path
 # Third-party
 import click
 
+# First-party
+from ats_pdf_generator.validator import validate_document
+
 
 class ATSGeneratorError(Exception):
     """Base exception for ATS PDF Generator."""
@@ -243,6 +246,31 @@ def cli(
     try:
         _validate_input_file(input_file)
         input_path = Path(input_file)
+
+        # Validate the document for ATS compatibility
+        violations = validate_document(input_path)
+        if violations:
+            click.secho(
+                "  [CRITICAL]: Validation failed!", fg="red", bold=True, err=True
+            )
+            click.secho(
+                "The following issues will likely cause ATS parsing failures:\n",
+                fg="red",
+                err=True,
+            )
+            for violation in violations:
+                click.secho(
+                    f"  [CRITICAL] Line {violation.line_number}: {violation.message}",
+                    fg="red",
+                    err=True,
+                )
+            click.secho(
+                "\n💡 Tip: Remove emojis and special characters. "
+                "Allowed symbols: $ € £ ° &",
+                fg="yellow",
+                err=True,
+            )
+            sys.exit(1)
 
         if not output_file:
             output_file = str(input_path.with_suffix(".pdf"))

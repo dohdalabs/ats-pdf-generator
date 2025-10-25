@@ -6,6 +6,7 @@ htmlcov/
 
 # Ignore example files that may have intentional formatting
 examples/
+templates/resume-markdown-template.md
 
 # Ignore documentation that may have different formatting standards
 CHANGELOG.md

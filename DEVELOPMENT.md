@@ -83,13 +83,13 @@ The project follows a clean separation of concerns:
 
 - **`src/`** - Core Python application code
 - **`docker/`** - Multi-stage Docker images (Alpine, Standard, Dev)
-- **`templates/`** - CSS styling for different document types
+- **`templates/`** - CSS styling for different document types and Markdown starter template
 - **`scripts/`** - Essential utilities (convert-pdf.sh, extract-versions.sh, etc.)
 - **`justfile`** - Task runner with all development commands
 - **`tests/`** - Unit tests and validation
 - **`.github/workflows/`** - CI/CD automation
 
-For detailed Docker operations, see the [Docker Management Guide](docs/DOCKER_MANAGEMENT.md).
+For detailed Docker operations, see the [Docker Distribution Guide](docs/DOCKER_DISTRIBUTION.md).
 
 ## 🛠️ Development Environment Setup
 
@@ -142,7 +142,8 @@ just test-docker      # Run Docker tests
 just build-all && just test-docker
 
 # Convert PDFs for testing
-just convert examples/sample-profile.md
+just convert examples/sample-cover-letter.md
+just convert examples/sample-profile.md doc_type=profile
 
 # Individual commands for specific needs
 just lint-python      # Python linting only
@@ -282,6 +283,7 @@ The project provides comprehensive automation for common development tasks:
 - `just security` - Run security scans with Trivy
 - `just convert` - Convert Markdown to PDF
 - `just publish` - Publish to Docker registries
+- `just convert input=resume.md doc_type=profile` - Convert resume-style profile with compact header
 
 **Essential Scripts** (kept for specific utilities):
 
@@ -359,7 +361,38 @@ just typecheck-python  # Python type checking
 just test-docker       # Run Docker tests
 just lint-shell        # Lint shell scripts
 just validate-dockerfiles  # Lint Dockerfiles
+just security          # Run all security scans (Bandit + Trivy)
+just security-python   # Run Python security scan with bandit
+just security-trivy    # Run Trivy security scan
 ```
+
+### Security Scanning
+
+The project includes comprehensive security scanning with both Python-specific and general vulnerability detection:
+
+```bash
+# Run all security scans (Bandit + Trivy)
+just security
+
+# Python-specific security scan with bandit
+just security-python
+
+# Trivy security scan for dependencies and secrets
+just security-trivy
+```
+
+**Security Tools:**
+
+- **Bandit**: Python security linter that identifies common security issues in Python code
+- **Trivy**: Comprehensive security scanner for dependencies, secrets, and vulnerabilities
+- **Configuration**: Bandit uses `pyproject.toml` for configuration, Trivy scans for HIGH/CRITICAL issues
+
+**Security Standards:**
+
+- Security scans are integrated into the CI pipeline (`just ci`)
+- Build fails on HIGH/CRITICAL security issues
+- Regular scanning of dependencies and secrets
+- Non-root user in production Docker images
 
 ### Pre-commit Hooks
 
@@ -654,6 +687,8 @@ Key dependencies managed by `pyproject.toml`:
 - **mypy**: Static type checking
 - **pre-commit**: Git hooks for code quality
 - **pytest-cov**: Test coverage reporting
+- **bandit**: Python security linter for identifying security issues
+- **interrogate**: Docstring coverage analysis
 
 ### Dependency Management Strategy
 
@@ -725,7 +760,7 @@ The project uses GitHub Actions with a script-first approach for automated quali
 
 ### CI Workflow (`ci.yml`)
 
-- **Security Scanning**: Runs Trivy security scan via GitHub Action
+- **Security Scanning**: Runs comprehensive security scans with Bandit (Python) and Trivy (dependencies/secrets)
 - **Quality Checks**: Runs `just ci` (Python, Shell, Docker, Markdown)
 - **Docker Testing**: Runs `just _ci-build-docker && just _ci-test-docker` (Docker builds and tests)
 - **Docker Validation**: Validates Dockerfiles with hadolint
