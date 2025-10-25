@@ -5,8 +5,8 @@ This document is for technical reviewers and developers who want to understand t
 ## Table of Contents
 
 - [Key Technical Highlights](#key-technical-highlights)
-- [🏗️ Key Components](#️-key-components)
-- [🛠️ Development Environment Setup](#️-development-environment-setup)
+- [🏗️ Key Components](#key-components)
+- [🛠️ Development Environment Setup](#development-environment-setup)
   - [Local Development (Recommended)](#local-development-recommended)
   - [Alternative: Manual Setup](#alternative-manual-setup)
   - [Quick Development Setup](#quick-development-setup)
