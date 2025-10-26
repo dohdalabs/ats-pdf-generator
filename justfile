@@ -59,7 +59,7 @@ validate: lint-python test-python format-check
     @echo "✅ Code validation passed!"
 
 # Complete CI validation (~5-8 minutes)
-ci: lint format-check typecheck check-docstrings test-python security _ci-build-docker _ci-test-docker validate-dockerfiles pre-commit
+ci: pre-commit typecheck check-docstrings test-python security-trivy _ci-build-docker _ci-test-docker
     @echo ""
     @echo "✅ Complete CI pipeline passed!"
     @echo "This matches what GitHub Actions runs."
