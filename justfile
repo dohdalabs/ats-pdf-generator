@@ -64,15 +64,6 @@ ci: lint format-check typecheck check-docstrings test-python security _ci-build-
     @echo "✅ Complete CI pipeline passed!"
     @echo "This matches what GitHub Actions runs."
 
-# ============================================================================
-# Legacy Commands (Deprecated - for transition)
-# ============================================================================
-
-# @deprecated Use 'validate' instead
-quick: validate
-
-# @deprecated Use 'ci' instead
-check: ci
 
 # ============================================================================
 # Development Environment
