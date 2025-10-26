@@ -54,7 +54,7 @@ export UV_CACHE_DIR := "$HOME/.cache/uv"
 # ============================================================================
 
 # Fast code validation (~30 seconds)
-validate: lint-python test-python format-check
+validate: format-check lint-python test-python
     @echo ""
     @echo "✅ Code validation passed!"
 
