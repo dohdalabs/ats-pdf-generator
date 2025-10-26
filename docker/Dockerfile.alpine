@@ -67,6 +67,7 @@ RUN apk add --no-cache \
 # Copy virtual environment from deps stage
 COPY --from=deps /build/.venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+ENV PYTHONPATH="/app"
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -91,19 +92,19 @@ RUN mkdir -p /app/input /app/output /app/templates /app/css /app/tmp
 RUN adduser -D converter && \
     chown -R converter:converter /app
 
-# Copy the Python script and templates (WORKDIR is already set)
-COPY --chown=converter:converter src/ats_pdf_generator/ats_converter.py ./
+# Copy the Python package and templates (WORKDIR is already set)
+COPY --chown=converter:converter src/ats_pdf_generator/ ./ats_pdf_generator/
 COPY --chown=converter:converter templates/ /app/templates/
 
 # Make the script executable and verify it exists
-RUN chmod +x /app/ats_converter.py && \
-    ls -la /app/ats_converter.py
+RUN chmod +x /app/ats_pdf_generator/ats_converter.py && \
+    ls -la /app/ats_pdf_generator/ats_converter.py
 
 # Switch to non-root user
 USER converter
 
 # Set the entrypoint
-ENTRYPOINT ["python3", "/app/ats_converter.py"]
+ENTRYPOINT ["python3", "/app/ats_pdf_generator/ats_converter.py"]
 
 # Default command (can be overridden)
 CMD ["--help"]
