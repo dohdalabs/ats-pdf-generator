@@ -17,7 +17,7 @@ from pathlib import Path
 import click
 
 # First-party
-from ats_pdf_generator.validator import validate_document
+from ats_pdf_generator.validator import Severity, validate_document
 
 
 class ATSGeneratorError(Exception):
@@ -200,6 +200,205 @@ def _validate_input_file(file_path: str) -> None:
         raise FileOperationError(f"Cannot read input file: {file_path}")
 
 
+def _generate_validation_report(violations: list, input_file: str) -> str:
+    """Generate a comprehensive validation report.
+
+    Args:
+        violations: List of validation violations.
+        input_file: Path to the input file being validated.
+
+    Returns:
+        Formatted validation report string.
+    """
+    from datetime import datetime
+
+    # Count violations by severity
+    critical_count = sum(1 for v in violations if v.severity == Severity.CRITICAL)
+    high_count = sum(1 for v in violations if v.severity == Severity.HIGH)
+    medium_count = sum(1 for v in violations if v.severity == Severity.MEDIUM)
+    low_count = sum(1 for v in violations if v.severity == Severity.LOW)
+
+    # Determine overall status
+    if critical_count > 0:
+        status = "FAIL"
+    elif high_count > 0:
+        status = "WARNING"
+    else:
+        status = "PASS"
+
+    report_lines = [
+        "# ATS Safety Verification Report",
+        "",
+        f"## Document: {Path(input_file).name}",
+        f"**Verification Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"**Overall Status:** {status}",
+        "",
+        "---",
+        "",
+        "## Summary",
+        f"- Critical Issues: {critical_count}",
+        f"- High Severity Issues: {high_count}",
+        f"- Medium Severity Issues: {medium_count}",
+        f"- Low Severity Issues: {low_count}",
+        "",
+        "---",
+        "",
+    ]
+
+    # Group violations by severity
+    critical_violations = [v for v in violations if v.severity == Severity.CRITICAL]
+    high_violations = [v for v in violations if v.severity == Severity.HIGH]
+    medium_violations = [v for v in violations if v.severity == Severity.MEDIUM]
+    low_violations = [v for v in violations if v.severity == Severity.LOW]
+
+    # Add violation details
+    if critical_violations:
+        report_lines.extend(["## Critical Issues (Must Fix)", ""])
+        for violation in critical_violations:
+            report_lines.extend(
+                [
+                    f"### {violation.violation_type} at line {violation.line_number}",
+                    "",
+                    f"**Severity:** {violation.severity.value}",
+                    "",
+                    f"**Found:** {violation.found_text}",
+                    "",
+                    f"**Issue:** {violation.message}",
+                    "",
+                    f"**Suggestion:** {violation.suggestion}",
+                    "",
+                    f"**Example:** {violation.line_content}",
+                    "",
+                ]
+            )
+
+    if high_violations:
+        report_lines.extend(["## High Severity Issues (Should Fix)", ""])
+        for violation in high_violations:
+            report_lines.extend(
+                [
+                    f"### {violation.violation_type} at line {violation.line_number}",
+                    "",
+                    f"**Severity:** {violation.severity.value}",
+                    "",
+                    f"**Found:** {violation.found_text}",
+                    "",
+                    f"**Issue:** {violation.message}",
+                    "",
+                    f"**Suggestion:** {violation.suggestion}",
+                    "",
+                    f"**Example:** {violation.line_content}",
+                    "",
+                ]
+            )
+
+    if medium_violations:
+        report_lines.extend(["## Medium Severity Issues (Consider Fixing)", ""])
+        for violation in medium_violations:
+            report_lines.extend(
+                [
+                    f"### {violation.violation_type} at line {violation.line_number}",
+                    "",
+                    f"**Severity:** {violation.severity.value}",
+                    "",
+                    f"**Found:** {violation.found_text}",
+                    "",
+                    f"**Issue:** {violation.message}",
+                    "",
+                    f"**Suggestion:** {violation.suggestion}",
+                    "",
+                    f"**Example:** {violation.line_content}",
+                    "",
+                ]
+            )
+
+    if low_violations:
+        report_lines.extend(["## Low Severity Issues (Optional)", ""])
+        for violation in low_violations:
+            report_lines.extend(
+                [
+                    f"### {violation.violation_type} at line {violation.line_number}",
+                    "",
+                    f"**Severity:** {violation.severity.value}",
+                    "",
+                    f"**Found:** {violation.found_text}",
+                    "",
+                    f"**Issue:** {violation.message}",
+                    "",
+                    f"**Suggestion:** {violation.suggestion}",
+                    "",
+                    f"**Example:** {violation.line_content}",
+                    "",
+                ]
+            )
+
+    report_lines.extend(
+        [
+            "---",
+            "",
+            "## Recommendations",
+            "For best ATS compatibility:",
+            "- Use standard fonts (Arial, Calibri, Times New Roman)",
+            "- Avoid tables, columns, and complex layouts",
+            "- Use standard section headers",
+            "- Include relevant keywords naturally",
+            "- Use standard date formats (Month YYYY - Month YYYY)",
+            "- Avoid emojis, special characters, and creative formatting",
+        ]
+    )
+
+    return "\n".join(report_lines)
+
+
+def _print_violations_summary(violations: list) -> None:
+    """Print a summary of violations to the console.
+
+    Args:
+        violations: List of validation violations.
+    """
+    if not violations:
+        click.secho("✅ No ATS compatibility issues found!", fg="green", bold=True)
+        return
+
+    # Count violations by severity
+    critical_count = sum(1 for v in violations if v.severity == Severity.CRITICAL)
+    high_count = sum(1 for v in violations if v.severity == Severity.HIGH)
+    medium_count = sum(1 for v in violations if v.severity == Severity.MEDIUM)
+    low_count = sum(1 for v in violations if v.severity == Severity.LOW)
+
+    # Print summary
+    click.secho("\n📊 ATS Validation Summary:", fg="blue", bold=True)
+    if critical_count > 0:
+        click.secho(f"  🔴 Critical Issues: {critical_count}", fg="red")
+    if high_count > 0:
+        click.secho(f"  🟡 High Severity Issues: {high_count}", fg="yellow")
+    if medium_count > 0:
+        click.secho(f"  🟠 Medium Severity Issues: {medium_count}", fg="yellow")
+    if low_count > 0:
+        click.secho(f"  🔵 Low Severity Issues: {low_count}", fg="blue")
+
+    # Print detailed violations
+    click.secho("\n📋 Detailed Issues:", fg="blue", bold=True)
+    for violation in violations:
+        if violation.severity == Severity.CRITICAL:
+            color = "red"
+            icon = "🔴"
+        elif violation.severity == Severity.HIGH:
+            color = "yellow"
+            icon = "🟡"
+        elif violation.severity == Severity.MEDIUM:
+            color = "yellow"
+            icon = "🟠"
+        else:
+            color = "blue"
+            icon = "🔵"
+
+        click.secho(
+            f"  {icon} Line {violation.line_number}: {violation.message}", fg=color
+        )
+        click.secho(f"     💡 {violation.suggestion}", fg="cyan")
+
+
 @click.command(
     help="Convert Markdown documents to ATS-optimized PDFs.",
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -232,6 +431,21 @@ def _validate_input_file(file_path: str) -> None:
 @click.option(
     "--pdf-engine", default="weasyprint", show_default=True, help="PDF engine to use."
 )
+@click.option(
+    "--validate-only",
+    is_flag=True,
+    help="Only validate the document for ATS compatibility without converting to PDF.",
+)
+@click.option(
+    "--validation-report",
+    type=click.Path(writable=True, resolve_path=True),
+    help="Save detailed validation report to a file.",
+)
+@click.option(
+    "--fail-on-warning",
+    is_flag=True,
+    help="Exit with error code if any validation issues are found (not just critical).",
+)
 def cli(
     input_file: str,
     output_file: str | None,
@@ -241,6 +455,9 @@ def cli(
     author: str | None,
     date: str | None,
     pdf_engine: str,
+    validate_only: bool,
+    validation_report: str | None,
+    fail_on_warning: bool,
 ) -> None:
     """Main CLI for the ATS PDF Generator."""
     try:
@@ -249,28 +466,69 @@ def cli(
 
         # Validate the document for ATS compatibility
         violations = validate_document(input_path)
-        if violations:
+
+        # Generate validation report if requested
+        if validation_report:
+            report_content = _generate_validation_report(violations, input_file)
+            with open(validation_report, "w", encoding="utf-8") as f:
+                f.write(report_content)
             click.secho(
-                "  [CRITICAL]: Validation failed!", fg="red", bold=True, err=True
+                f"📄 Validation report saved to: {validation_report}", fg="green"
+            )
+
+        # Print validation summary
+        _print_violations_summary(violations)
+
+        # Handle validation-only mode
+        if validate_only:
+            if violations:
+                critical_count = sum(
+                    1 for v in violations if v.severity == Severity.CRITICAL
+                )
+                high_count = sum(1 for v in violations if v.severity == Severity.HIGH)
+
+                if critical_count > 0:
+                    click.secho(
+                        "\n❌ Validation failed - critical issues found!",
+                        fg="red",
+                        bold=True,
+                    )
+                    sys.exit(1)
+                elif fail_on_warning and (high_count > 0 or len(violations) > 0):
+                    click.secho(
+                        "\n⚠️  Validation failed - issues found!", fg="yellow", bold=True
+                    )
+                    sys.exit(1)
+                else:
+                    click.secho("\n✅ Validation completed with warnings", fg="yellow")
+            else:
+                click.secho("\n✅ Validation passed - no issues found!", fg="green")
+            return
+
+        # Check for critical violations that should prevent conversion
+        critical_violations = [v for v in violations if v.severity == Severity.CRITICAL]
+        if critical_violations:
+            click.secho(
+                "\n❌ Conversion aborted - critical ATS compatibility issues found!",
+                fg="red",
+                bold=True,
+                err=True,
             )
             click.secho(
-                "The following issues will likely cause ATS parsing failures:\n",
+                "Fix the critical issues above before converting to PDF.",
                 fg="red",
                 err=True,
             )
-            for violation in violations:
-                click.secho(
-                    f"  [CRITICAL] Line {violation.line_number}: {violation.message}",
-                    fg="red",
-                    err=True,
-                )
+            sys.exit(1)
+
+        # Warn about high severity issues but allow conversion
+        high_violations = [v for v in violations if v.severity == Severity.HIGH]
+        if high_violations and not fail_on_warning:
             click.secho(
-                "\n💡 Tip: Remove emojis and special characters. "
-                "Allowed symbols: $ € £ ° &",
+                "\n⚠️  High severity issues found - consider fixing before submitting to ATS systems.",
                 fg="yellow",
                 err=True,
             )
-            sys.exit(1)
 
         if not output_file:
             output_file = str(input_path.with_suffix(".pdf"))
