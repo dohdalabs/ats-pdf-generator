@@ -18,10 +18,14 @@ export UV_CACHE_DIR := "$HOME/.cache/uv"
     echo "ATS PDF Generator - Development Tasks"
     echo ""
     echo "MAIN COMMANDS:"
-    echo "  quick        Fast checks (~30s)"
-    echo "  check        Pre-commit checks (~3min)"
-    echo "  ci           Full CI pipeline (~10min)"
+    echo "  validate     Fast code validation (~30s)"
+    echo "  ci           Complete CI validation (~5-8min)"
     echo "  install      Setup development environment"
+    echo ""
+    echo "WORKFLOW:"
+    echo "  • During development: just validate"
+    echo "  • Before pushing: just ci"
+    echo "  • Git hooks run automatically on commit"
     echo ""
     echo "QUALITY:"
     echo "  lint         Lint all code"
@@ -49,21 +53,17 @@ export UV_CACHE_DIR := "$HOME/.cache/uv"
 # Quick Entry Points (Most Common Workflows)
 # ============================================================================
 
-# Fast local checks (~30 seconds)
-quick: lint-python test-python
+# Fast code validation (~30 seconds)
+validate: format-check lint-python test-python
     @echo ""
-    @echo "✅ Quick checks passed!"
+    @echo "✅ Code validation passed!"
 
-# Thorough pre-commit checks (~3 minutes)
-check: lint format-check typecheck test
-    @echo ""
-    @echo "✅ Ready to commit!"
-
-# Complete CI pipeline (~10 minutes)
-ci: lint format-check typecheck check-docstrings test-python security _ci-build-docker _ci-test-docker validate-dockerfiles
+# Complete CI validation (~5-8 minutes)
+ci: pre-commit typecheck check-docstrings test-python security-trivy _ci-build-docker _ci-test-docker
     @echo ""
     @echo "✅ Complete CI pipeline passed!"
     @echo "This matches what GitHub Actions runs."
+
 
 # ============================================================================
 # Development Environment
