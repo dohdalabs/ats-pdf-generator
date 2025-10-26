@@ -50,6 +50,10 @@ coverage.xml
 # Security scanning
 trivy-results.sarif
 
+# Generated validation reports
+validation_report.md
+*_validation_report.md
+
 # Cache directories
 .mypy_cache/
 .ruff_cache/
