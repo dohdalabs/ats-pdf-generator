@@ -539,8 +539,9 @@ convert input output="" doc_type="cover-letter": (_build-docker "dev")
         -w /app \
         -e INPUT_FILENAME \
         -e OUTPUT_BASENAME \
+        -e DOC_TYPE \
         ats-pdf-generator:dev \
-        bash -c 'set -euo pipefail; source .venv/bin/activate; python src/ats_pdf_generator/ats_converter.py "input/$INPUT_FILENAME" -o "input/$OUTPUT_BASENAME"'
+        bash -c 'set -euo pipefail; source .venv/bin/activate; python src/ats_pdf_generator/ats_converter.py "input/$INPUT_FILENAME" -o "input/$OUTPUT_BASENAME" --type "$DOC_TYPE"'
 
     # If we used a temp copy, move the PDF back to the original location
     if [ "$USE_TEMP_COPY" = true ]; then
