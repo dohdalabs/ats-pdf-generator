@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Tests for the ATS Document Validator.
 """
@@ -200,10 +199,10 @@ def test_validate_document_previously_matched_characters_now_allowed(
 
 def test_validate_document_complete_dingbats_range(tmp_path: Path) -> None:
     """
-    Test that the complete Dingbats range U+2700–U+27BF is properly matched.
+    Test that the complete Dingbats range U+2700-U+27BF is properly matched.
 
     This test verifies that characters from the previously missing ranges
-    U+2700–U+2701 and U+27B1–U+27BF are now properly flagged as violations.
+    U+2700-U+2701 and U+27B1-U+27BF are now properly flagged as violations.
     """
     file_path = tmp_path / "test.md"
     # Test characters from the complete Dingbats range:
@@ -225,7 +224,7 @@ def test_validate_document_complete_dingbats_range(tmp_path: Path) -> None:
 
 def test_validate_document_miscellaneous_symbols_range(tmp_path: Path) -> None:
     """
-    Test that the Miscellaneous Symbols range U+2600–U+26FF is properly matched.
+    Test that the Miscellaneous Symbols range U+2600-U+26FF is properly matched.
 
     This test verifies that symbols like ☀, ★, ✈ are now properly flagged as violations.
     """
