@@ -6,6 +6,7 @@ for ATS compatibility as specified in Issue 8.
 """
 
 # Standard library
+import re
 
 # First-party
 from ats_pdf_generator.validator.contact_validator import ContactValidator
@@ -19,16 +20,7 @@ def test_contact_validator_initialization() -> None:
     assert validator is not None
     assert isinstance(validator, ContactValidator)
 
-    # Test that regex patterns are compiled and not None
-    assert validator.EMAIL_PATTERN is not None
-    assert validator.OBFUSCATED_EMAIL_PATTERN is not None
-    assert validator.PHONE_PATTERN is not None
-    assert validator.URL_PATTERN is not None
-    assert validator.BARE_URL_PATTERN is not None
-
-    # Test that regex patterns are actually compiled pattern objects
-    import re
-
+    # Test that regex patterns are compiled pattern objects
     assert isinstance(validator.EMAIL_PATTERN, re.Pattern)
     assert isinstance(validator.OBFUSCATED_EMAIL_PATTERN, re.Pattern)
     assert isinstance(validator.PHONE_PATTERN, re.Pattern)
