@@ -131,50 +131,49 @@ class ContactValidator:
         """Validate phone number formatting."""
         violations: list[Violation] = []
 
-        if self.PHONE_PATTERN.search(content):
-            phone_match = self.PHONE_PATTERN.search(content)
-            if phone_match:
-                phone = phone_match.group(0)
+        phone_match = self.PHONE_PATTERN.search(content)
+        if phone_match:
+            phone = phone_match.group(0)
 
-                # Check if phone has proper label
-                has_label = any(
-                    any(label in content.lower() for label in labels)
-                    for label, labels in self.CONTACT_LABELS.items()
-                    if "phone" in label
+            # Check if phone has proper label
+            has_label = any(
+                any(label in content.lower() for label in labels)
+                for label, labels in self.CONTACT_LABELS.items()
+                if "phone" in label
+            )
+
+            if not has_label:
+                violations.append(
+                    Violation(
+                        line_number=line_number,
+                        line_content=content.strip(),
+                        message="Phone number without proper label",
+                        severity=SeverityLevel.HIGH,
+                        suggestion="Add 'Phone:' label before the number",
+                    )
                 )
-
-                if not has_label:
+            else:
+                # Check for non-standard formats even with proper labels
+                # Check for formats without separators (no dashes, spaces, or parentheses)
+                cleaned_phone = (
+                    phone.replace("-", "")
+                    .replace(" ", "")
+                    .replace(".", "")
+                    .replace("(", "")
+                    .replace(")", "")
+                )
+                if re.match(r"\d{10,}", cleaned_phone) and not any(
+                    sep in phone for sep in ["-", " ", "(", ")"]
+                ):
                     violations.append(
                         Violation(
                             line_number=line_number,
                             line_content=content.strip(),
-                            message="Phone number without proper label",
+                            message="Phone number should use standard format",
                             severity=SeverityLevel.HIGH,
-                            suggestion="Add 'Phone:' label before the number",
+                            suggestion="Use format: (555) 123-4567 or 555-123-4567",
                         )
                     )
-                else:
-                    # Check for non-standard formats even with proper labels
-                    # Check for formats without separators (no dashes, spaces, or parentheses)
-                    cleaned_phone = (
-                        phone.replace("-", "")
-                        .replace(" ", "")
-                        .replace(".", "")
-                        .replace("(", "")
-                        .replace(")", "")
-                    )
-                    if re.match(r"\d{10,}", cleaned_phone) and not any(
-                        sep in phone for sep in ["-", " ", "(", ")"]
-                    ):
-                        violations.append(
-                            Violation(
-                                line_number=line_number,
-                                line_content=content.strip(),
-                                message="Phone number should use standard format",
-                                severity=SeverityLevel.HIGH,
-                                suggestion="Use format: (555) 123-4567 or 555-123-4567",
-                            )
-                        )
 
         return violations
 
