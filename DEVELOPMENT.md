@@ -6,6 +6,7 @@ This document is for technical reviewers and developers who want to understand t
 
 - [Key Technical Highlights](#key-technical-highlights)
 - [🏗️ Key Components](#key-components)
+- [🛡️ ATS Safety Validation System](#-ats-safety-validation-system)
 - [🛠️ Development Environment Setup](#development-environment-setup)
   - [Local Development (Recommended)](#local-development-recommended)
   - [Alternative: Manual Setup](#alternative-manual-setup)
@@ -90,6 +91,230 @@ The project follows a clean separation of concerns:
 - **`.github/workflows/`** - CI/CD automation
 
 For detailed Docker operations, see the [Docker Distribution Guide](docs/DOCKER_DISTRIBUTION.md).
+
+## 🛡️ ATS Safety Validation System
+
+The application includes a comprehensive ATS (Applicant Tracking System) safety validation system that ensures generated PDFs are compatible with ATS parsers used by HR departments.
+
+### Validation System Architecture
+
+The validation system follows a **modular plugin architecture** where individual validators can be added without modifying core validation logic:
+
+```text
+src/ats_pdf_generator/
+├── types.py                    # Shared types (Violation, etc.)
+├── validator/
+│   ├── __init__.py            # Validator package interface
+│   ├── validator.py           # Main validation coordinator
+│   ├── contact_validator.py   # Contact information validation
+│   └── [future validators]    # Emoji, date, font validators
+└── reporter.py                # Markdown report generation
+```
+
+### Core Components
+
+#### **Violation Type System**
+
+```python
+class Violation(NamedTuple):
+    """Represents a single validation violation."""
+
+    line_number: int          # Line where issue occurs
+    line_content: str         # The problematic line content
+    message: str             # Human-readable error message
+    severity: str = "MEDIUM"  # CRITICAL, HIGH, MEDIUM, LOW
+    suggestion: str = ""      # Actionable fix suggestion
+```
+
+#### **Validator Base Pattern**
+
+All validators follow a consistent interface:
+
+```python
+class BaseValidator:
+    def validate(self, content: str, line_number: int) -> list[Violation]:
+        """Validate content and return list of violations."""
+        # Implementation-specific validation logic
+        return violations
+```
+
+#### **Main Validation Coordinator**
+
+The `validate_document()` function coordinates all validators:
+
+```python
+def validate_document(file_path: Path) -> list[Violation]:
+    """Scans document for ATS compatibility issues."""
+    violations = []
+
+    # Initialize all validators
+    contact_validator = ContactValidator()
+
+    # Process each line with all validators
+    with file_path.open("r", encoding="utf-8") as f:
+        for line_number, line in enumerate(f, 1):
+            # Existing emoji validation
+            violations.extend(emoji_validation(line, line_number))
+
+            # Contact information validation
+            violations.extend(contact_validator.validate(line, line_number))
+
+    return violations
+```
+
+### Creating New Validators
+
+#### **Step 1: Define Validation Rules**
+
+Create validation logic in a new validator class:
+
+```python
+# src/ats_pdf_generator/validator/date_validator.py
+class DateValidator:
+    def __init__(self):
+        # Pre-compile regex patterns for performance
+        self.DATE_PATTERN = re.compile(r'\b\d{1,2}/\d{1,2}/\d{4}\b')
+
+    def validate(self, content: str, line_number: int) -> list[Violation]:
+        violations = []
+
+        if self.DATE_PATTERN.search(content):
+            violations.append(Violation(
+                line_number=line_number,
+                line_content=content.strip(),
+                message="Date should use standard format",
+                severity="HIGH",
+                suggestion="Use 'January 2020' instead of '01/2020'"
+            ))
+
+        return violations
+```
+
+#### **Step 2: Add to Validator Package**
+
+Update `src/ats_pdf_generator/validator/__init__.py`:
+
+```python
+from ats_pdf_generator.validator.date_validator import DateValidator
+
+__all__ = ["ContactValidator", "DateValidator", "Violation"]
+```
+
+#### **Step 3: Integrate with Main Validator**
+
+Update `src/ats_pdf_generator/validator/validator.py`:
+
+```python
+# Import new validator
+from ats_pdf_generator.validator.date_validator import DateValidator
+
+def validate_document(file_path: Path) -> list[Violation]:
+    violations = []
+
+    # Initialize all validators
+    contact_validator = ContactValidator()
+    date_validator = DateValidator()  # New validator
+
+    with file_path.open("r", encoding="utf-8") as f:
+        for line_number, line in enumerate(f, 1):
+            # Existing validations
+            violations.extend(emoji_validation(line, line_number))
+            violations.extend(contact_validator.validate(line, line_number))
+
+            # New date validation
+            violations.extend(date_validator.validate(line, line_number))
+
+    return violations
+```
+
+#### **Step 4: Add Tests**
+
+Create comprehensive test suite:
+
+```python
+# tests/test_date_validator.py
+def test_validate_date_format():
+    validator = DateValidator()
+    violations = validator.validate("Experience: 01/2020 - 03/2024", 1)
+    assert len(violations) == 1
+    assert violations[0].severity == "HIGH"
+```
+
+### Performance Considerations
+
+#### **Regex Optimization**
+
+- Pre-compile all regex patterns in `__init__()` methods
+- Use efficient patterns that fail fast
+- Target <10ms per validator for typical documents
+
+#### **Line-by-Line Processing**
+
+- Process one line at a time to minimize memory usage
+- Maintain proper line number tracking for user-friendly error messages
+- Enable parallel validation if needed in future
+
+#### **Validation Priority**
+
+Validators run in order of importance:
+
+1. **Critical** (blocking): Emoji detection, table detection
+2. **High** (should fix): Contact formatting, date formats
+3. **Medium** (consider): Section headers, phone formats
+4. **Low** (optional): Terminology, styling suggestions
+
+### Integration Points
+
+#### **CLI Integration**
+
+Validation runs automatically during PDF conversion:
+
+```python
+# In ats_converter.py
+violations = validate_document(input_path)
+if violations:
+    # Show validation errors and exit
+    for violation in violations:
+        click.secho(f"Line {violation.line_number}: {violation.message}")
+        if violation.suggestion:
+            click.secho(f"  Suggestion: {violation.suggestion}")
+    sys.exit(1)
+```
+
+#### **Report Generation**
+
+Generate detailed markdown reports for users:
+
+```python
+# Generate validation report
+report = generate_markdown_report(violations, filename)
+Path("validation_report.md").write_text(report)
+```
+
+### Extending the System
+
+#### **Adding New Validation Rules**
+
+1. **Identify the requirement** (e.g., "validate section headers")
+2. **Create validator class** following the base pattern
+3. **Write comprehensive tests** (TDD approach)
+4. **Add to main validator** coordinator
+5. **Update documentation** with examples
+
+#### **Severity Guidelines**
+
+- **CRITICAL**: Will cause parsing failures (emojis, tables)
+- **HIGH**: Contact information, dates (may be misread)
+- **MEDIUM**: Section headers, formatting (may be miscategorized)
+- **LOW**: Styling, terminology (optimization suggestions)
+
+#### **Performance Requirements**
+
+- **Individual validators**: <10ms per document
+- **Total validation**: <50ms for typical documents
+- **Large documents**: Scale linearly with line count
+
+This architecture allows the validation system to grow organically while maintaining performance and providing clear extension points for new ATS safety requirements.
 
 ## 🛠️ Development Environment Setup
 

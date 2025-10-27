@@ -40,6 +40,105 @@ ats-pdf profile.md --type profile -o profile.pdf
 ats-pdf /path/to/document.md -o /path/to/output.pdf
 ```
 
+## ATS Safety Validation
+
+ATS PDF Generator automatically validates your Markdown documents to ensure they're compatible with Applicant Tracking Systems used by HR departments. This prevents common formatting issues that can cause your resume to be misread or rejected by ATS software.
+
+### What Gets Validated
+
+The validation system checks for:
+
+**🚫 Critical Issues (Will Cause Problems):**
+
+- Emojis and decorative Unicode characters
+- Tables that ATS systems can't parse
+- Multi-column layouts that scramble reading order
+- Images containing critical information (ATS can't read text in images)
+
+**⚠️ High Priority Issues (Should Fix):**
+
+- Contact information without proper labels (`Email:`, `Phone:`)
+- Phone numbers in non-standard formats
+- URLs without `https://` protocol
+- Obfuscated email addresses (`user [at] example [dot] com`)
+
+**ℹ️ Medium Priority Issues (Consider Fixing):**
+
+- Section headers that aren't ATS-friendly
+- Date formats that may be ambiguous
+- Bullet point styles that may not render correctly
+
+**💡 Low Priority Suggestions:**
+
+- Consistent terminology usage
+- Optimal keyword placement
+- Professional formatting standards
+
+### Validation Process
+
+When you run the converter, validation happens automatically:
+
+```bash
+ats-pdf resume.md -o resume.pdf
+# ✓ Validation passed - converting to PDF
+```
+
+If issues are found, you'll see detailed error messages:
+
+```bash
+ats-pdf resume.md -o resume.pdf
+# ❌ Validation failed!
+# Line 5: Email address without proper label
+#   Suggestion: Add 'Email:' label before the address
+#
+# Line 7: Phone number should use standard format
+#   Suggestion: Use format: (555) 123-4567 or 555-123-4567
+```
+
+### Validation Reports
+
+For detailed validation analysis, the system can generate comprehensive reports:
+
+```bash
+# Generate validation report
+ats-pdf resume.md --validate-only --report validation_report.md
+```
+
+The report includes:
+
+- Summary of all issues by severity level
+- Specific line numbers and content
+- Actionable suggestions for fixes
+- Best practices for ATS compatibility
+
+### Fixing Validation Issues
+
+Most validation issues can be fixed by following the suggestions:
+
+**Before:**
+
+```markdown
+user@example.com
+(555) 123-4567
+linkedin.com/in/user
+```
+
+**After:**
+
+```markdown
+Email: user@example.com
+Phone: (555) 123-4567
+LinkedIn: https://linkedin.com/in/user
+```
+
+**Common Fixes:**
+
+- Add labels to contact information: `Email:`, `Phone:`, `LinkedIn:`
+- Use standard phone formats: `(555) 123-4567` or `555-123-4567`
+- Include `https://` in URLs: `https://github.com/username`
+- Remove emojis and decorative characters
+- Use standard section headers: `Professional Experience`, `Technical Skills`
+
 Command options:
 
 ```text
