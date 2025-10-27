@@ -69,7 +69,7 @@ class ContactValidator:
                 violations.extend(self._validate_phone_formatting(line, current_line))
                 violations.extend(self._validate_url_formatting(line, current_line))
                 violations.extend(self._validate_contact_labels(line, current_line))
-                current_line += 1
+            current_line += 1
 
         return violations
 
