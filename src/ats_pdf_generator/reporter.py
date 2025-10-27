@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 # First-party
-from ats_pdf_generator.validation_types import Violation
+from ats_pdf_generator.validation_types import SeverityLevel, Violation
 
 
 def generate_markdown_report(
@@ -27,10 +27,12 @@ def generate_markdown_report(
         The markdown report as a string
     """
     # Group violations by severity
-    critical_violations = [v for v in violations if v.severity == "CRITICAL"]
-    high_violations = [v for v in violations if v.severity == "HIGH"]
-    medium_violations = [v for v in violations if v.severity == "MEDIUM"]
-    low_violations = [v for v in violations if v.severity == "LOW"]
+    critical_violations = [
+        v for v in violations if v.severity == SeverityLevel.CRITICAL
+    ]
+    high_violations = [v for v in violations if v.severity == SeverityLevel.HIGH]
+    medium_violations = [v for v in violations if v.severity == SeverityLevel.MEDIUM]
+    low_violations = [v for v in violations if v.severity == SeverityLevel.LOW]
 
     # Determine overall status
     if critical_violations:
@@ -99,7 +101,7 @@ def _generate_severity_section(title: str, violations: list[Violation]) -> str:
 
     for violation in violations:
         section += f"### Issue at line {violation.line_number}\n\n"
-        section += f"**Severity:** {violation.severity}\n\n"
+        section += f"**Severity:** {violation.severity.name}\n\n"
         section += f"**Found:** `{violation.line_content}`\n\n"
         section += f"**Issue:** {violation.message}\n\n"
         if violation.suggestion:
