@@ -9,7 +9,7 @@ Implements Issue 8: Contact Information Formatting Validation.
 import re
 
 # First-party
-from ..validation_types import Violation
+from ..validation_types import SeverityLevel, Violation
 
 
 class ContactValidator:
@@ -86,7 +86,7 @@ class ContactValidator:
                     line_number=line_number,
                     line_content=content.strip(),
                     message="Obfuscated email address detected",
-                    severity="HIGH",
+                    severity=SeverityLevel.HIGH,
                     suggestion="Use standard email format: user@example.com",
                 )
             )
@@ -104,7 +104,7 @@ class ContactValidator:
                         line_number=line_number,
                         line_content=content.strip(),
                         message="Email address without proper label",
-                        severity="HIGH",
+                        severity=SeverityLevel.HIGH,
                         suggestion="Add 'Email:' label before the address",
                     )
                 )
@@ -135,7 +135,7 @@ class ContactValidator:
                             line_number=line_number,
                             line_content=content.strip(),
                             message="Phone number without proper label",
-                            severity="HIGH",
+                            severity=SeverityLevel.HIGH,
                             suggestion="Add 'Phone:' label before the number",
                         )
                     )
@@ -157,7 +157,7 @@ class ContactValidator:
                                 line_number=line_number,
                                 line_content=content.strip(),
                                 message="Phone number should use standard format",
-                                severity="HIGH",
+                                severity=SeverityLevel.HIGH,
                                 suggestion="Use format: (555) 123-4567 or 555-123-4567",
                             )
                         )
@@ -190,7 +190,7 @@ class ContactValidator:
                         line_number=line_number,
                         line_content=content.strip(),
                         message="URL without proper label",
-                        severity="HIGH",
+                        severity=SeverityLevel.HIGH,
                         suggestion="Add appropriate label (LinkedIn:, GitHub:, Website:)",
                     )
                 )
@@ -200,7 +200,7 @@ class ContactValidator:
                         line_number=line_number,
                         line_content=content.strip(),
                         message="URL should include https:// protocol",
-                        severity="HIGH",
+                        severity=SeverityLevel.HIGH,
                         suggestion="Add https:// to the beginning of the URL",
                     )
                 )
@@ -251,7 +251,7 @@ class ContactValidator:
                         line_number=line_number,
                         line_content=content.strip(),
                         message="Emoji used instead of text label",
-                        severity="HIGH",
+                        severity=SeverityLevel.HIGH,
                         suggestion="Use text labels like 'Email:', 'Phone:', 'LinkedIn:'",
                     )
                 )

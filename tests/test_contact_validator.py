@@ -9,6 +9,7 @@ for ATS compatibility as specified in Issue 8.
 import re
 
 # First-party
+from ats_pdf_generator.validation_types import SeverityLevel
 from ats_pdf_generator.validator.contact_validator import ContactValidator
 
 
@@ -56,7 +57,7 @@ def test_validate_email_without_label() -> None:
     assert violations[0].line_number == 1
     assert "without" in violations[0].message.lower()
     assert "email:" in violations[0].suggestion.lower()
-    assert violations[0].severity == "HIGH"
+    assert violations[0].severity == SeverityLevel.HIGH
 
 
 def test_validate_email_with_label() -> None:
@@ -81,7 +82,7 @@ def test_validate_obfuscated_email() -> None:
         violations = validator.validate(content, 1)
         assert len(violations) >= 1
         assert "obfuscated" in violations[0].message.lower()
-        assert violations[0].severity == "HIGH"
+        assert violations[0].severity == SeverityLevel.HIGH
 
 
 def test_validate_phone_without_label() -> None:
@@ -93,7 +94,7 @@ def test_validate_phone_without_label() -> None:
     assert len(violations) == 1
     assert "without" in violations[0].message.lower()
     assert "phone:" in violations[0].suggestion.lower()
-    assert violations[0].severity == "HIGH"
+    assert violations[0].severity == SeverityLevel.HIGH
 
 
 def test_validate_phone_with_label() -> None:
@@ -132,7 +133,7 @@ def test_validate_non_standard_phone_formats() -> None:
         # since they don't have proper labels first
         assert "without" in violations[0].message.lower()
         assert "phone:" in violations[0].suggestion.lower()
-        assert violations[0].severity == "HIGH"
+        assert violations[0].severity == SeverityLevel.HIGH
 
 
 def test_validate_phone_format_with_label() -> None:
@@ -144,7 +145,7 @@ def test_validate_phone_format_with_label() -> None:
 
     assert len(violations) == 1
     assert "standard format" in violations[0].message.lower()
-    assert violations[0].severity == "HIGH"
+    assert violations[0].severity == SeverityLevel.HIGH
 
 
 def test_validate_url_without_protocol() -> None:
@@ -155,7 +156,7 @@ def test_validate_url_without_protocol() -> None:
 
     assert len(violations) == 1
     assert "https://" in violations[0].suggestion
-    assert violations[0].severity == "HIGH"
+    assert violations[0].severity == SeverityLevel.HIGH
 
 
 def test_validate_url_with_protocol() -> None:
@@ -176,7 +177,7 @@ def test_validate_url_without_label() -> None:
     assert len(violations) == 1
     assert "without" in violations[0].message.lower()
     assert "linkedin:" in violations[0].suggestion.lower()
-    assert violations[0].severity == "HIGH"
+    assert violations[0].severity == SeverityLevel.HIGH
 
 
 def test_validate_emoji_as_label() -> None:
@@ -193,7 +194,7 @@ def test_validate_emoji_as_label() -> None:
     assert any("emoji" in msg for msg in messages)
     assert any("email" in msg and "without" in msg for msg in messages)
 
-    assert all(v.severity == "HIGH" for v in violations)
+    assert all(v.severity == SeverityLevel.HIGH for v in violations)
 
 
 def test_validate_multiple_contact_types() -> None:
@@ -284,7 +285,7 @@ def test_validate_url_with_non_url_label() -> None:
         "linkedin:" in violations[0].suggestion.lower()
         or "github:" in violations[0].suggestion.lower()
     )
-    assert violations[0].severity == "HIGH"
+    assert violations[0].severity == SeverityLevel.HIGH
 
 
 def test_validate_url_with_url_specific_label() -> None:

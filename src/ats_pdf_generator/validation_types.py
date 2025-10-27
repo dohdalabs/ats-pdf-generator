@@ -5,7 +5,17 @@ This module contains shared type definitions to avoid circular imports.
 """
 
 # Standard library
+from enum import Enum
 from typing import NamedTuple
+
+
+class SeverityLevel(str, Enum):
+    """Severity levels for validation violations."""
+
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
 
 
 class Violation(NamedTuple):
@@ -14,5 +24,5 @@ class Violation(NamedTuple):
     line_number: int
     line_content: str
     message: str
-    severity: str = "MEDIUM"
+    severity: SeverityLevel = SeverityLevel.MEDIUM
     suggestion: str = ""

@@ -6,6 +6,7 @@ Tests for the ATS Document Validator.
 from pathlib import Path
 
 # First-party
+from ats_pdf_generator.validation_types import SeverityLevel
 from ats_pdf_generator.validator import validate_document
 
 
@@ -29,7 +30,7 @@ def test_validate_document_with_emojis(tmp_path: Path) -> None:
     assert len(violations) == 1
     assert violations[0].line_number == 1
     assert violations[0].message == "Disallowed characters: '😊'"
-    assert violations[0].severity == "CRITICAL"
+    assert violations[0].severity == SeverityLevel.CRITICAL
     assert "Remove emojis" in violations[0].suggestion
 
 
@@ -45,7 +46,7 @@ def test_validate_document_with_special_characters(tmp_path: Path) -> None:
     assert len(violations) == 1
     assert violations[0].line_number == 1
     assert violations[0].message == "Disallowed characters: '→'"
-    assert violations[0].severity == "CRITICAL"
+    assert violations[0].severity == SeverityLevel.CRITICAL
     assert "Remove emojis" in violations[0].suggestion
 
 
@@ -81,7 +82,7 @@ def test_validate_document_multi_character_emoji_sequence(tmp_path: Path) -> Non
     assert len(violations) == 4
     assert all(v.line_number == 1 for v in violations)
     assert all(v.line_content == "Family: 👨‍👩‍👧‍👦" for v in violations)
-    assert all(v.severity == "CRITICAL" for v in violations)
+    assert all(v.severity == SeverityLevel.CRITICAL for v in violations)
     assert all("Remove emojis" in v.suggestion for v in violations)
 
     # Check that each character gets its own violation
@@ -101,7 +102,7 @@ def test_validate_document_consecutive_emojis(tmp_path: Path) -> None:
     # Should create one violation for the consecutive emoji sequence
     assert len(violations) == 1
     assert all(v.line_number == 1 for v in violations)
-    assert all(v.severity == "CRITICAL" for v in violations)
+    assert all(v.severity == SeverityLevel.CRITICAL for v in violations)
     assert all("Remove emojis" in v.suggestion for v in violations)
 
     # Check that the emoji sequence gets one violation
@@ -128,7 +129,7 @@ def test_validate_document_mixed_allowed_disallowed(tmp_path: Path) -> None:
     # Should only flag the emojis, not the currency symbols (which aren't matched by EMOJI_PATTERN)
     assert len(violations) == 2
     assert all(v.line_number == 1 for v in violations)
-    assert all(v.severity == "CRITICAL" for v in violations)
+    assert all(v.severity == SeverityLevel.CRITICAL for v in violations)
     assert all("Remove emojis" in v.suggestion for v in violations)
 
     # Check that only the emojis are flagged
@@ -149,7 +150,7 @@ def test_validate_document_complex_emoji_sequences(tmp_path: Path) -> None:
     # (ignoring the zero-width joiners and modifiers)
     assert len(violations) == 4
     assert all(v.line_number == 1 for v in violations)
-    assert all(v.severity == "CRITICAL" for v in violations)
+    assert all(v.severity == SeverityLevel.CRITICAL for v in violations)
     assert all("Remove emojis" in v.suggestion for v in violations)
 
     # Check that each base emoji character gets its own violation
@@ -168,7 +169,7 @@ def test_validate_document_multiple_lines_with_emojis(tmp_path: Path) -> None:
 
     # Should create violations for each emoji on each line
     assert len(violations) == 2
-    assert all(v.severity == "CRITICAL" for v in violations)
+    assert all(v.severity == SeverityLevel.CRITICAL for v in violations)
     assert all("Remove emojis" in v.suggestion for v in violations)
 
     # Check line numbers
@@ -229,7 +230,7 @@ def test_validate_document_complete_dingbats_range(tmp_path: Path) -> None:
     # All these characters should be flagged as violations
     assert len(violations) == 6
     assert all(v.line_number == 1 for v in violations)
-    assert all(v.severity == "CRITICAL" for v in violations)
+    assert all(v.severity == SeverityLevel.CRITICAL for v in violations)
     assert all("Remove emojis" in v.suggestion for v in violations)
 
     # Check that each character gets its own violation
@@ -255,7 +256,7 @@ def test_validate_document_miscellaneous_symbols_range(tmp_path: Path) -> None:
     # All these characters should be flagged as violations
     assert len(violations) == 6
     assert all(v.line_number == 1 for v in violations)
-    assert all(v.severity == "CRITICAL" for v in violations)
+    assert all(v.severity == SeverityLevel.CRITICAL for v in violations)
     assert all("Remove emojis" in v.suggestion for v in violations)
 
     # Check that each character gets its own violation
