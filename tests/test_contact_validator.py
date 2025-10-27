@@ -239,3 +239,43 @@ def test_validate_no_contact_info() -> None:
     violations = validator.validate(content, 1)
 
     assert len(violations) == 0
+
+
+def test_validate_url_with_non_url_label() -> None:
+    """Test that URLs with non-URL labels (like Email:) are flagged as missing proper labels."""
+    validator = ContactValidator()
+    content = "Email: github.com/user"
+    violations = validator.validate(content, 1)
+
+    # Should be flagged as URL without proper label (not just missing protocol)
+    # because "Email:" is not a URL-specific label
+    assert len(violations) == 1
+    assert "without proper label" in violations[0].message.lower()
+    assert (
+        "linkedin:" in violations[0].suggestion.lower()
+        or "github:" in violations[0].suggestion.lower()
+    )
+    assert violations[0].severity == "HIGH"
+
+
+def test_validate_url_with_url_specific_label() -> None:
+    """Test that URLs with URL-specific labels are only flagged for missing protocol."""
+    validator = ContactValidator()
+
+    # Test with GitHub label
+    content_github = "GitHub: github.com/user"
+    violations_github = validator.validate(content_github, 1)
+
+    # Should only be flagged for missing protocol, not missing label
+    assert len(violations_github) == 1
+    assert "https://" in violations_github[0].suggestion
+    assert "without proper label" not in violations_github[0].message.lower()
+
+    # Test with Website label
+    content_website = "Website: example.com/site"
+    violations_website = validator.validate(content_website, 1)
+
+    # Should only be flagged for missing protocol, not missing label
+    assert len(violations_website) == 1
+    assert "https://" in violations_website[0].suggestion
+    assert "without proper label" not in violations_website[0].message.lower()

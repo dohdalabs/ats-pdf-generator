@@ -178,10 +178,12 @@ class ContactValidator:
 
         # Check for URLs without protocol (bare URLs)
         if self.BARE_URL_PATTERN.search(content):
-            has_label = any(
-                any(label in content.lower() for label in labels)
-                for labels in self.CONTACT_LABELS.values()
-            )
+            # Only consider URL-specific labels, not all contact labels
+            url_labels = []
+            for key in ["linkedin", "github", "website"]:
+                url_labels.extend(self.CONTACT_LABELS.get(key, []))
+
+            has_label = any(label in content.lower() for label in url_labels)
 
             if not has_label:
                 violations.append(

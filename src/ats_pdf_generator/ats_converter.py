@@ -17,7 +17,7 @@ from pathlib import Path
 import click
 
 # First-party
-from ats_pdf_generator.validator import validate_document
+from ats_pdf_generator.validator.validator import validate_document
 
 
 class ATSGeneratorError(Exception):
