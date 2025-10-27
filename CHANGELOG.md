@@ -12,11 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial open source release preparation
-- Multi-architecture Docker builds (AMD64, ARM64)
-- GitHub Actions CI/CD pipeline
-- Comprehensive documentation
-- Contributing guidelines
-- Security scanning integration
+
+### Fixed
+
+- Eliminate duplicate violations for multi-character emojis in validation reports
 
 ## [1.0.0] - 2025-01-XX
 
