@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 
 # First-party
-from ats_pdf_generator.types import Violation
+from ats_pdf_generator.validation_types import Violation
 from ats_pdf_generator.validator.contact_validator import ContactValidator
 
 # A comprehensive regex for emojis and other special characters.

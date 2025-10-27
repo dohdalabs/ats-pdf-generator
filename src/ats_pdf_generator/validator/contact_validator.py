@@ -9,7 +9,7 @@ Implements Issue 8: Contact Information Formatting Validation.
 import re
 
 # First-party
-from ..types import Violation
+from ..validation_types import Violation
 
 
 class ContactValidator:

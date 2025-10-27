@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 # First-party
-from ats_pdf_generator.types import Violation
+from ats_pdf_generator.validation_types import Violation
 
 
 def generate_markdown_report(

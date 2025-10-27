@@ -102,7 +102,7 @@ The validation system follows a **modular plugin architecture** where individual
 
 ```text
 src/ats_pdf_generator/
-├── types.py                    # Shared types (Violation, etc.)
+├── validation_types.py         # Shared types (Violation, etc.)
 ├── validator/
 │   ├── __init__.py            # Validator package interface
 │   ├── validator.py           # Main validation coordinator
