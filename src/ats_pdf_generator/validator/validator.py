@@ -56,17 +56,15 @@ def validate_document(file_path: Path) -> list[Violation]:
 
             # Check for emojis and special characters
             for match in EMOJI_PATTERN.finditer(line):
-                matched_chars = match.group(0)
-                for char in matched_chars:
-                    violations.append(
-                        Violation(
-                            line_number=i,
-                            line_content=line_content,
-                            message=f"Disallowed character: '{char}'",
-                            severity="CRITICAL",
-                            suggestion="Remove emojis and special characters",
-                        )
+                violations.append(
+                    Violation(
+                        line_number=i,
+                        line_content=line_content,
+                        message=f"Disallowed characters: '{match.group(0)}'",
+                        severity="CRITICAL",
+                        suggestion="Remove emojis and special characters",
                     )
+                )
 
             # Check contact information formatting
             contact_violations = contact_validator.validate(line, i)

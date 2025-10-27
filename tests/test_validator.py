@@ -28,7 +28,7 @@ def test_validate_document_with_emojis(tmp_path: Path) -> None:
     violations = validate_document(file_path)
     assert len(violations) == 1
     assert violations[0].line_number == 1
-    assert violations[0].message == "Disallowed character: '😊'"
+    assert violations[0].message == "Disallowed characters: '😊'"
     assert violations[0].severity == "CRITICAL"
     assert "Remove emojis" in violations[0].suggestion
 
@@ -44,7 +44,7 @@ def test_validate_document_with_special_characters(tmp_path: Path) -> None:
     violations = validate_document(file_path)
     assert len(violations) == 1
     assert violations[0].line_number == 1
-    assert violations[0].message == "Disallowed character: '→'"
+    assert violations[0].message == "Disallowed characters: '→'"
     assert violations[0].severity == "CRITICAL"
     assert "Remove emojis" in violations[0].suggestion
 
@@ -98,15 +98,15 @@ def test_validate_document_consecutive_emojis(tmp_path: Path) -> None:
     file_path.write_text("Celebration: 🎉🎊", encoding="utf-8")
     violations = validate_document(file_path)
 
-    # Should create separate violations for each emoji
-    assert len(violations) == 2
+    # Should create one violation for the consecutive emoji sequence
+    assert len(violations) == 1
     assert all(v.line_number == 1 for v in violations)
     assert all(v.severity == "CRITICAL" for v in violations)
     assert all("Remove emojis" in v.suggestion for v in violations)
 
-    # Check that each emoji gets its own violation
+    # Check that the emoji sequence gets one violation
     violation_chars = {v.message.split("'")[1] for v in violations}
-    expected_chars = {"🎉", "🎊"}
+    expected_chars = {"🎉🎊"}
     assert violation_chars == expected_chars
 
 
@@ -167,7 +167,7 @@ def test_validate_document_multiple_lines_with_emojis(tmp_path: Path) -> None:
     violations = validate_document(file_path)
 
     # Should create violations for each emoji on each line
-    assert len(violations) == 3
+    assert len(violations) == 2
     assert all(v.severity == "CRITICAL" for v in violations)
     assert all("Remove emojis" in v.suggestion for v in violations)
 
@@ -175,12 +175,12 @@ def test_validate_document_multiple_lines_with_emojis(tmp_path: Path) -> None:
     line_numbers = {v.line_number for v in violations}
     assert line_numbers == {1, 2}
 
-    # Check that line 1 has 1 violation, line 2 has 2 violations
+    # Check that line 1 has 1 violation, line 2 has 1 violation (🎉🎊 as one sequence)
     line_1_violations = [v for v in violations if v.line_number == 1]
     line_2_violations = [v for v in violations if v.line_number == 2]
 
     assert len(line_1_violations) == 1
-    assert len(line_2_violations) == 2
+    assert len(line_2_violations) == 1
 
     # Check that line 3 (with allowed character) has no violations
     line_3_violations = [v for v in violations if v.line_number == 3]
