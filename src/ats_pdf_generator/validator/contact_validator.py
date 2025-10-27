@@ -46,6 +46,20 @@ class ContactValidator:
             "website": ["website:", "web:", "portfolio:", "site:"],
         }
 
+        # Emoji pattern for label validation
+        self.EMOJI_PATTERN = re.compile(
+            "["
+            "\U0001f1e0-\U0001f1ff"  # flags
+            "\U0001f300-\U0001f5ff"  # symbols & pictographs
+            "\U0001f600-\U0001f64f"  # emoticons
+            "\U0001f680-\U0001f6ff"  # transport & map symbols
+            "\U00002700-\U000027bf"  # Dingbats
+            "\u200d"  # ZWJ
+            "\ufe0f"  # VS16
+            "\U0001f3fb-\U0001f3ff"  # skin tone modifiers
+            "]+"
+        )
+
     def validate(self, content: str, line_number: int) -> list[Violation]:
         """
         Validate contact information formatting in the given content.
@@ -214,15 +228,7 @@ class ContactValidator:
         violations: list[Violation] = []
 
         # Check for emoji characters that might be used as labels
-        emoji_pattern = re.compile(
-            "["
-            "\U0001f1e0-\U0001f1ff"  # flags
-            "\U0001f300-\U0001f5ff"  # symbols & pictographs
-            "\U0001f600-\U0001f64f"  # emoticons
-            "\U0001f680-\U0001f6ff"  # transport & map symbols
-            "\U00002700-\U000027bf"  # Dingbats
-            "]+"
-        )
+        emoji_pattern = self.EMOJI_PATTERN
 
         if emoji_pattern.search(content):
             # Check if it's likely being used as a contact label
