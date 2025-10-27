@@ -13,7 +13,7 @@ from ats_pdf_generator.types import Violation
 
 
 def generate_markdown_report(
-    violations: list[Violation], filename: str, output_path: Path = None
+    violations: list[Violation], filename: str, output_path: Path | None = None
 ) -> str:
     """
     Generate a markdown validation report.
@@ -87,6 +87,7 @@ def generate_markdown_report(
 
     # Save to file if output path provided
     if output_path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(report, encoding="utf-8")
 
     return report

@@ -12,9 +12,46 @@ from ats_pdf_generator.validator.contact_validator import ContactValidator
 
 
 def test_contact_validator_initialization() -> None:
-    """Test that ContactValidator can be initialized."""
+    """Test that ContactValidator initializes with proper patterns and labels."""
     validator = ContactValidator()
+
+    # Test that instance is created successfully
     assert validator is not None
+    assert isinstance(validator, ContactValidator)
+
+    # Test that regex patterns are compiled and not None
+    assert validator.EMAIL_PATTERN is not None
+    assert validator.OBFUSCATED_EMAIL_PATTERN is not None
+    assert validator.PHONE_PATTERN is not None
+    assert validator.URL_PATTERN is not None
+    assert validator.BARE_URL_PATTERN is not None
+
+    # Test that regex patterns are actually compiled pattern objects
+    import re
+
+    assert isinstance(validator.EMAIL_PATTERN, re.Pattern)
+    assert isinstance(validator.OBFUSCATED_EMAIL_PATTERN, re.Pattern)
+    assert isinstance(validator.PHONE_PATTERN, re.Pattern)
+    assert isinstance(validator.URL_PATTERN, re.Pattern)
+    assert isinstance(validator.BARE_URL_PATTERN, re.Pattern)
+
+    # Test that CONTACT_LABELS dictionary is properly initialized
+    assert validator.CONTACT_LABELS is not None
+    assert isinstance(validator.CONTACT_LABELS, dict)
+
+    # Test that CONTACT_LABELS has expected structure
+    expected_keys = {"email", "phone", "linkedin", "github", "location", "website"}
+    assert set(validator.CONTACT_LABELS.keys()) == expected_keys
+
+    # Test that each key maps to a non-empty list of labels
+    for _key, labels in validator.CONTACT_LABELS.items():
+        assert isinstance(labels, list)
+        assert len(labels) > 0
+        assert all(isinstance(label, str) for label in labels)
+
+    # Test that the class has the required validate method
+    assert hasattr(validator, "validate")
+    assert callable(validator.validate)
 
 
 def test_validate_email_without_label() -> None:
