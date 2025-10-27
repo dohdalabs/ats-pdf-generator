@@ -33,7 +33,8 @@ class ContactValidator:
         # URL patterns
         self.URL_PATTERN = re.compile(r"\bhttps?://\S+\b", re.IGNORECASE)
         self.BARE_URL_PATTERN = re.compile(
-            r"\b(?!(?:https?://|www\.))\w+\.\w+/\S+\b", re.IGNORECASE
+            r"\b(?!(?:https?://|www\.))(?:(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})(?:/\S*)?\b",
+            re.IGNORECASE,
         )
 
         # Contact label patterns
