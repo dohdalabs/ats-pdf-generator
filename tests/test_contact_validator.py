@@ -13,13 +13,9 @@ from ats_pdf_generator.validation_types import SeverityLevel
 from ats_pdf_generator.validator.contact_validator import ContactValidator
 
 
-def test_contact_validator_initialization() -> None:
-    """Test that ContactValidator initializes with proper patterns and labels."""
+def test_contact_validator_regex_patterns() -> None:
+    """Test that ContactValidator has proper regex pattern attributes."""
     validator = ContactValidator()
-
-    # Test that instance is created successfully
-    assert validator is not None
-    assert isinstance(validator, ContactValidator)
 
     # Test that regex patterns are compiled pattern objects
     assert isinstance(validator.EMAIL_PATTERN, re.Pattern)
@@ -27,6 +23,11 @@ def test_contact_validator_initialization() -> None:
     assert isinstance(validator.PHONE_PATTERN, re.Pattern)
     assert isinstance(validator.URL_PATTERN, re.Pattern)
     assert isinstance(validator.BARE_URL_PATTERN, re.Pattern)
+
+
+def test_contact_validator_labels() -> None:
+    """Test that ContactValidator has proper CONTACT_LABELS structure."""
+    validator = ContactValidator()
 
     # Test that CONTACT_LABELS dictionary is properly initialized
     assert validator.CONTACT_LABELS is not None
@@ -41,6 +42,15 @@ def test_contact_validator_initialization() -> None:
         assert isinstance(labels, list)
         assert len(labels) > 0
         assert all(isinstance(label, str) for label in labels)
+
+
+def test_contact_validator_interface() -> None:
+    """Test that ContactValidator can be instantiated and exposes validate method."""
+    validator = ContactValidator()
+
+    # Test that instance is created successfully
+    assert validator is not None
+    assert isinstance(validator, ContactValidator)
 
     # Test that the class has the required validate method
     assert hasattr(validator, "validate")
