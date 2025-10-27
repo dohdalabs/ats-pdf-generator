@@ -19,7 +19,7 @@ class ContactValidator:
         """Initialize the ContactValidator with pre-compiled regex patterns."""
         # Email patterns
         self.EMAIL_PATTERN = re.compile(
-            r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
+            r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
         )
         self.OBFUSCATED_EMAIL_PATTERN = re.compile(
             r"\[at\]|\[dot\]|\(at\)|\(dot\)| AT | DOT ", re.IGNORECASE
