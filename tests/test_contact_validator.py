@@ -178,6 +178,17 @@ def test_validate_url_with_protocol() -> None:
     assert len(violations) == 0
 
 
+def test_validate_url_with_http_protocol() -> None:
+    """Test that URLs using http:// are flagged to enforce https usage."""
+    validator = ContactValidator()
+    content = "LinkedIn: http://linkedin.com/in/user"
+    violations = validator.validate(content, 1)
+
+    assert len(violations) == 1
+    assert violations[0].severity == SeverityLevel.HIGH
+    assert "https://" in violations[0].suggestion
+
+
 def test_validate_url_without_label() -> None:
     """Test detection of URLs without proper label."""
     validator = ContactValidator()

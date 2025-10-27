@@ -30,6 +30,9 @@ EMOJI_PATTERN = re.compile(
     "\U00002600-\U000026ff"  # Miscellaneous Symbols
     "\U00002700-\U000027bf"  # Dingbats
     "\U00002190-\U000021ff"  # Arrows
+    "\u200d"  # ZWJ
+    "\ufe0f"  # VS16
+    "\U0001f3fb-\U0001f3ff"  # skin tone modifiers
     "]+"
 )
 

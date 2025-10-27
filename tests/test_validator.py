@@ -68,27 +68,23 @@ def test_validate_document_with_allowed_characters(tmp_path: Path) -> None:
 
 def test_validate_document_multi_character_emoji_sequence(tmp_path: Path) -> None:
     """
-    Test that multi-character emoji sequences are handled correctly.
+    Test that multi-character emoji sequences are handled as single matches.
 
-    This test verifies the fix for the regex + quantifier issue where
-    multi-character emoji sequences (like family emojis) were treated
-    as single characters, causing false positives.
+    This ensures that visually single emojis composed of multiple codepoints
+    generate a single violation instead of one per component character.
     """
     file_path = tmp_path / "test.md"
     file_path.write_text("Family: 👨‍👩‍👧‍👦", encoding="utf-8")
     violations = validate_document(file_path)
 
-    # Should create separate violations for each character in the sequence
-    assert len(violations) == 4
-    assert all(v.line_number == 1 for v in violations)
-    assert all(v.line_content == "Family: 👨‍👩‍👧‍👦" for v in violations)
-    assert all(v.severity == SeverityLevel.CRITICAL for v in violations)
-    assert all("Remove emojis" in v.suggestion for v in violations)
-
-    # Check that each character gets its own violation
-    violation_chars = {v.message.split("'")[1] for v in violations}
-    expected_chars = {"👨", "👩", "👧", "👦"}
-    assert violation_chars == expected_chars
+    # Should create a single violation covering the entire emoji sequence
+    assert len(violations) == 1
+    violation = violations[0]
+    assert violation.line_number == 1
+    assert violation.line_content == "Family: 👨‍👩‍👧‍👦"
+    assert violation.severity == SeverityLevel.CRITICAL
+    assert "Remove emojis" in violation.suggestion
+    assert violation.message == "Disallowed characters: '👨‍👩‍👧‍👦'"
 
 
 def test_validate_document_consecutive_emojis(tmp_path: Path) -> None:
@@ -146,16 +142,15 @@ def test_validate_document_complex_emoji_sequences(tmp_path: Path) -> None:
     file_path.write_text("Complex: 👨‍💻 and 👩‍🔬", encoding="utf-8")
     violations = validate_document(file_path)
 
-    # Should create separate violations for each base emoji character
-    # (ignoring the zero-width joiners and modifiers)
-    assert len(violations) == 4
+    # Should create separate violations for each visual emoji (not per codepoint)
+    assert len(violations) == 2
     assert all(v.line_number == 1 for v in violations)
     assert all(v.severity == SeverityLevel.CRITICAL for v in violations)
     assert all("Remove emojis" in v.suggestion for v in violations)
 
-    # Check that each base emoji character gets its own violation
+    # Check that each visual emoji sequence gets its own violation
     violation_chars = {v.message.split("'")[1] for v in violations}
-    expected_chars = {"👨", "👩", "💻", "🔬"}
+    expected_chars = {"👨‍💻", "👩‍🔬"}
     assert violation_chars == expected_chars
 
 

@@ -183,9 +183,23 @@ class ContactValidator:
         violations: list[Violation] = []
 
         # Check for URLs with protocol
-        if self.URL_PATTERN.search(content):
-            # URLs with https:// or http:// should pass validation
-            return violations  # No violations for properly formatted URLs
+        url_with_protocol = list(self.URL_PATTERN.finditer(content))
+        if url_with_protocol:
+            for match in url_with_protocol:
+                matched_url = match.group(0)
+                if matched_url.lower().startswith("http://"):
+                    violations.append(
+                        Violation(
+                            line_number=line_number,
+                            line_content=content.strip(),
+                            message="URL should use https:// protocol",
+                            severity=SeverityLevel.HIGH,
+                            suggestion="Replace http:// with https://",
+                        )
+                    )
+            if violations:
+                return violations  # http:// URLs already handled above
+            return violations  # https:// URLs pass validation
 
         # Check for URLs without protocol (bare URLs)
         if self.BARE_URL_PATTERN.search(content):
