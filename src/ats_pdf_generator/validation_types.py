@@ -26,3 +26,6 @@ class Violation(NamedTuple):
     message: str
     severity: SeverityLevel = SeverityLevel.MEDIUM
     suggestion: str = ""
+
+
+__all__ = ["SeverityLevel", "Violation"]

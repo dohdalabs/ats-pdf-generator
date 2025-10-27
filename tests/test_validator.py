@@ -234,11 +234,12 @@ def test_validate_document_complete_dingbats_range(tmp_path: Path) -> None:
     assert violation_chars == expected_chars
 
 
-def test_validate_document_miscellaneous_symbols_range(tmp_path: Path) -> None:
+def test_validate_document_symbols_across_ranges(tmp_path: Path) -> None:
     """
-    Test that the Miscellaneous Symbols range U+2600-U+26FF is properly matched.
+    Test that representative symbols from Miscellaneous Symbols and Dingbats
+    ranges are properly matched.
 
-    This test verifies that symbols like ☀, ★, ✈ are now properly flagged as violations.
+    This test verifies that symbols like ☀, ★, ✈ are properly flagged as violations.
     """
     file_path = tmp_path / "test.md"
     # Test characters from the Miscellaneous Symbols range:

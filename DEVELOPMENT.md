@@ -116,13 +116,15 @@ src/ats_pdf_generator/
 #### **Violation Type System**
 
 ```python
+from ats_pdf_generator.validation_types import SeverityLevel, Violation
+
 class Violation(NamedTuple):
     """Represents a single validation violation."""
 
     line_number: int          # Line where issue occurs
     line_content: str         # The problematic line content
-    message: str             # Human-readable error message
-    severity: str = "MEDIUM"  # CRITICAL, HIGH, MEDIUM, LOW
+    message: str              # Human-readable error message
+    severity: SeverityLevel = SeverityLevel.MEDIUM
     suggestion: str = ""      # Actionable fix suggestion
 ```
 
@@ -143,23 +145,66 @@ class BaseValidator:
 The `validate_document()` function coordinates all validators:
 
 ```python
+from collections import defaultdict
+from pathlib import Path
+from typing import Iterable
+
+from ats_pdf_generator.ats_converter import ValidationError
+from ats_pdf_generator.validation_types import SeverityLevel, Violation
+from ats_pdf_generator.validator.contact_validator import ContactValidator
+from ats_pdf_generator.validator.validator import EMOJI_PATTERN
+
+
+def _emoji_violations(line: str, line_number: int) -> Iterable[Violation]:
+    for match in EMOJI_PATTERN.finditer(line):
+        yield Violation(
+            line_number=line_number,
+            line_content=line.strip(),
+            message=f"Disallowed characters: '{match.group(0)}'",
+            severity=SeverityLevel.CRITICAL,
+            suggestion="Remove emojis and special characters",
+        )
+
+
 def validate_document(file_path: Path) -> list[Violation]:
     """Scans document for ATS compatibility issues."""
-    violations = []
+    violations: list[Violation] = []
 
-    # Initialize all validators
     contact_validator = ContactValidator()
 
-    # Process each line with all validators
-    with file_path.open("r", encoding="utf-8") as f:
-        for line_number, line in enumerate(f, 1):
-            # Existing emoji validation
-            violations.extend(emoji_validation(line, line_number))
-
-            # Contact information validation
+    with file_path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, 1):
+            violations.extend(_emoji_violations(line, line_number))
             violations.extend(contact_validator.validate(line, line_number))
 
     return violations
+
+
+def handle_validation_results(violations: list[Violation]) -> None:
+    """Severity-aware handling that gates on CRITICAL/HIGH issues."""
+
+    grouped: dict[SeverityLevel, list[Violation]] = defaultdict(list)
+    for violation in violations:
+        grouped[violation.severity].append(violation)
+
+    blocking = grouped.get(SeverityLevel.CRITICAL, []) + grouped.get(
+        SeverityLevel.HIGH, []
+    )
+    if blocking:
+        details = [
+            f"{violation.message} (suggestion: {violation.suggestion})"
+            for violation in blocking
+        ]
+        raise ValidationError("\n".join(details))
+
+    for violation in grouped.get(SeverityLevel.MEDIUM, []):
+        print(
+            f"Warning: {violation.message} | Suggestion: {violation.suggestion}",
+        )
+
+    low_count = len(grouped.get(SeverityLevel.LOW, []))
+    if low_count:
+        print(f"Info: {low_count} low-severity issues detected.")
 ```
 
 ### Creating New Validators
@@ -304,9 +349,9 @@ Path("validation_report.md").write_text(report)
 #### **Severity Guidelines**
 
 - **CRITICAL**: Will cause parsing failures (emojis, tables)
-- **HIGH**: Contact information, dates (may be misread)
-- **MEDIUM**: Section headers, formatting (may be miscategorized)
-- **LOW**: Styling, terminology (optimization suggestions)
+- **High-priority**: Contact information, dates (may be misread)
+- **Medium-priority**: Section headers, formatting (may be miscategorized)
+- **Low-priority**: Styling, terminology (optimization suggestions)
 
 #### **Performance Requirements**
 

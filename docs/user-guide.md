@@ -241,3 +241,11 @@ docker run --rm -v $(pwd):/app ghcr.io/dohdalabs/ats-pdf-generator:latest profil
 - **Need more automation help?** Check the [Development Guide](../DEVELOPMENT.md) for advanced workflows.
 
 ---
+
+Success output now includes a confirmation message before conversion:
+
+```bash
+ats-pdf resume.md -o resume.pdf
+✓ Validation passed - converting to PDF
+Successfully converted 'resume.md' to 'resume.pdf'
+```

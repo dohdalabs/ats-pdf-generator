@@ -19,7 +19,7 @@ import click
 # First-party
 from ats_pdf_generator.reporter import generate_markdown_report
 from ats_pdf_generator.validation_types import Violation
-from ats_pdf_generator.validator.validator import validate_document
+from ats_pdf_generator.validator import validate_document
 
 
 class ATSGeneratorError(Exception):
@@ -326,6 +326,8 @@ def cli(
         if violations:
             _print_validation_errors(violations)
             sys.exit(1)
+
+        click.secho("✓ Validation passed - converting to PDF", fg="green", bold=True)
 
         if not output_file:
             output_file = str(input_path.with_suffix(".pdf"))
