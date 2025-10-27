@@ -138,9 +138,7 @@ class ContactValidator:
 
             # Check if phone has proper label
             has_label = any(
-                any(label in content.lower() for label in labels)
-                for label, labels in self.CONTACT_LABELS.items()
-                if "phone" in label
+                label in content.lower() for label in self.CONTACT_LABELS["phone"]
             )
 
             if not has_label:
