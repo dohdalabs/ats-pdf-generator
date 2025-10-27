@@ -100,8 +100,11 @@ ats-pdf resume.md -o resume.pdf
 For detailed validation analysis, the system can generate comprehensive reports:
 
 ```bash
-# Generate validation report
+# Generate validation report without creating a PDF
 ats-pdf resume.md --validate-only --report validation_report.md
+
+# Validate and print the report to stdout
+ats-pdf resume.md --validate-only
 ```
 
 The report includes:
@@ -145,12 +148,16 @@ Command options:
 ats-pdf [OPTIONS] <input_file>
 
 Options:
-  -o, --output FILE    Output PDF filename
-  --type TYPE          Document type: cover-letter (default) or profile
-  --title TITLE        Custom PDF document title
-  --author AUTHOR      Custom author metadata
-  --date DATE          Custom date metadata
-  -h, --help           Show CLI usage
+  -o, --output FILE         Output PDF filename (defaults to <input>.pdf)
+  --type TYPE               Document type: cover-letter (default) or profile
+  --css FILE                Path to a custom CSS file (overrides defaults)
+  --title TITLE             Custom PDF document title metadata
+  --author AUTHOR           Custom author metadata
+  --date DATE               Custom date metadata
+  --pdf-engine ENGINE       PDF engine to use (default: weasyprint)
+  --validate-only           Validate the document without generating a PDF
+  --report FILE             Write validation report to FILE (use with --validate-only)
+  -h, --help                Show CLI usage
 ```
 
 ## Document Types

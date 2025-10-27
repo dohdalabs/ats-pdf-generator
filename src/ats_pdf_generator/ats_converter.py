@@ -17,6 +17,8 @@ from pathlib import Path
 import click
 
 # First-party
+from ats_pdf_generator.reporter import generate_markdown_report
+from ats_pdf_generator.validation_types import Violation
 from ats_pdf_generator.validator.validator import validate_document
 
 
@@ -200,6 +202,37 @@ def _validate_input_file(file_path: str) -> None:
         raise FileOperationError(f"Cannot read input file: {file_path}")
 
 
+def _print_validation_errors(violations: list[Violation]) -> None:
+    """Display validation errors in a consistent format."""
+    if not violations:
+        return
+
+    click.secho(
+        "  [ERROR]: Validation failed!",
+        fg="red",
+        bold=True,
+        err=True,
+    )
+    click.secho(
+        "The following issues will likely cause ATS parsing failures:\n",
+        fg="red",
+        err=True,
+    )
+
+    for violation in violations:
+        click.secho(
+            f"  [{violation.severity.name}] Line {violation.line_number}: {violation.message}",
+            fg="red" if violation.severity.name == "CRITICAL" else "yellow",
+            err=True,
+        )
+
+    click.secho(
+        "\n💡 Tip: Remove emojis and special characters. Allowed symbols: $ € £ ° &",
+        fg="yellow",
+        err=True,
+    )
+
+
 @click.command(
     help="Convert Markdown documents to ATS-optimized PDFs.",
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -232,6 +265,17 @@ def _validate_input_file(file_path: str) -> None:
 @click.option(
     "--pdf-engine", default="weasyprint", show_default=True, help="PDF engine to use."
 )
+@click.option(
+    "--validate-only",
+    is_flag=True,
+    help="Validate the document and report issues without generating a PDF.",
+)
+@click.option(
+    "--report",
+    "report_path",
+    type=click.Path(resolve_path=True),
+    help="Write the validation report to the specified path. Requires --validate-only.",
+)
 def cli(
     input_file: str,
     output_file: str | None,
@@ -241,35 +285,46 @@ def cli(
     author: str | None,
     date: str | None,
     pdf_engine: str,
+    validate_only: bool,
+    report_path: str | None,
 ) -> None:
     """Main CLI for the ATS PDF Generator."""
+    if report_path and not validate_only:
+        raise click.UsageError("--report option requires --validate-only.")
+
+    preprocessed_file: Path | None = None
     try:
         _validate_input_file(input_file)
         input_path = Path(input_file)
 
         # Validate the document for ATS compatibility
         violations = validate_document(input_path)
-        if violations:
-            click.secho(
-                "  [CRITICAL]: Validation failed!", fg="red", bold=True, err=True
+        if validate_only:
+            if violations:
+                _print_validation_errors(violations)
+            else:
+                click.secho("Validation passed. No issues found.", fg="green")
+
+            report_output = Path(report_path) if report_path else None
+            report_content = generate_markdown_report(
+                violations,
+                input_path.name,
+                report_output,
             )
-            click.secho(
-                "The following issues will likely cause ATS parsing failures:\n",
-                fg="red",
-                err=True,
-            )
-            for violation in violations:
+
+            if report_output:
+                status_color = "green" if not violations else "yellow"
                 click.secho(
-                    f"  [CRITICAL] Line {violation.line_number}: {violation.message}",
-                    fg="red",
-                    err=True,
+                    f"Validation report saved to '{report_output}'",
+                    fg=status_color,
                 )
-            click.secho(
-                "\n💡 Tip: Remove emojis and special characters. "
-                "Allowed symbols: $ € £ ° &",
-                fg="yellow",
-                err=True,
-            )
+            else:
+                click.echo(report_content)
+
+            sys.exit(1 if violations else 0)
+
+        if violations:
+            _print_validation_errors(violations)
             sys.exit(1)
 
         if not output_file:
@@ -324,7 +379,7 @@ def cli(
         sys.exit(2)
     finally:
         # Cleanup
-        if "preprocessed_file" in locals() and preprocessed_file.exists():
+        if preprocessed_file is not None and preprocessed_file.exists():
             try:
                 os.remove(preprocessed_file)
             except OSError:

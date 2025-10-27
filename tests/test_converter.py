@@ -18,6 +18,8 @@ from ats_pdf_generator.ats_converter import (
     _validate_input_file,
     cli,
 )
+from ats_pdf_generator.reporter import generate_markdown_report
+from ats_pdf_generator.validation_types import SeverityLevel, Violation
 
 
 @pytest.fixture
@@ -231,6 +233,98 @@ class TestCli:
         assert result.exit_code == 1
         assert "Pandoc conversion failed" in result.output
         assert "pandoc error" in result.output
+
+    def test_cli_validate_only_success(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Test validation-only mode with no violations."""
+        input_file = tmp_path / "test.md"
+        input_file.write_text("# Hello")
+
+        with patch(
+            "ats_pdf_generator.ats_converter.generate_markdown_report",
+            return_value="REPORT",
+        ) as mock_report:
+            result = runner.invoke(cli, [str(input_file), "--validate-only"])
+
+        assert result.exit_code == 0
+        assert "Validation passed" in result.output
+        assert "REPORT" in result.output
+        mock_report.assert_called_once()
+
+    def test_cli_validate_only_with_report_file(
+        self, runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Test validation-only mode writing a report to disk."""
+        input_file = tmp_path / "test.md"
+        input_file.write_text("# Hello")
+        report_target = tmp_path / "report.md"
+
+        with patch(
+            "ats_pdf_generator.ats_converter.generate_markdown_report",
+            wraps=generate_markdown_report,
+        ) as mock_report:
+            result = runner.invoke(
+                cli,
+                [
+                    str(input_file),
+                    "--validate-only",
+                    "--report",
+                    str(report_target),
+                ],
+            )
+
+        assert result.exit_code == 0
+        assert report_target.exists()
+        assert "Validation report saved" in result.output
+        mock_report.assert_called_once()
+
+    def test_cli_validate_only_requires_report_flag(
+        self, runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Ensure --report cannot be used without --validate-only."""
+        input_file = tmp_path / "test.md"
+        input_file.write_text("# Hello")
+        report_target = tmp_path / "report.md"
+
+        result = runner.invoke(
+            cli,
+            [str(input_file), "--report", str(report_target)],
+        )
+
+        assert result.exit_code != 0
+        assert "--report option requires --validate-only" in result.output
+
+    def test_cli_validate_only_with_violations(
+        self, runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Test validation-only mode with violations present."""
+        input_file = tmp_path / "test.md"
+        input_file.write_text("# Hello")
+        violations = [
+            Violation(
+                line_number=1,
+                line_content="Hello",
+                message="Problem",
+                severity=SeverityLevel.CRITICAL,
+                suggestion="Fix",
+            )
+        ]
+
+        with (
+            patch(
+                "ats_pdf_generator.ats_converter.validate_document",
+                return_value=violations,
+            ),
+            patch(
+                "ats_pdf_generator.ats_converter.generate_markdown_report",
+                return_value="REPORT",
+            ) as mock_report,
+        ):
+            result = runner.invoke(cli, [str(input_file), "--validate-only"])
+
+        assert result.exit_code == 1
+        assert "Validation failed" in result.output
+        assert "REPORT" in result.output
+        mock_report.assert_called_once_with(violations, input_file.name, None)
 
     def test_cli_metadata_parameters(self, runner: CliRunner, tmp_path: Path) -> None:
         """Test that metadata parameters are passed to pandoc."""
