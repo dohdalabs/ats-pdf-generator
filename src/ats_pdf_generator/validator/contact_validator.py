@@ -95,8 +95,7 @@ class ContactValidator:
         # Check for emails without labels
         if self.EMAIL_PATTERN.search(content):
             has_label = any(
-                any(label in content.lower() for label in labels)
-                for labels in self.CONTACT_LABELS.values()
+                label in content.lower() for label in self.CONTACT_LABELS["email"]
             )
 
             if not has_label:
