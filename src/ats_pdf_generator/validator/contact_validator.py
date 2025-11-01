@@ -32,8 +32,9 @@ class ContactValidator:
 
         # URL patterns
         self.URL_PATTERN = re.compile(r"\bhttps?://\S+\b", re.IGNORECASE)
+        # Match domain-like patterns but exclude email addresses (both before and after @)
         self.BARE_URL_PATTERN = re.compile(
-            r"(?<!@)\b(?!(?:https?://|www\.))(?:(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})(?:/\S*)?\b",
+            r"\b(?!(?:https?://|www\.))(?:(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})(?!/\S*)?(?!@)\b",
             re.IGNORECASE,
         )
 
@@ -202,7 +203,38 @@ class ContactValidator:
             return violations  # https:// URLs pass validation
 
         # Check for URLs without protocol (bare URLs)
-        if self.BARE_URL_PATTERN.search(content):
+        # Filter out domains that are part of email addresses
+        bare_url_matches = list(self.BARE_URL_PATTERN.finditer(content))
+        non_email_urls = []
+
+        for match in bare_url_matches:
+            # Check if this domain is part of an email address
+            # by looking for @ before OR after the matched domain
+            start_pos = match.start()
+            end_pos = match.end()
+
+            is_email_part = False
+
+            # Check if @ appears BEFORE the match (domain after @)
+            before_text = content[:start_pos]
+            if "@" in before_text:
+                last_at_pos = before_text.rfind("@")
+                between_text = content[last_at_pos:start_pos]
+                # If there's only @ and valid email chars between, it's an email domain
+                if re.match(r"^@[A-Za-z0-9._-]*$", between_text):
+                    is_email_part = True
+
+            # Check if @ appears AFTER the match (domain before @)
+            if not is_email_part:
+                after_text = content[end_pos : end_pos + 10]  # Check next few chars
+                # If @ immediately follows (possibly with dots/chars), it's the start of an email
+                if re.match(r"^[A-Za-z0-9._-]*@", after_text):
+                    is_email_part = True
+
+            if not is_email_part:
+                non_email_urls.append(match)
+
+        if non_email_urls:
             # Only consider URL-specific labels, not all contact labels
             url_labels = []
             for key in ["linkedin", "github", "website"]:
