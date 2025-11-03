@@ -204,11 +204,11 @@ test-docker:
 
     echo "✅ All Docker tests passed!"
 
-# Validate Dockerfiles with hadolint
-validate-dockerfiles:
+# Lint Dockerfiles with hadolint
+lint-docker:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔍 Validating Dockerfiles with hadolint..."
+    echo "🔍 Linting Dockerfiles with hadolint..."
 
     if ! command -v hadolint >/dev/null 2>&1; then
         echo "⚠️  hadolint not found, skipping validation"

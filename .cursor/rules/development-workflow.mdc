@@ -101,7 +101,7 @@ A clear and complete PR description is mandatory. This description directly beco
 
 - Python: `just lint-python` (ruff + black + mypy)
 - Shell: `just lint-shell` (shellcheck)
-- Docker: `just validate-dockerfiles` (hadolint)
+- Docker: `just lint-docker` (hadolint)
 - Markdown: `just lint-markdown` (markdownlint)
 
 **All must pass before suggesting changes.**
@@ -277,7 +277,7 @@ just validate       # Run fast quality checks
 just test           # Run tests
 just lint-python    # Python linting only
 just lint-shell     # Shell script linting
-just validate-dockerfiles  # Dockerfile linting
+just lint-docker  # Dockerfile linting
 just lint-markdown  # Markdown linting
 ```
 

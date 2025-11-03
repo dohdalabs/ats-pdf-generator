@@ -418,7 +418,7 @@ just convert examples/sample-profile.md doc_type=profile
 # Individual commands for specific needs
 just lint-python      # Python linting only
 just lint-shell       # Shell script linting
-just validate-dockerfiles  # Docker linting
+just lint-docker  # Docker linting
 just lint-markdown    # Markdown linting
 just format-python    # Python formatting
 just format-markdown  # Markdown formatting
@@ -630,7 +630,7 @@ just format            # Format code
 just typecheck-python  # Python type checking
 just test-docker       # Run Docker tests
 just lint-shell        # Lint shell scripts
-just validate-dockerfiles  # Lint Dockerfiles
+just lint-docker  # Lint Dockerfiles
 just security          # Run all security scans (Bandit + Trivy)
 just security-python   # Run Python security scan with bandit
 just security-trivy    # Run Trivy security scan
