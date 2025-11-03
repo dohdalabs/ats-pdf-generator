@@ -237,7 +237,7 @@ docker run --rm -v $(pwd):/app ghcr.io/dohdalabs/ats-pdf-generator:latest profil
 
 - **Docker not running?** Start Docker Desktop (macOS/Windows) or ensure `docker ps` works.
 - **Command not found (`ats-pdf`)?** Restart your shell so PATH changes from the installer are applied.
-- **Markdown warnings?** Run `just format-markdown` or `pnpm dlx markdownlint-cli '**/*.md' --fix` to clean up formatting.
+- **Markdown warnings?** Run `just format-markdown` or `uv run rumdl fmt '**/*.{md,mdc}'` (rumdl via uv) to clean up formatting.
 - **Need more automation help?** Check the [Development Guide](../DEVELOPMENT.md) for advanced workflows.
 
 ---

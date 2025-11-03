@@ -17,7 +17,7 @@ log_error() {
 show_usage() {
     cat <<'USAGE_EOF'
 SYNOPSIS
-    extract-versions.sh [OPTIONS] {env|python|uv|shellcheck|hadolint|node|pnpm|just|trivy|list}
+    extract-versions.sh [OPTIONS] {env|python|uv|shellcheck|hadolint|just|trivy|list}
 
 DESCRIPTION
     Extract tool versions from mise.toml for reuse in CI and automation.
@@ -101,8 +101,6 @@ main() {
             echo "UV_VERSION=$(extract_version uv)"
             echo "SHELLCHECK_VERSION=$(extract_version shellcheck)"
             echo "HADOLINT_VERSION=$(extract_version hadolint)"
-            echo "NODE_VERSION=$(extract_version node)"
-            echo "PNPM_VERSION=$(extract_version pnpm)"
             echo "JUST_VERSION=$(extract_version just)"
             echo "TRIVY_VERSION=$(extract_version trivy)"
             ;;
@@ -118,11 +116,14 @@ main() {
         hadolint)
             extract_version hadolint
             ;;
+        # node and pnpm removed - no-op if requested
         node)
-            extract_version node
+            log_error "node version extraction removed; Node.js is no longer a project dependency"
+            exit 2
             ;;
         pnpm)
-            extract_version pnpm
+            log_error "pnpm version extraction removed; pnpm is no longer a project dependency"
+            exit 2
             ;;
         just)
             extract_version just
@@ -137,8 +138,8 @@ main() {
             log_info "uv: $(extract_version uv)"
             log_info "shellcheck: $(extract_version shellcheck)"
             log_info "hadolint: $(extract_version hadolint)"
-            log_info "node: $(extract_version node)"
-            log_info "pnpm: $(extract_version pnpm)"
+            log_info "node: <removed>"
+            log_info "pnpm: <removed>"
             log_info "just: $(extract_version just)"
             log_info "trivy: $(extract_version trivy)"
             ;;

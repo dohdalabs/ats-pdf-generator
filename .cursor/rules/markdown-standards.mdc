@@ -4,21 +4,21 @@ alwaysApply: false
 ---
 # Markdown Standards
 
-**ALL markdown files MUST pass markdownlint before being committed.**
+**ALL markdown files MUST pass rumdl (markdown linter) before being committed.**
 
 ## Process
 
 - Run `just format-markdown` to automatically fix violations before committing
-- If issues remain, manually fix all markdownlint violations
-- Re-run `just format-markdown` to ensure no remaining issues
-- Ensure proper heading hierarchy and consistent formatting
+ - If issues remain, manually fix all rumdl violations
+ - Re-run `just format-markdown` to ensure no remaining issues
+ - Ensure proper heading hierarchy and consistent formatting
 
 ## Configuration
 
-- Current rules: See `.markdownlint.jsonc` for disabled rules
+- Current rules: See `.rumdl.toml` for disabled rules and include patterns
 - Commands: See `justfile` for `lint-markdown` and `format-markdown` targets
 - Use consistent heading hierarchy (H1 → H2 → H3 → H4)
 - Use kebab-case for file names
 - Include table of contents for long documents
 
-**Note**: This file itself must pass markdownlint validation.
+**Note**: This file itself must pass rumdl validation.

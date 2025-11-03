@@ -100,13 +100,13 @@ graph LR
 - Unit test execution with coverage reporting
 - Security scanning for HIGH/CRITICAL vulnerabilities (Trivy)
 - Shell script validation (shellcheck)
-- Markdown linting (markdownlint)
+ - Markdown linting (rumdl via uv)
 
 **Key Architectural Decisions**:
 
 1. **Integrated Security Scanning**: Security scanning runs in the build stage rather than as a separate job. This provides faster feedback—developers know within minutes if their PR introduces vulnerabilities rather than waiting for a separate security job to start.
 
-2. **Dynamic Version Management**: All tool versions (Python, Node.js, pnpm, hadolint) are extracted from `mise.toml` at runtime, ensuring the CI environment exactly matches local development environments. No version drift.
+2. **Dynamic Version Management**: All tool versions (Python, uv, hadolint, etc.) are extracted from `mise.toml` at runtime, ensuring the CI environment exactly matches local development environments. No version drift. Markdown linting now uses `rumdl` (installed via `uv`) so Node.js/pnpm are no longer required.
 
 3. **Just as Unified Interface**: Uses `just ci` as the entry point, providing perfect parity between local development and CI. Developers can run exactly what CI runs with one command.
 
@@ -253,8 +253,7 @@ env:
 
 ```bash
 ./scripts/extract-versions.sh python   # Returns: 3.12.5
-./scripts/extract-versions.sh node     # Returns: 20.11.0
-./scripts/extract-versions.sh pnpm     # Returns: 8.15.3
+./scripts/extract-versions.sh uv       # Returns: latest
 ./scripts/extract-versions.sh hadolint # Returns: 2.12.0
 ```
 
@@ -496,7 +495,7 @@ just ci
 ├── lint                     # Lint all code
 │   ├── lint-python         # ruff check
 │   ├── lint-shell          # shellcheck
-│   └── lint-markdown       # markdownlint
+│   └── lint-markdown       # rumdl (via uv)
 ├── format-check            # Verify formatting (no changes)
 │   └── _format-check-python  # ruff format --check
 ├── typecheck               # Type checking

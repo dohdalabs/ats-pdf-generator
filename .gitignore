@@ -73,16 +73,12 @@ Thumbs.db
 # Logs
 *.log
 
-# Node.js
+# JavaScript tool artifacts (historical; project no longer requires Node.js/pnpm)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 .yarn-integrity
-
-# Node.js cache
-.eslintcache
 
 # Build and distribution
 out/

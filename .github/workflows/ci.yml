@@ -53,23 +53,7 @@ jobs:
           python-version: ${{ steps.python-version.outputs.version }}
 
 
-      - name: Extract Node.js version
-        id: node-version
-        run: echo "version=$(./scripts/extract-versions.sh node)" >> $GITHUB_OUTPUT
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ steps.node-version.outputs.version }}
-
-      - name: Extract pnpm version
-        id: pnpm-version
-        run: echo "version=$(./scripts/extract-versions.sh pnpm)" >> $GITHUB_OUTPUT
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ steps.pnpm-version.outputs.version }}
+      # Node.js and pnpm steps removed: markdown linting now uses rumdl via uv
 
       - name: Extract hadolint version
         id: hadolint-version

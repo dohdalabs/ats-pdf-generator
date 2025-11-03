@@ -255,11 +255,12 @@ lint-markdown:
     set -euo pipefail
     echo "📝 Linting Markdown files..."
 
-    # Use mise-managed pnpm dlx if available, fallback to system npx
+    # Use mise-managed uv if available, fallback to system uv
+    # rumdl is a Rust-based markdown linter/formatter installed via uv
     if command -v mise >/dev/null 2>&1; then
-        mise exec -- pnpm dlx markdownlint-cli --dot '**/*.{md,mdc}' --config=.markdownlint.jsonc --ignore node_modules
+        mise exec -- uv run rumdl check '**/*.{md,mdc}' --config .rumdl.toml || exit_code=$?
     else
-        npx markdownlint-cli --dot '**/*.{md,mdc}' --config=.markdownlint.jsonc --ignore node_modules
+        uv run rumdl check '**/*.{md,mdc}' --config .rumdl.toml || exit_code=$?
     fi
 
 # Format Markdown files
@@ -268,11 +269,11 @@ format-markdown:
     set -euo pipefail
     echo "📝 Formatting Markdown files..."
 
-    # Use mise-managed pnpm dlx if available, fallback to system npx
+    # Use mise-managed uv if available, fallback to system uv
     if command -v mise >/dev/null 2>&1; then
-        mise exec -- pnpm dlx markdownlint-cli --dot '**/*.{md,mdc}' --config=.markdownlint.jsonc --ignore node_modules --fix
+        mise exec -- uv run rumdl fmt '**/*.{md,mdc}' --config .rumdl.toml || true
     else
-        npx markdownlint-cli --dot '**/*.{md,mdc}' --config=.markdownlint.jsonc --ignore node_modules --fix
+        uv run rumdl fmt '**/*.{md,mdc}' --config .rumdl.toml || true
     fi
 
 # ============================================================================

@@ -78,19 +78,15 @@ htmlcov/
 .env.local
 .env.*.local
 
-# Node.js
+# JavaScript tool artifacts (historical; project no longer requires Node.js/pnpm)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 .npm
 .yarn-integrity
 package-lock.json
 yarn.lock
-
-# Node.js cache
-.eslintcache
 
 # Build and distribution
 dist/

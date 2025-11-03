@@ -1,0 +1,6 @@
+[global]
+# Disable specific rules aligned with previous .markdownlint.jsonc
+disable = ["MD013", "MD033", "MD041", "MD051"]
+
+# File patterns to include when running rumdl
+include = ["**/*.md", "**/*.mdc"]
