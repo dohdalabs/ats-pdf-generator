@@ -8,7 +8,7 @@ alwaysApply: false
 
 **Always use `just` commands - never call tools directly:**
 
-- `just check` - Run all quality checks
+- `just validate` - Run fast quality checks (~30s)
 - `just test` - Run tests
 - `just format` - Auto-fix formatting
 - `just ci` - Complete CI pipeline
@@ -25,8 +25,8 @@ git checkout -b feature/descriptive-name
 ### 2. Quality Checks
 
 ```bash
-just check  # Run all quality checks before changes
-just test   # Run tests after changes
+just validate  # Run fast quality checks before changes
+just test      # Run tests after changes
 ```
 
 ### 3. Commit Standards
@@ -42,6 +42,7 @@ git commit -m "feat: descriptive change"
 
    - Open your PR _after_ completing all checks locally.
    - Use a descriptive title and a detailed body summarizing all meaningful changes:
+
      ```bash
      gh pr create --title "feat: clear, specific title" --body "## What & Why\n- Summarize each change\n- Explain reasoning & impact\n"
      ```
@@ -163,7 +164,7 @@ PDF conversion, especially for users working with cloud storage solutions.
 ### When Making Changes
 
 1. **Always work in feature branch**
-2. **Run `just check` before suggesting changes**
+2. **Run `just validate` before suggesting changes**
 3. **Use `just` commands instead of direct tool calls**
 4. **Follow established patterns:**
 
@@ -172,15 +173,112 @@ PDF conversion, especially for users working with cloud storage solutions.
    - Update CHANGELOG.md for user-facing changes
    - Add tests for new functionality
 
+### When Reviewing PR Before Merge
+
+**Critical: The PR title and description become the squash commit message and serve as context for future debugging.**
+
+#### Step 1: Review Current PR State
+
+```bash
+# Get current PR number from branch
+gh pr view --json number,title,body
+
+# Review linked issues
+gh issue view <issue-number> --json title,body,state
+```
+
+#### Step 2: Verify PR Accuracy
+
+**Check that PR title:**
+
+- Uses conventional commit format (feat:, fix:, docs:, etc.)
+- Accurately describes the PRIMARY feature/change implemented
+- Is concise but specific enough to understand the change
+
+**Check that PR description:**
+
+- Documents EVERY significant change made in the branch
+- Not just the original planned scope, but all work actually completed
+- Includes implementation details, architecture decisions, testing info
+- Contains "Closes #X" or "Fixes #X" to auto-close related issues
+- Is written for future investigation/debugging (think: "What will an AI or developer need to know in 6 months?")
+
+#### Step 3: Update PR If Needed
+
+```bash
+# Update title
+gh pr edit <pr-number> --title "feat: accurate description of work"
+
+# Update description (use heredoc for multi-line)
+gh pr edit <pr-number> --body-file /dev/stdin <<'EOF'
+## Overview
+[Clear summary of what was implemented]
+
+Closes #X
+
+## Key Features
+- Feature 1
+- Feature 2
+
+## Implementation
+[Architecture/technical details]
+
+## Testing
+- Test coverage stats
+- Verification steps
+
+## Impact
+[User/developer impact]
+EOF
+```
+
+#### Step 4: Verify Issue Linkage
+
+**Ensure issues will auto-close:**
+
+- Include "Closes #X" or "Fixes #X" in PR description
+- GitHub will automatically close linked issues when PR merges
+- Do NOT manually close issues before merge
+
+#### Step 5: Pre-Merge Checklist
+
+Before adding to merge queue:
+
+- [ ] All CI checks passing on latest commit
+- [ ] PR title uses conventional commit format
+- [ ] PR title accurately reflects main feature/change
+- [ ] PR description comprehensively documents ALL work done
+- [ ] PR description includes "Closes #X" for related issues
+- [ ] PR description written for future debugging context
+- [ ] Code follows project quality standards
+- [ ] Tests added for new functionality
+- [ ] Documentation updated for user-facing changes
+
+**Only after all checks pass, add PR to merge queue:**
+
+```bash
+# Add PR to merge queue
+gh pr merge --squash --auto
+
+# Or via GitHub UI: Click "Merge when ready" button
+```
+
+**Merge queue will:**
+
+- Automatically run full CI pipeline on merged state
+- Only merge if ALL checks pass
+- Automatically remove PR from queue if CI fails
+- Ensure main branch always has passing code
+
 ### When Debugging
 
 ```bash
-just check           # Run all quality checks
-just test            # Run tests
-just lint-python     # Python linting only
-just lint-shell      # Shell script linting
-just lint-docker     # Dockerfile linting
-just lint-markdown   # Markdown linting
+just validate       # Run fast quality checks
+just test           # Run tests
+just lint-python    # Python linting only
+just lint-shell     # Shell script linting
+just lint-docker  # Dockerfile linting
+just lint-markdown  # Markdown linting
 ```
 
 ### Quality Standards

@@ -22,7 +22,7 @@ repos:
     hooks:
       - id: docker-validate
         name: docker validate
-        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just validate-dockerfiles; else just validate-dockerfiles; fi'
+        entry: bash -c 'if command -v mise >/dev/null 2>&1; then mise exec -- just lint-docker; else just lint-docker; fi'
         language: system
         types: [dockerfile]
         pass_filenames: false

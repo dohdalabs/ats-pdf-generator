@@ -140,7 +140,7 @@ jobs:
           sha256sum -c hadolint-linux-x86_64.sha256
           chmod +x hadolint-linux-x86_64
           sudo mv hadolint-linux-x86_64 /usr/local/bin/hadolint
-          just validate-dockerfiles
+          just lint-docker
 
 
   publish:

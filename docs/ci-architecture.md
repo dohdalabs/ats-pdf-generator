@@ -134,7 +134,7 @@ graph LR
 ```bash
 just _ci-build-docker    # Branch-optimized: builds standard only on PRs, all on main
 just _ci-test-docker     # Tests corresponding images
-just validate-dockerfiles  # Hadolint validation
+just lint-docker  # Hadolint validation
 ```
 
 **Key Architectural Decisions**:
@@ -306,7 +306,7 @@ test-python     # Run pytest with coverage
 security        # Scan for vulnerabilities and secrets
 _ci-build-docker   # Build appropriate Docker images for branch
 _ci-test-docker    # Test built images
-validate-dockerfiles  # Hadolint validation
+lint-docker  # Hadolint validation
 ```
 
 **Trade-offs**:
@@ -448,7 +448,7 @@ Based on typical runs:
    - **Check**: Entrypoint configuration, file permissions, dependencies
 
 3. **Dockerfile Validation Failures**: hadolint finds issues
-   - **Local Debug**: `just validate-dockerfiles`
+   - **Local Debug**: `just lint-docker`
    - **Fix**: Follow hadolint recommendations for best practices
 
 **Pro Tip**: Use `just docker-shell` to interactively debug inside a container.
@@ -505,7 +505,7 @@ just ci
 ├── security                # Security scanning with Trivy
 ├── _ci-build-docker        # Build images (branch-optimized)
 ├── _ci-test-docker         # Test images (branch-optimized)
-└── validate-dockerfiles    # Dockerfile linting
+└── lint-docker    # Dockerfile linting
 ```
 
 ### Workflow Selection Guide
