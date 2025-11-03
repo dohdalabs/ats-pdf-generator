@@ -2,7 +2,7 @@
 Contact Information Validator
 
 Validates contact information formatting for ATS compatibility.
-Implements Issue 8: Contact Information Formatting Validation.
+
 """
 
 # Standard library
@@ -127,6 +127,33 @@ class ContactValidator:
 
         return violations
 
+    def _is_year_range(self, content: str, start_pos: int, end_pos: int) -> bool:
+        """Check if a phone pattern match is actually part of a year range."""
+        before_text = content[max(0, start_pos - 10) : start_pos]
+        after_text = content[end_pos : end_pos + 10]
+
+        # Pattern 1: (YYYY-YYYY) - opening paren and 4-digit year before match
+        if re.search(r"\(\d{1,4}$", before_text):
+            if re.search(r"^\)", after_text):
+                return True
+
+        # Pattern 2: YYYY-YYYY without parens but in year context
+        if start_pos > 0:
+            char_before = content[start_pos - 1]
+            if char_before.isdigit():
+                # Look backwards to find the start of the year (1-4 digits)
+                extended_before = content[max(0, start_pos - 4) : start_pos]
+                # Check if there are 1-4 consecutive digits at the end of extended_before
+                year_match = re.search(r"\d{1,4}$", extended_before)
+                if year_match:
+                    # Match if after_text is just ")", or ")" followed by separator, or just separator
+                    if re.search(
+                        r"^\)$|^\)[\s,:\.]|^[\s,:\.]", after_text
+                    ) or end_pos == len(content.strip()):
+                        return True
+
+        return False
+
     def _validate_phone_formatting(
         self, content: str, line_number: int
     ) -> list[Violation]:
@@ -139,38 +166,8 @@ class ContactValidator:
             start_pos = phone_match.start()
             end_pos = phone_match.end()
 
-            # Check if this is part of a year range (e.g., 2021-2022, 2011-2012)
-            # Year ranges often match as "021-2022" (missing first digit of first year)
-            # Look for surrounding context that indicates a year range
-            before_text = content[max(0, start_pos - 10) : start_pos]
-            after_text = content[end_pos : end_pos + 10]
-
-            # Check if this looks like a year range
-            is_year_range = False
-
-            # Pattern 1: (YYYY-YYYY) - opening paren and 4-digit year before match
-            if re.search(r"\(\d{1,4}$", before_text):
-                # Match likely starts mid-year, check if followed by closing paren
-                if re.search(r"^\)", after_text):
-                    is_year_range = True
-
-            # Pattern 2: YYYY-YYYY without parens but in year context
-            # Check if preceded by a digit (part of 4-digit year)
-            if not is_year_range and start_pos > 0:
-                char_before = content[start_pos - 1] if start_pos > 0 else ""
-                if char_before.isdigit():
-                    # Check if this is the middle of a year range pattern
-                    # Look for pattern like "2021-2022" where match is "021-2022"
-                    extended_before = content[max(0, start_pos - 4) : start_pos]
-                    if re.match(r"^\d{1,4}$", extended_before):
-                        # Has digits before, check if after looks like year end
-                        if re.search(r"^\)?[\s,:\.]", after_text) or end_pos == len(
-                            content.strip()
-                        ):
-                            is_year_range = True
-
             # Skip validation if this looks like a year range
-            if is_year_range:
+            if self._is_year_range(content, start_pos, end_pos):
                 return violations
 
             # Check if phone has proper label

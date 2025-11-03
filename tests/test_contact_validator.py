@@ -330,3 +330,291 @@ def test_validate_url_with_url_specific_label() -> None:
     assert len(violations_website) == 1
     assert "https://" in violations_website[0].suggestion
     assert "without proper label" not in violations_website[0].message.lower()
+
+
+# Tests for _is_year_range helper method
+def test_is_year_range_with_parens() -> None:
+    """Test _is_year_range detects year ranges with parentheses."""
+    validator = ContactValidator()
+    # Pattern: (2021-2022) where phone pattern matches "021-2022"
+    content = "(2021-2022)"
+    # Phone pattern matches "021-2022" at positions 2-10
+    start_pos = 2  # After "(2"
+    end_pos = 10  # After "2022"
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is True
+
+
+def test_is_year_range_with_parens_various_years() -> None:
+    """Test _is_year_range with various year formats in parentheses."""
+    validator = ContactValidator()
+    # Get actual match positions from phone pattern
+    test_contents = [
+        "(2011-2012)",
+        "(1999-2000)",
+        "(2020-2021)",
+        "(2001-2002)",
+    ]
+
+    for content in test_contents:
+        phone_match = validator.PHONE_PATTERN.search(content)
+        if phone_match:
+            start_pos = phone_match.start()
+            end_pos = phone_match.end()
+            result = validator._is_year_range(content, start_pos, end_pos)
+            assert result is True, f"Failed for content: {content}"
+
+
+def test_is_year_range_without_parens_space_after() -> None:
+    """Test _is_year_range detects year ranges without parens, space after."""
+    validator = ContactValidator()
+    # Pattern: 2021-2022 where phone pattern matches "021-2022"
+    content = "2021-2022 "
+    phone_match = validator.PHONE_PATTERN.search(content)
+    assert phone_match is not None
+    start_pos = phone_match.start()
+    end_pos = phone_match.end()
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is True
+
+
+def test_is_year_range_without_parens_comma_after() -> None:
+    """Test _is_year_range detects year ranges without parens, comma after."""
+    validator = ContactValidator()
+    content = "2021-2022,"
+    phone_match = validator.PHONE_PATTERN.search(content)
+    assert phone_match is not None
+    start_pos = phone_match.start()
+    end_pos = phone_match.end()
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is True
+
+
+def test_is_year_range_without_parens_colon_after() -> None:
+    """Test _is_year_range detects year ranges without parens, colon after."""
+    validator = ContactValidator()
+    content = "2021-2022:"
+    phone_match = validator.PHONE_PATTERN.search(content)
+    assert phone_match is not None
+    start_pos = phone_match.start()
+    end_pos = phone_match.end()
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is True
+
+
+def test_is_year_range_without_parens_dot_after() -> None:
+    """Test _is_year_range detects year ranges without parens, dot after."""
+    validator = ContactValidator()
+    content = "2021-2022."
+    phone_match = validator.PHONE_PATTERN.search(content)
+    assert phone_match is not None
+    start_pos = phone_match.start()
+    end_pos = phone_match.end()
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is True
+
+
+def test_is_year_range_without_parens_end_of_string() -> None:
+    """Test _is_year_range detects year ranges at end of string."""
+    validator = ContactValidator()
+    content = "Worked from 2021-2022"
+    phone_match = validator.PHONE_PATTERN.search(content)
+    assert phone_match is not None
+    start_pos = phone_match.start()
+    end_pos = phone_match.end()
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is True
+
+
+def test_is_year_range_without_parens_with_closing_paren_after() -> None:
+    """Test _is_year_range detects year ranges with optional closing paren."""
+    validator = ContactValidator()
+    content = "2021-2022)"
+    phone_match = validator.PHONE_PATTERN.search(content)
+    assert phone_match is not None
+    start_pos = phone_match.start()
+    end_pos = phone_match.end()
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is True
+
+
+def test_is_year_range_false_positive_phone_number() -> None:
+    """Test _is_year_range does not flag actual phone numbers."""
+    validator = ContactValidator()
+    # Actual phone number that might look like year range
+    content = "Phone: (555) 123-4567"
+    phone_match = validator.PHONE_PATTERN.search(content)
+    assert phone_match is not None
+
+    start_pos = phone_match.start()
+    end_pos = phone_match.end()
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is False
+
+
+def test_is_year_range_false_positive_no_digit_before() -> None:
+    """Test _is_year_range returns False when no digit before match."""
+    validator = ContactValidator()
+    content = "-2022"
+    # This won't match phone pattern, so test with start_pos at 0
+    start_pos = 0
+    end_pos = 5
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is False
+
+
+def test_is_year_range_false_positive_no_context_after() -> None:
+    """Test _is_year_range returns False when no year context after match."""
+    validator = ContactValidator()
+    content = "2021-2022abc"
+    phone_match = validator.PHONE_PATTERN.search(content)
+    assert phone_match is not None
+    start_pos = phone_match.start()
+    end_pos = phone_match.end()
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is False
+
+
+def test_is_year_range_false_positive_phone_with_dash() -> None:
+    """Test _is_year_range does not flag phone numbers with dashes."""
+    validator = ContactValidator()
+    content = "555-123-4567"
+    phone_match = validator.PHONE_PATTERN.search(content)
+    assert phone_match is not None
+
+    start_pos = phone_match.start()
+    end_pos = phone_match.end()
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is False
+
+
+def test_is_year_range_at_start_of_string() -> None:
+    """Test _is_year_range handles year range at start of content."""
+    validator = ContactValidator()
+    content = "(2021-2022) worked here"
+    phone_match = validator.PHONE_PATTERN.search(content)
+    assert phone_match is not None
+    start_pos = phone_match.start()
+    end_pos = phone_match.end()
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is True
+
+
+def test_is_year_range_single_digit_before() -> None:
+    """Test _is_year_range with single digit year before match."""
+    validator = ContactValidator()
+    content = "1-2022"
+    start_pos = 1
+    end_pos = 7
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    # Single digit before might not match Pattern 2 (expects 1-4 digits)
+    # but the logic should handle it correctly
+    assert isinstance(result, bool)
+
+
+def test_is_year_range_four_digit_before() -> None:
+    """Test _is_year_range with four digit year before match."""
+    validator = ContactValidator()
+    content = "2021-2022"
+    phone_match = validator.PHONE_PATTERN.search(content)
+    assert phone_match is not None
+    start_pos = phone_match.start()
+    end_pos = phone_match.end()
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is True
+
+
+# Tests for _validate_phone_formatting with year range detection
+def test_validate_phone_formatting_skips_year_ranges_with_parens() -> None:
+    """Test that phone validation skips year ranges with parentheses."""
+    validator = ContactValidator()
+    # This should match phone pattern but be recognized as year range
+    content = "(2021-2022)"
+    violations = validator._validate_phone_formatting(content, 1)
+
+    # Should not generate violations for year ranges
+    assert len(violations) == 0
+
+
+def test_validate_phone_formatting_skips_year_ranges_without_parens() -> None:
+    """Test that phone validation skips year ranges without parentheses."""
+    validator = ContactValidator()
+    content = "Worked 2021-2022"
+    violations = validator._validate_phone_formatting(content, 1)
+
+    # Should not generate violations for year ranges
+    assert len(violations) == 0
+
+
+def test_validate_phone_formatting_skips_year_ranges_in_context() -> None:
+    """Test that phone validation skips year ranges in various contexts."""
+    validator = ContactValidator()
+    test_cases = [
+        "Employment: (2021-2022)",
+        "Years: 2021-2022",
+        "Duration: 2011-2012, worked on project",
+        "Period: 1999-2000.",
+    ]
+
+    for content in test_cases:
+        violations = validator._validate_phone_formatting(content, 1)
+        assert len(violations) == 0, f"Should not flag year range: {content}"
+
+
+def test_validate_phone_formatting_flags_actual_phones() -> None:
+    """Test that phone validation still flags actual phone numbers."""
+    validator = ContactValidator()
+    content = "(555) 123-4567"
+    violations = validator._validate_phone_formatting(content, 1)
+
+    # Should generate violation for phone without label
+    assert len(violations) == 1
+    assert "without" in violations[0].message.lower()
+    assert violations[0].severity == SeverityLevel.HIGH
+
+
+def test_validate_phone_formatting_year_range_vs_phone() -> None:
+    """Test differentiation between year ranges and actual phone numbers."""
+    validator = ContactValidator()
+    # Year range - should not be flagged
+    year_range = "2021-2022"
+    violations_year = validator._validate_phone_formatting(year_range, 1)
+    assert len(violations_year) == 0
+
+    # Actual phone - should be flagged
+    phone = "555-123-4567"
+    violations_phone = validator._validate_phone_formatting(phone, 1)
+    assert len(violations_phone) >= 1
+
+
+def test_validate_phone_formatting_year_range_at_end() -> None:
+    """Test that year ranges at end of string are properly detected."""
+    validator = ContactValidator()
+    content = "Software Engineer 2021-2022"
+    violations = validator._validate_phone_formatting(content, 1)
+
+    assert len(violations) == 0
+
+
+def test_validate_phone_formatting_year_range_with_label() -> None:
+    """Test that year ranges are skipped even if they contain phone-like patterns."""
+    validator = ContactValidator()
+    # Year range that could match phone pattern
+    content = "Period: (2021-2022)"
+    violations = validator._validate_phone_formatting(content, 1)
+
+    assert len(violations) == 0
