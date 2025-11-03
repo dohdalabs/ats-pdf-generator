@@ -136,6 +136,42 @@ class ContactValidator:
         phone_match = self.PHONE_PATTERN.search(content)
         if phone_match:
             phone = phone_match.group(0)
+            start_pos = phone_match.start()
+            end_pos = phone_match.end()
+
+            # Check if this is part of a year range (e.g., 2021-2022, 2011-2012)
+            # Year ranges often match as "021-2022" (missing first digit of first year)
+            # Look for surrounding context that indicates a year range
+            before_text = content[max(0, start_pos - 10) : start_pos]
+            after_text = content[end_pos : end_pos + 10]
+
+            # Check if this looks like a year range
+            is_year_range = False
+
+            # Pattern 1: (YYYY-YYYY) - opening paren and 4-digit year before match
+            if re.search(r"\(\d{1,4}$", before_text):
+                # Match likely starts mid-year, check if followed by closing paren
+                if re.search(r"^\)", after_text):
+                    is_year_range = True
+
+            # Pattern 2: YYYY-YYYY without parens but in year context
+            # Check if preceded by a digit (part of 4-digit year)
+            if not is_year_range and start_pos > 0:
+                char_before = content[start_pos - 1] if start_pos > 0 else ""
+                if char_before.isdigit():
+                    # Check if this is the middle of a year range pattern
+                    # Look for pattern like "2021-2022" where match is "021-2022"
+                    extended_before = content[max(0, start_pos - 4) : start_pos]
+                    if re.match(r"^\d{1,4}$", extended_before):
+                        # Has digits before, check if after looks like year end
+                        if re.search(r"^\)?[\s,:\.]", after_text) or end_pos == len(
+                            content.strip()
+                        ):
+                            is_year_range = True
+
+            # Skip validation if this looks like a year range
+            if is_year_range:
+                return violations
 
             # Check if phone has proper label
             has_label = any(
