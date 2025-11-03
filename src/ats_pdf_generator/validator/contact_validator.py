@@ -1,7 +1,10 @@
 """
 Contact Information Validator
 
-Validates contact information formatting for ATS compatibility.
+Checks for valid formatting of contact fields (email, phone, website, LinkedIn, etc.)
+and flags issues like obfuscated emails, non-standard phone numbers, improper URLs,
+missing labels, or use of emojis and non-ATS-friendly characters for
+applicant tracking system compatibility.
 
 """
 
@@ -32,7 +35,7 @@ class ContactValidator:
 
         # URL patterns
         self.URL_PATTERN = re.compile(r"\bhttps?://\S+\b", re.IGNORECASE)
-        # Match domain-like patterns but exclude email addresses (both before and after @)
+        # Match domain-like patterns; basic filtering for standalone domains
         self.BARE_URL_PATTERN = re.compile(
             r"\b(?!(?:https?://|www\.))(?:(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})(?!/\S*)?(?!@)\b",
             re.IGNORECASE,
