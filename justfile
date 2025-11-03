@@ -257,9 +257,9 @@ lint-markdown:
 
     # Use mise-managed pnpm dlx if available, fallback to system npx
     if command -v mise >/dev/null 2>&1; then
-        mise exec -- pnpm dlx markdownlint-cli '**/*.{md,mdc}' --config=.markdownlint.jsonc
+        mise exec -- pnpm dlx markdownlint-cli --dot '**/*.{md,mdc}' --config=.markdownlint.jsonc --ignore node_modules
     else
-        npx markdownlint-cli '**/*.{md,mdc}' --config=.markdownlint.jsonc
+        npx markdownlint-cli --dot '**/*.{md,mdc}' --config=.markdownlint.jsonc --ignore node_modules
     fi
 
 # Format Markdown files
@@ -270,9 +270,9 @@ format-markdown:
 
     # Use mise-managed pnpm dlx if available, fallback to system npx
     if command -v mise >/dev/null 2>&1; then
-        mise exec -- pnpm dlx markdownlint-cli '**/*.{md,mdc}' --config=.markdownlint.jsonc --fix
+        mise exec -- pnpm dlx markdownlint-cli --dot '**/*.{md,mdc}' --config=.markdownlint.jsonc --ignore node_modules --fix
     else
-        npx markdownlint-cli '**/*.{md,mdc}' --config=.markdownlint.jsonc --fix
+        npx markdownlint-cli --dot '**/*.{md,mdc}' --config=.markdownlint.jsonc --ignore node_modules --fix
     fi
 
 # ============================================================================
@@ -454,11 +454,11 @@ convert input output="" doc_type="cover-letter": (_build-docker "dev")
 
     # Extract paths for Docker mount
     INPUT_DIR=$(dirname "{{input}}")
-    INPUT_FILENAME=$(basename "{{input}}")
-    OUTPUT_BASENAME=$(basename "$OUTPUT_FILE")
+    export INPUT_FILENAME=$(basename "{{input}}")
+    export OUTPUT_BASENAME=$(basename "$OUTPUT_FILE")
 
     # Document type for styling
-    DOC_TYPE="{{doc_type}}"
+    export DOC_TYPE="{{doc_type}}"
 
     # Resolve absolute path for Docker mount (portable across systems)
     RESOLVED_INPUT_DIR=""
