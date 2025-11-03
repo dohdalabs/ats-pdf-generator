@@ -152,7 +152,7 @@ class ContactValidator:
                     # Match if after_text is just ")", or ")" followed by separator, or just separator
                     if re.search(
                         r"^\)$|^\)[\s,:\.]|^[\s,:\.]", after_text
-                    ) or end_pos == len(content.strip()):
+                    ) or end_pos == len(content):
                         return True
 
         return False
