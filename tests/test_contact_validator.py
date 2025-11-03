@@ -520,9 +520,8 @@ def test_is_year_range_single_digit_before() -> None:
     end_pos = 7
 
     result = validator._is_year_range(content, start_pos, end_pos)
-    # Single digit before might not match Pattern 2 (expects 1-4 digits)
-    # but the logic should handle it correctly
-    assert isinstance(result, bool)
+    # Single digit is not a valid year range
+    assert result is False
 
 
 def test_is_year_range_four_digit_before() -> None:
