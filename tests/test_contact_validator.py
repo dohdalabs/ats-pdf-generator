@@ -432,6 +432,19 @@ def test_is_year_range_without_parens_end_of_string() -> None:
     assert result is True
 
 
+def test_is_year_range_with_trailing_whitespace() -> None:
+    """Test _is_year_range detects year ranges with trailing whitespace."""
+    validator = ContactValidator()
+    content = "2021-2022   "  # Multiple trailing spaces
+    phone_match = validator.PHONE_PATTERN.search(content)
+    assert phone_match is not None
+    start_pos = phone_match.start()
+    end_pos = phone_match.end()
+
+    result = validator._is_year_range(content, start_pos, end_pos)
+    assert result is True
+
+
 def test_is_year_range_without_parens_with_closing_paren_after() -> None:
     """Test _is_year_range detects year ranges with optional closing paren."""
     validator = ContactValidator()
